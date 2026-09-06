@@ -96,6 +96,23 @@ Expected:
 - **Create template** form (title, cadence daily/weekly, anchor date).
 - After **Create**, template listed under **Templates** as active; edit fields and **Save**, or **Deactivate**.
 
-## 9. Spawn from template (placeholder — #12)
+## 9. Spawn from template
 
-> **TODO under [#12](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/12):** document the management command or trigger that spawns open chores from active templates, plus the expected Unclaimed list outcome.
+With the server stopped or in another terminal (from `module_1/`), after creating an **active** template in step 8 (cadence daily/weekly, anchor on or before today):
+
+```text
+conda run -n module1_chores python manage.py spawn_recurring_chores
+```
+
+Optional fixed date (useful for smoke/debug):
+
+```text
+conda run -n module1_chores python manage.py spawn_recurring_chores --as-of 2026-09-06
+```
+
+Expected:
+
+- Command prints how many chores were spawned (at least one if a due active template had no incomplete instance).
+- Refresh http://127.0.0.1:8000/ — spawned chore appears under **Unclaimed** with the template’s title.
+- Running the command again for the same period does **not** add a duplicate while that chore is still open or claimed.
+- Deactivated templates never spawn.

@@ -5,6 +5,8 @@ Commands
 - `pytest` - the whole suite (from `module_1/` with env active)
 - `pytest tests/test_home.py` - one test file
 - `python manage.py runserver` - local Django server
+- `python manage.py spawn_recurring_chores` - spawn open chores from due active templates (today)
+- `python manage.py spawn_recurring_chores --as-of YYYY-MM-DD` - same, evaluated as of a fixed date
 - `start.bat` - activate env and start the app (double-click or run from Explorer)
 
 Documents

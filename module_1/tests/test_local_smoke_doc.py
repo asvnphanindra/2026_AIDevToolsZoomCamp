@@ -17,3 +17,5 @@ def test_local_smoke_doc_exists_and_mentions_key_strings():
     assert "member_id" in text
     assert "Temporary session stub" not in text
     assert "placeholder — #11" not in text
+    assert "placeholder — #12" not in text
+    assert "spawn_recurring_chores" in text

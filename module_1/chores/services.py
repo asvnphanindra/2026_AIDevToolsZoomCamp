@@ -9,6 +9,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from chores.models import Chore, Household, Member, RecurringTemplate
+from chores.recurrence import is_due
 
 CHORE_TITLE_MAX_LENGTH = Chore._meta.get_field("title").max_length
 TEMPLATE_TITLE_MAX_LENGTH = RecurringTemplate._meta.get_field("title").max_length
@@ -419,3 +420,45 @@ def complete_chore(member: Member, chore_id: int) -> Chore:
 
     chore.refresh_from_db()
     return chore
+
+
+def _has_incomplete_for_template(template: RecurringTemplate) -> bool:
+    """True if an open or claimed chore already exists for this template.
+
+    An outstanding incomplete instance is treated as covering the current
+    period, so spawn will not create another until it is completed.
+    """
+    return Chore.objects.filter(
+        template_id=template.pk,
+        status__in=[Chore.Status.OPEN, Chore.Status.CLAIMED],
+    ).exists()
+
+
+def spawn_recurring_chores(*, as_of: date | None = None) -> list[Chore]:
+    """Spawn open chores for active templates that are due on ``as_of``.
+
+    Defaults ``as_of`` to today (local date). Skips inactive templates and
+    templates that already have an incomplete (open/claimed) chore. Period
+    and due rules: see ``chores.recurrence``.
+    """
+    if as_of is None:
+        as_of = timezone.localdate()
+
+    created: list[Chore] = []
+    templates = RecurringTemplate.objects.filter(is_active=True).select_related(
+        "household"
+    )
+    for template in templates:
+        if not is_due(template.cadence, template.anchor_date, as_of):
+            continue
+        if _has_incomplete_for_template(template):
+            continue
+        chore = Chore.objects.create(
+            household_id=template.household_id,
+            title=template.title,
+            status=Chore.Status.OPEN,
+            claimer=None,
+            template=template,
+        )
+        created.append(chore)
+    return created
