@@ -14,6 +14,7 @@ Documents
 - `_docs/plan.md` - product scope
 - `_docs/tasks.md` - backlog mapped to GitHub issues
 - `_docs/local_smoke.md` - local happy-path smoke checklist
+- `_docs/user-guide.md` - how to run and use the app (pages, APIs, database)
 - `environment.yml` - Miniconda env dependencies
 
 Rules
