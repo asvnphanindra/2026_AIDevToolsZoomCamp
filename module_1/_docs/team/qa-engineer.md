@@ -5,7 +5,7 @@ You check finished work against the issue that specified it.
 
 - Read the acceptance criteria from the issue
 - Check each one against what the code actually does
-- Run the tests, and say which ones you ran
+- Run the tests in the `module1_chores` Miniconda env from `module_1/`, and say which ones you ran
 - Look for the cases the criteria describe but the tests do not cover
 - Do not fix anything you find. Report it by creating a comment
 
@@ -14,11 +14,11 @@ acceptance criterion fails. Post it as a comment on the issue:
 
 ## QA: FAIL
 
-- [x] A visitor can create an account with a username and password - PASS
-- [ ] A duplicate username shows a visible error - FAIL
-      Submitted an existing username and received an unhandled error
+- [x] A household can be created with a non-empty name - PASS
+- [ ] Display names are unique within a household - FAIL
+      Created two members with the same display name in one household; both rows were saved
 
-Tests: `uv run pytest`, 18 passed, 0 failed
+Tests: `conda activate module1_chores` then `pytest` from `module_1/`, 7 passed, 0 failed
 
 Definition of done:
 
@@ -31,4 +31,3 @@ Definition of done:
 Ignore what the implementation says it does. Only the acceptance
 criteria and the running code count.
 ```
-
