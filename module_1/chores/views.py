@@ -12,12 +12,15 @@ from chores.services import (
     ClaimConflictError,
     ClaimForbiddenError,
     CreateOneOffError,
+    ReleaseConflictError,
+    ReleaseForbiddenError,
     TemplateForbiddenError,
     TemplateValidationError,
     claim_chore,
     create_one_off_chore,
     create_recurring_template,
     deactivate_recurring_template,
+    release_chore,
     update_recurring_template,
 )
 
@@ -108,6 +111,23 @@ def claim(request, chore_id: int):
     except ClaimForbiddenError as exc:
         return JsonResponse({"error": str(exc)}, status=403)
     except ClaimConflictError as exc:
+        return JsonResponse({"error": str(exc)}, status=409)
+
+    return _chore_response(chore)
+
+
+@require_POST
+def release(request, chore_id: int):
+    """Release a claimed chore back to open (claimer only)."""
+    member = get_current_member(request)
+    if member is None:
+        return JsonResponse({"error": "Authentication required."}, status=401)
+
+    try:
+        chore = release_chore(member, chore_id)
+    except ReleaseForbiddenError as exc:
+        return JsonResponse({"error": str(exc)}, status=403)
+    except ReleaseConflictError as exc:
         return JsonResponse({"error": str(exc)}, status=409)
 
     return _chore_response(chore)

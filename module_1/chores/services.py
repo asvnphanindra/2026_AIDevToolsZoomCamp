@@ -33,6 +33,14 @@ class ClaimForbiddenError(Exception):
     """Raised when a claim targets a chore outside the member's household."""
 
 
+class ReleaseConflictError(Exception):
+    """Raised when a chore cannot be released because it is not claimed."""
+
+
+class ReleaseForbiddenError(Exception):
+    """Raised when release is denied (not claimer or wrong household)."""
+
+
 def create_one_off_chore(member: Member, title: str | None) -> Chore:
     """Create an open one-off chore for the member's household.
 
@@ -184,13 +192,18 @@ def deactivate_recurring_template(
     return template
 
 
-def _get_household_chore(member: Member, chore_id: int) -> Chore:
+def _get_household_chore(
+    member: Member,
+    chore_id: int,
+    *,
+    forbidden_error: type[Exception] = ClaimForbiddenError,
+) -> Chore:
     try:
         chore = Chore.objects.get(pk=chore_id)
     except (Chore.DoesNotExist, TypeError, ValueError) as exc:
-        raise ClaimForbiddenError("Chore not found in this household.") from exc
+        raise forbidden_error("Chore not found in this household.") from exc
     if chore.household_id != member.household_id:
-        raise ClaimForbiddenError("Chore not found in this household.")
+        raise forbidden_error("Chore not found in this household.")
     return chore
 
 
@@ -219,6 +232,41 @@ def claim_chore(member: Member, chore_id: int) -> Chore:
     )
     if updated != 1:
         raise ClaimConflictError("Chore is not open and cannot be claimed.")
+
+    chore.refresh_from_db()
+    return chore
+
+
+def release_chore(member: Member, chore_id: int) -> Chore:
+    """Release a claimed chore back to open (claimer only; no admin override).
+
+    Uses a conditional update on ``status=claimed`` and ``claimer`` so a
+    concurrent release or status change cannot leave inconsistent state.
+    """
+    chore = _get_household_chore(
+        member, chore_id, forbidden_error=ReleaseForbiddenError
+    )
+
+    if chore.status != Chore.Status.CLAIMED:
+        raise ReleaseConflictError("Chore is not claimed and cannot be released.")
+
+    if chore.claimer_id != member.pk:
+        raise ReleaseForbiddenError("Only the claimer can release this chore.")
+
+    updated = (
+        Chore.objects.filter(
+            pk=chore.pk,
+            status=Chore.Status.CLAIMED,
+            claimer_id=member.pk,
+            household_id=member.household_id,
+        ).update(
+            status=Chore.Status.OPEN,
+            claimer_id=None,
+            claimed_at=None,
+        )
+    )
+    if updated != 1:
+        raise ReleaseConflictError("Chore is not claimed and cannot be released.")
 
     chore.refresh_from_db()
     return chore
