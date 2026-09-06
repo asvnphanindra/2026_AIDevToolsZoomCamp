@@ -11,6 +11,7 @@ Documents
 - `_docs/process.md` - how work is organized
 - `_docs/plan.md` - product scope
 - `_docs/tasks.md` - backlog mapped to GitHub issues
+- `_docs/local_smoke.md` - local happy-path smoke checklist
 - `environment.yml` - Miniconda env dependencies
 
 Rules
