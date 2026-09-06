@@ -5,6 +5,7 @@ Commands
 - `pytest` - the whole suite (from `module_1/` with env active)
 - `pytest tests/test_home.py` - one test file
 - `python manage.py runserver` - local Django server
+- `start.bat` - activate env and start the app (double-click or run from Explorer)
 
 Documents
 - `_docs/process.md` - how work is organized
