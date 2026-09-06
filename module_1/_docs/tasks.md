@@ -1,20 +1,24 @@
 # Backlog — household chores tool (v1)
 
-Stack for this backlog: **Django + SQLite**, run locally. Product scope lives in `plan.md`.
+Stack for this backlog: **Django + SQLite**, run locally in the Miniconda env `module1_chores` (see `environment.yml` and `_docs/agents.md`). Product scope lives in `plan.md`.
 
-Each task is written so someone can pick it up without reading the other tasks. Prefer small vertical slices; keep auth invite-code based (no email).
+Work is tracked as **GitHub issues** — use those issue numbers, not the old backlog list order. Prefer small vertical slices; keep auth invite-code based (no email).
 
 ---
 
-## 1. Empty Django project with a passing test
+## Empty Django project with a passing test
+
+GitHub: [#1](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/1) (done)
 
 Goal: Bootstrap a local Django + SQLite app that runs and has one green test.
 
-Description: Create a new Django project under `module_1` (or an agreed app folder) with SQLite, a minimal settings layout, and a way to run the test suite. Add a trivial passing unit test (for example asserting `1 + 1 == 2` or that the Django setup loads) so CI-less local `manage.py test` (or `pytest`) succeeds. Do not build product features yet.
+Description: Create a new Django project under `module_1` with SQLite, a minimal settings layout, and a way to run the test suite inside the `module1_chores` Miniconda env. Add a trivial passing unit test (for example asserting `1 + 1 == 2` or that the Django setup loads) so local `pytest` succeeds. Do not build product features yet.
 
 ---
 
-## 2. Domain models for household, members, and chores
+## Domain models for household, members, and chores
+
+GitHub: [#2](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/2)
 
 Goal: Persist the core entities needed for one household’s claim-based chore list.
 
@@ -22,15 +26,9 @@ Description: In the Django app, add models for Household, Member (display name, 
 
 ---
 
-## 3. Invite code join flow
+## Add one-off chores (any member)
 
-Goal: Let a person join one household with an invite link/code and get a session identity.
-
-Description: Implement household invite codes (generate/store on Household) and endpoints or views to create a household (first user becomes admin) and join via code with a display name. Establish a server session (or equivalent) so later requests know which Member is acting. No email. Cover join success, bad code, and “already named member in session” with tests.
-
----
-
-## 4. Add one-off chores (any member)
+GitHub: [#3](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/3)
 
 Goal: Any household member can put a one-off chore on the open shared list.
 
@@ -38,7 +36,9 @@ Description: Add an authenticated-by-session way for any Member to create a one-
 
 ---
 
-## 5. Admin-managed recurring templates
+## Admin-managed recurring templates
+
+GitHub: [#4](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/4)
 
 Goal: Only admins can create and edit recurring chore templates.
 
@@ -46,15 +46,9 @@ Description: Build create/update (and optionally deactivate) for RecurringTempla
 
 ---
 
-## 6. Spawn open tasks from recurring templates
+## Claim an open chore
 
-Goal: Turn due recurring templates into open chores on the shared list.
-
-Description: Implement a deterministic spawn mechanism (management command and/or “run on list load”) that creates an `open` chore when a template is due and no incomplete instance already exists for that period. Keep logic testable with frozen dates. Do not add reminders or notifications. Document how to run the command locally if you use one.
-
----
-
-## 7. Claim an open chore
+GitHub: [#5](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/5)
 
 Goal: A member can claim an open chore so it becomes theirs until done or released.
 
@@ -62,7 +56,9 @@ Description: Add an action that moves an `open` chore to `claimed` and sets the 
 
 ---
 
-## 8. Release a claimed chore
+## Release a claimed chore
+
+GitHub: [#6](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/6)
 
 Goal: The claimer can return a chore to the open list without completing it.
 
@@ -70,7 +66,9 @@ Description: Add a release action that only the current claimer can perform on a
 
 ---
 
-## 9. Self-mark chore complete
+## Self-mark chore complete
+
+GitHub: [#7](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/7)
 
 Goal: The claimer can trust-mark a claimed chore as done.
 
@@ -78,7 +76,9 @@ Description: Add a complete action that only the claimer can run on a `claimed` 
 
 ---
 
-## 10. Shared list UI: unclaimed, mine, others claimed
+## Shared list UI: unclaimed, mine, others claimed
+
+GitHub: [#8](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/8)
 
 Goal: Show a phone-friendly web page of the household’s chores segmented by claim state.
 
@@ -86,7 +86,9 @@ Description: Build a Django-rendered (templates; HTMX optional) mobile-friendly 
 
 ---
 
-## 11. Admin UI for templates and invite code
+## Admin UI for templates and invite code
+
+GitHub: [#9](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/9)
 
 Goal: Give admins a simple local UI to manage templates and copy the household invite code.
 
@@ -94,8 +96,30 @@ Description: Add phone-friendly pages (or extend the main UI) where admins can s
 
 ---
 
-## 12. End-to-end local smoke script or checklist
+## End-to-end local smoke script or checklist
+
+GitHub: [#10](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/10)
 
 Goal: Prove a new developer can run the happy path locally without reading tribal knowledge.
 
-Description: Add a short `_docs/local_smoke.md` (or a scripted test) that walks: install deps, migrate, runserver, create household, join with second session/user, add one-off, claim, complete, release, and spawn from a template. Keep it accurate to the actual commands in the repo. No production deploy steps.
+Description: Add a short `_docs/local_smoke.md` (or a scripted test) that walks: create/activate the Miniconda env from `environment.yml`, migrate, runserver, create household, join with second session/user, add one-off, claim, complete, release, and spawn from a template. Keep it accurate to the actual commands in the repo. No production deploy steps.
+
+---
+
+## Invite code join flow
+
+GitHub: [#11](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/11)
+
+Goal: Let a person join one household with an invite link/code and get a session identity.
+
+Description: Implement household invite codes (generate/store on Household) and endpoints or views to create a household (first user becomes admin) and join via code with a display name. Establish a server session (or equivalent) so later requests know which Member is acting. No email. Cover join success, bad code, and already-named member in session with tests.
+
+---
+
+## Spawn open tasks from recurring templates
+
+GitHub: [#12](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/12)
+
+Goal: Turn due recurring templates into open chores on the shared list.
+
+Description: Implement a deterministic spawn mechanism (management command and/or run-on-list-load) that creates an `open` chore when a template is due and no incomplete instance already exists for that period. Keep logic testable with frozen dates. Do not add reminders or notifications. Document how to run the command locally if you use one.

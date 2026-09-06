@@ -44,4 +44,4 @@ flowchart LR
 
 ## Next
 
-Stop at documentation unless you ask to start building.
+Implementation is underway under `module_1/` (Django + SQLite, Miniconda env `module1_chores`). Track work via GitHub issues; agent commands live in `_docs/agents.md`.
