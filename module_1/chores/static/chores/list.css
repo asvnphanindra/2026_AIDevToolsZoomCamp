@@ -1,0 +1,113 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  line-height: 1.4;
+  color: #1a1a1a;
+  background: #f7f7f5;
+}
+
+.page {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+}
+
+.page-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0 0 1.25rem;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.segment,
+.add-chore {
+  margin-bottom: 1.5rem;
+}
+
+.segment h2,
+.add-chore h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.35rem;
+}
+
+button {
+  padding: 0.65rem 0.9rem;
+  font-size: 1rem;
+  border: 1px solid #333;
+  border-radius: 0.35rem;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+}
+
+.chore-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chore-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.chore-title {
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.claimer {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.empty {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

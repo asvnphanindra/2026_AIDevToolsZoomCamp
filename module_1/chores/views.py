@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import json
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import render
+from django.urls import reverse
+from django.views.decorators.http import require_GET, require_POST
 
 from chores.helpers import get_current_member
+from chores.models import Chore
 from chores.services import (
     ClaimConflictError,
     ClaimForbiddenError,
@@ -79,6 +82,53 @@ def _chore_response(chore, *, status: int = 200) -> JsonResponse:
     )
 
 
+def _denied_response(request):
+    """Render a clear denial page for missing/invalid session member."""
+    return render(request, "chores/denied.html", status=401)
+
+
+def _redirect_to_list():
+    return HttpResponseRedirect(reverse("chores:chore_list"))
+
+
+@require_GET
+def chore_list(request):
+    """Phone-friendly household chore list segmented by claim state."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    chores = (
+        Chore.objects.filter(household_id=member.household_id)
+        .exclude(status=Chore.Status.DONE)
+        .select_related("claimer")
+        .order_by("created_at", "id")
+    )
+
+    unclaimed = []
+    mine = []
+    others_claimed = []
+    for chore in chores:
+        if chore.status == Chore.Status.OPEN:
+            unclaimed.append(chore)
+        elif chore.status == Chore.Status.CLAIMED:
+            if chore.claimer_id == member.pk:
+                mine.append(chore)
+            else:
+                others_claimed.append(chore)
+
+    return render(
+        request,
+        "chores/chore_list.html",
+        {
+            "member": member,
+            "unclaimed": unclaimed,
+            "mine": mine,
+            "others_claimed": others_claimed,
+        },
+    )
+
+
 @require_POST
 def create_one_off(request):
     """Create a one-off open chore for the session member's household."""
@@ -103,6 +153,67 @@ def create_one_off(request):
         },
         status=201,
     )
+
+
+@require_POST
+def create_one_off_html(request):
+    """Form-friendly one-off create; redirects back to the shared list."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    title = _request_title(request)
+    try:
+        create_one_off_chore(member, title)
+    except CreateOneOffError:
+        return _redirect_to_list()
+
+    return _redirect_to_list()
+
+
+@require_POST
+def claim_html(request, chore_id: int):
+    """Form-friendly claim; redirects back to the shared list."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    try:
+        claim_chore(member, chore_id)
+    except (ClaimForbiddenError, ClaimConflictError):
+        return _redirect_to_list()
+
+    return _redirect_to_list()
+
+
+@require_POST
+def release_html(request, chore_id: int):
+    """Form-friendly release; redirects back to the shared list."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    try:
+        release_chore(member, chore_id)
+    except (ReleaseForbiddenError, ReleaseConflictError):
+        return _redirect_to_list()
+
+    return _redirect_to_list()
+
+
+@require_POST
+def complete_html(request, chore_id: int):
+    """Form-friendly complete; redirects back to the shared list."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    try:
+        complete_chore(member, chore_id)
+    except (CompleteForbiddenError, CompleteConflictError):
+        return _redirect_to_list()
+
+    return _redirect_to_list()
 
 
 @require_POST

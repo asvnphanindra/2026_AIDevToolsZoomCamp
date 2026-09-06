@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ member.household.name }} chores</title>
+  <link rel="stylesheet" href="{% static 'chores/list.css' %}">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>{{ member.household.name }}</h1>
+      <p class="subtitle">Signed in as {{ member.display_name }}</p>
+    </header>
+
+    <section class="add-chore" aria-labelledby="add-heading">
+      <h2 id="add-heading">Add one-off</h2>
+      <form method="post" action="{% url 'chores:create_one_off_html' %}" class="add-form">
+        {% csrf_token %}
+        <label class="sr-only" for="title">Chore title</label>
+        <input id="title" name="title" type="text" maxlength="200" required placeholder="Chore title">
+        <button type="submit">Add</button>
+      </form>
+    </section>
+
+    <section class="segment" id="unclaimed" aria-labelledby="unclaimed-heading">
+      <h2 id="unclaimed-heading">Unclaimed</h2>
+      {% if unclaimed %}
+      <ul class="chore-list">
+        {% for chore in unclaimed %}
+        <li class="chore-item" data-chore-id="{{ chore.id }}">
+          <span class="chore-title">{{ chore.title }}</span>
+          <form method="post" action="{% url 'chores:claim_html' chore.id %}" class="actions">
+            {% csrf_token %}
+            <button type="submit">Claim</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">No unclaimed chores.</p>
+      {% endif %}
+    </section>
+
+    <section class="segment" id="mine" aria-labelledby="mine-heading">
+      <h2 id="mine-heading">Mine</h2>
+      {% if mine %}
+      <ul class="chore-list">
+        {% for chore in mine %}
+        <li class="chore-item" data-chore-id="{{ chore.id }}">
+          <span class="chore-title">{{ chore.title }}</span>
+          <div class="actions">
+            <form method="post" action="{% url 'chores:release_html' chore.id %}">
+              {% csrf_token %}
+              <button type="submit">Release</button>
+            </form>
+            <form method="post" action="{% url 'chores:complete_html' chore.id %}">
+              {% csrf_token %}
+              <button type="submit">Complete</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">Nothing claimed by you.</p>
+      {% endif %}
+    </section>
+
+    <section class="segment" id="others-claimed" aria-labelledby="others-heading">
+      <h2 id="others-heading">Others’ claimed</h2>
+      {% if others_claimed %}
+      <ul class="chore-list">
+        {% for chore in others_claimed %}
+        <li class="chore-item" data-chore-id="{{ chore.id }}">
+          <span class="chore-title">{{ chore.title }}</span>
+          <span class="claimer">{{ chore.claimer.display_name }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">No chores claimed by others.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
