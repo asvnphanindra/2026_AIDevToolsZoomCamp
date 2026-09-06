@@ -69,6 +69,7 @@ class RecurringTemplate(models.Model):
         choices=Cadence.choices,
     )
     anchor_date = models.DateField()
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         constraints = [
