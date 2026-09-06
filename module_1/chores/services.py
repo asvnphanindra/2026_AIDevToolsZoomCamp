@@ -2,19 +2,32 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import date, datetime
 
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from chores.models import Chore, Member, RecurringTemplate
+from chores.models import Chore, Household, Member, RecurringTemplate
 
 CHORE_TITLE_MAX_LENGTH = Chore._meta.get_field("title").max_length
 TEMPLATE_TITLE_MAX_LENGTH = RecurringTemplate._meta.get_field("title").max_length
+HOUSEHOLD_NAME_MAX_LENGTH = Household._meta.get_field("name").max_length
+DISPLAY_NAME_MAX_LENGTH = Member._meta.get_field("display_name").max_length
 VALID_CADENCES = frozenset(RecurringTemplate.Cadence.values)
+INVITE_CODE_BYTES = 9
 
 
 class CreateOneOffError(Exception):
     """Raised when a one-off chore cannot be created due to invalid input."""
+
+
+class HouseholdJoinError(Exception):
+    """Raised when household create/join input is invalid or conflicts."""
+
+
+class InviteCodeNotFoundError(Exception):
+    """Raised when an invite code does not match any household."""
 
 
 class TemplateValidationError(Exception):
@@ -72,6 +85,98 @@ def create_one_off_chore(member: Member, title: str | None) -> Chore:
         claimer=None,
         template=None,
     )
+
+
+def _strip_required(value, *, field_label: str, max_length: int) -> str:
+    if value is None:
+        raise HouseholdJoinError(f"{field_label} is required.")
+    stripped = value.strip() if isinstance(value, str) else str(value).strip()
+    if not stripped:
+        raise HouseholdJoinError(f"{field_label} must be non-empty.")
+    if len(stripped) > max_length:
+        raise HouseholdJoinError(
+            f"{field_label} must be at most {max_length} characters."
+        )
+    return stripped
+
+
+def _generate_unique_invite_code() -> str:
+    """Return a URL-safe invite code that is unique among existing households."""
+    for _ in range(20):
+        code = secrets.token_urlsafe(INVITE_CODE_BYTES)
+        if not code:
+            continue
+        if not Household.objects.filter(invite_code=code).exists():
+            return code
+    raise HouseholdJoinError("Could not generate a unique invite code.")
+
+
+def create_household(*, name, display_name) -> tuple[Household, Member]:
+    """Create a household with a unique invite code and first admin member."""
+    household_name = _strip_required(
+        name, field_label="Household name", max_length=HOUSEHOLD_NAME_MAX_LENGTH
+    )
+    member_name = _strip_required(
+        display_name,
+        field_label="Display name",
+        max_length=DISPLAY_NAME_MAX_LENGTH,
+    )
+
+    try:
+        with transaction.atomic():
+            household = Household.objects.create(
+                name=household_name,
+                invite_code=_generate_unique_invite_code(),
+            )
+            member = Member.objects.create(
+                household=household,
+                display_name=member_name,
+                role=Member.Role.ADMIN,
+            )
+    except IntegrityError as exc:
+        raise HouseholdJoinError(
+            "Display name is already taken in this household."
+        ) from exc
+
+    return household, member
+
+
+def join_household(*, invite_code, display_name) -> tuple[Household, Member]:
+    """Join an existing household by invite code as a regular member."""
+    if invite_code is None:
+        raise HouseholdJoinError("Invite code is required.")
+    code = (
+        invite_code.strip()
+        if isinstance(invite_code, str)
+        else str(invite_code).strip()
+    )
+    if not code:
+        raise HouseholdJoinError("Invite code must be non-empty.")
+
+    member_name = _strip_required(
+        display_name,
+        field_label="Display name",
+        max_length=DISPLAY_NAME_MAX_LENGTH,
+    )
+
+    try:
+        household = Household.objects.get(invite_code=code)
+    except Household.DoesNotExist as exc:
+        raise InviteCodeNotFoundError("Invite code not found.") from exc
+
+    try:
+        with transaction.atomic():
+            member = Member.objects.create(
+                household=household,
+                display_name=member_name,
+                role=Member.Role.MEMBER,
+            )
+    except IntegrityError as exc:
+        raise HouseholdJoinError(
+            "Display name is already taken in this household."
+        ) from exc
+
+    return household, member
 
 
 def _require_admin(member: Member) -> None:

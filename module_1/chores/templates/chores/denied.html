@@ -1,22 +1,23 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Access denied</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      padding: 1.5rem;
-      max-width: 28rem;
-    }
-  </style>
+  <link rel="stylesheet" href="{% static 'chores/list.css' %}">
 </head>
 <body>
-  <main>
-    <h1>Access denied</h1>
-    <p>You must be signed in as a household member to continue.</p>
+  <main class="page">
+    <header class="page-header">
+      <h1>Access denied</h1>
+      <p class="subtitle">You must be signed in as a household member to continue.</p>
+    </header>
+    <p class="nav-links">
+      <a href="{% url 'chores:create_household' %}">Create a household</a>
+      ·
+      <a href="{% url 'chores:join_household' %}">Join with invite code</a>
+    </p>
   </main>
 </body>
 </html>

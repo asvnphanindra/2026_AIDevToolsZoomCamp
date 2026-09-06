@@ -36,47 +36,36 @@ conda run -n module1_chores python manage.py runserver
 
 Expected: server at http://127.0.0.1:8000/ (message matches `start.bat`).
 
-## 4. Temporary session stub (until #11)
+## 4. Create a household
 
-Join/create-household UI is not shipped yet. Seed an admin and attach `session["member_id"]` so list/admin flows work in the browser.
+Open http://127.0.0.1:8000/ (or any protected page) without a session — you should see **Access denied** with links to create/join. Or go directly to:
 
-In a second terminal (from `module_1/`):
+http://127.0.0.1:8000/household/create/
 
-```text
-conda run -n module1_chores python manage.py shell
-```
+1. Enter a **Household name** (e.g. `Smoke House`)
+2. Enter your **display name** (e.g. `Alex`)
+3. Submit **Create household**
 
-Then:
+Expected:
 
-```python
-from django.contrib.sessions.backends.db import SessionStore
-from chores.models import Household, Member
+- Redirect to `/` (shared list) signed in as **Alex** for **Smoke House**
+- Session cookie `sessionid` is set; the server stores `member_id` for that Member
+- You are household **admin** (Admin / templates works)
 
-household = Household.objects.create(name="Smoke House", invite_code="SMOKE-INVITE-1")
-admin = Member.objects.create(
-    household=household,
-    display_name="Alex",
-    role=Member.Role.ADMIN,
-)
-print("member_id=", admin.pk)
+## 5. Join with invite code
 
-session = SessionStore()
-session["member_id"] = admin.pk
-session.create()
-print("sessionid=", session.session_key)
-```
+From the admin page (or note the code after create via JSON/`#invite-code`):
 
-In the browser (DevTools → Application → Cookies for `127.0.0.1`):
+1. As the admin, open http://127.0.0.1:8000/household/admin/
+2. Copy the **Invite code** from the readonly `#invite-code` field
+3. In another browser / private window (or clear cookies), open http://127.0.0.1:8000/household/join/
+4. Paste the invite code, enter a different display name (e.g. `Sam`), submit **Join household**
 
-1. Add or edit cookie name `sessionid`
-2. Set value to the printed `sessionid`
-3. Reload http://127.0.0.1:8000/
+Expected:
 
-Expected: page loads as household **Smoke House**, signed in as **Alex** (not the 401 denied page).
-
-## 5. Join / create household (placeholder — #11)
-
-> **TODO under [#11](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/11):** replace the temporary session stub with real create-household / invite-join steps and document the UI paths and expected outcomes here.
+- Redirect to `/` signed in as **Sam** for the same household
+- Session `member_id` is Sam’s Member pk; role is **member** (not admin)
+- Invalid/blank invite codes stay on the join page with an error; no new Member
 
 ## 6. Shared list UI
 
@@ -99,11 +88,11 @@ On `/`:
 
 ## 8. Admin UI + invite code
 
-Open http://127.0.0.1:8000/household/admin/ (or use **Admin / templates** from the list). Requires admin role (the stub member above).
+Open http://127.0.0.1:8000/household/admin/ (or use **Admin / templates** from the list). Requires admin role (the creator from step 4).
 
 Expected:
 
-- **Invite code** section with readonly input `#invite-code` showing `SMOKE-INVITE-1` (copyable).
+- **Invite code** section with readonly input `#invite-code` showing the household’s generated code (copyable).
 - **Create template** form (title, cadence daily/weekly, anchor date).
 - After **Create**, template listed under **Templates** as active; edit fields and **Save**, or **Deactivate**.
 

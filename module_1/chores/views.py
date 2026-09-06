@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
-from chores.helpers import get_current_member
+from chores.helpers import SESSION_MEMBER_ID_KEY, get_current_member
 from chores.models import Chore, Member, RecurringTemplate
 from chores.services import (
     ClaimConflictError,
@@ -17,15 +17,19 @@ from chores.services import (
     CompleteConflictError,
     CompleteForbiddenError,
     CreateOneOffError,
+    HouseholdJoinError,
+    InviteCodeNotFoundError,
     ReleaseConflictError,
     ReleaseForbiddenError,
     TemplateForbiddenError,
     TemplateValidationError,
     claim_chore,
     complete_chore,
+    create_household,
     create_one_off_chore,
     create_recurring_template,
     deactivate_recurring_template,
+    join_household,
     release_chore,
     update_recurring_template,
 )
@@ -98,6 +102,103 @@ def _redirect_to_list():
 
 def _redirect_to_admin():
     return HttpResponseRedirect(reverse("chores:admin_page"))
+
+
+def _wants_json(request) -> bool:
+    content_type = request.content_type or ""
+    return "application/json" in content_type
+
+
+def _set_session_member(request, member: Member) -> None:
+    request.session[SESSION_MEMBER_ID_KEY] = member.pk
+
+
+def create_household_page(request):
+    """Phone-friendly create-household form; POST creates admin + session."""
+    if request.method == "GET":
+        return render(request, "chores/create_household.html", {"error": None})
+
+    payload = _request_payload(request)
+    try:
+        household, member = create_household(
+            name=payload.get("name"),
+            display_name=payload.get("display_name"),
+        )
+    except HouseholdJoinError as exc:
+        if _wants_json(request):
+            return JsonResponse({"error": str(exc)}, status=400)
+        return render(
+            request,
+            "chores/create_household.html",
+            {
+                "error": str(exc),
+                "name": payload.get("name") or "",
+                "display_name": payload.get("display_name") or "",
+            },
+            status=400,
+        )
+
+    _set_session_member(request, member)
+    if _wants_json(request):
+        return JsonResponse(
+            {
+                "household_id": household.pk,
+                "member_id": member.pk,
+                "invite_code": household.invite_code,
+            },
+            status=201,
+        )
+    return _redirect_to_list()
+
+
+def join_household_page(request):
+    """Phone-friendly join form; POST joins via invite code + session."""
+    if request.method == "GET":
+        return render(request, "chores/join_household.html", {"error": None})
+
+    payload = _request_payload(request)
+    try:
+        household, member = join_household(
+            invite_code=payload.get("invite_code"),
+            display_name=payload.get("display_name"),
+        )
+    except InviteCodeNotFoundError as exc:
+        if _wants_json(request):
+            return JsonResponse({"error": str(exc)}, status=404)
+        return render(
+            request,
+            "chores/join_household.html",
+            {
+                "error": str(exc),
+                "invite_code": payload.get("invite_code") or "",
+                "display_name": payload.get("display_name") or "",
+            },
+            status=404,
+        )
+    except HouseholdJoinError as exc:
+        if _wants_json(request):
+            return JsonResponse({"error": str(exc)}, status=400)
+        return render(
+            request,
+            "chores/join_household.html",
+            {
+                "error": str(exc),
+                "invite_code": payload.get("invite_code") or "",
+                "display_name": payload.get("display_name") or "",
+            },
+            status=400,
+        )
+
+    _set_session_member(request, member)
+    if _wants_json(request):
+        return JsonResponse(
+            {
+                "household_id": household.pk,
+                "member_id": member.pk,
+            },
+            status=201,
+        )
+    return _redirect_to_list()
 
 
 @require_GET

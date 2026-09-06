@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join household</title>
+  <link rel="stylesheet" href="{% static 'chores/list.css' %}">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>Join household</h1>
+      <p class="subtitle">Enter an invite code and choose your display name.</p>
+      <p class="nav-links">
+        <a href="{% url 'chores:create_household' %}">Create a household</a>
+      </p>
+    </header>
+
+    {% if error %}
+    <p class="form-error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <section class="auth-form" aria-labelledby="join-heading">
+      <h2 id="join-heading" class="sr-only">Join form</h2>
+      <form method="post" action="{% url 'chores:join_household' %}" class="template-form">
+        {% csrf_token %}
+        <label for="invite_code">Invite code</label>
+        <input
+          id="invite_code"
+          name="invite_code"
+          type="text"
+          maxlength="64"
+          required
+          value="{{ invite_code|default:'' }}"
+          placeholder="Invite code"
+          autocomplete="off"
+        >
+
+        <label for="display_name">Your display name</label>
+        <input
+          id="display_name"
+          name="display_name"
+          type="text"
+          maxlength="100"
+          required
+          value="{{ display_name|default:'' }}"
+          placeholder="Display name"
+        >
+
+        <button type="submit">Join household</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

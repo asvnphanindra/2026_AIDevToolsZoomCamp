@@ -12,4 +12,8 @@ def test_local_smoke_doc_exists_and_mentions_key_strings():
     assert "migrate" in text
     assert "/" in text
     assert "household/admin/" in text
+    assert "household/create/" in text
+    assert "household/join/" in text
     assert "member_id" in text
+    assert "Temporary session stub" not in text
+    assert "placeholder — #11" not in text

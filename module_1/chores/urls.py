@@ -6,6 +6,8 @@ app_name = "chores"
 
 urlpatterns = [
     path("", views.chore_list, name="chore_list"),
+    path("household/create/", views.create_household_page, name="create_household"),
+    path("household/join/", views.join_household_page, name="join_household"),
     path("household/admin/", views.admin_page, name="admin_page"),
     path("chores/one-off/", views.create_one_off, name="create_one_off"),
     path(
