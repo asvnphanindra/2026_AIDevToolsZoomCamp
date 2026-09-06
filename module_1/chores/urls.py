@@ -6,6 +6,7 @@ app_name = "chores"
 
 urlpatterns = [
     path("", views.chore_list, name="chore_list"),
+    path("household/admin/", views.admin_page, name="admin_page"),
     path("chores/one-off/", views.create_one_off, name="create_one_off"),
     path(
         "chores/one-off/html/",
@@ -36,13 +37,28 @@ urlpatterns = [
     ),
     path("chores/templates/", views.create_template, name="create_template"),
     path(
+        "chores/templates/html/",
+        views.create_template_html,
+        name="create_template_html",
+    ),
+    path(
         "chores/templates/<int:template_id>/",
         views.update_template,
         name="update_template",
     ),
     path(
+        "chores/templates/<int:template_id>/html/",
+        views.update_template_html,
+        name="update_template_html",
+    ),
+    path(
         "chores/templates/<int:template_id>/deactivate/",
         views.deactivate_template,
         name="deactivate_template",
+    ),
+    path(
+        "chores/templates/<int:template_id>/deactivate/html/",
+        views.deactivate_template_html,
+        name="deactivate_template_html",
     ),
 ]

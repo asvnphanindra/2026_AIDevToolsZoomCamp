@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from chores.helpers import get_current_member
-from chores.models import Chore
+from chores.models import Chore, Member, RecurringTemplate
 from chores.services import (
     ClaimConflictError,
     ClaimForbiddenError,
@@ -87,8 +87,17 @@ def _denied_response(request):
     return render(request, "chores/denied.html", status=401)
 
 
+def _forbidden_response(request):
+    """Render a clear forbidden page for non-admin members."""
+    return render(request, "chores/forbidden.html", status=403)
+
+
 def _redirect_to_list():
     return HttpResponseRedirect(reverse("chores:chore_list"))
+
+
+def _redirect_to_admin():
+    return HttpResponseRedirect(reverse("chores:admin_page"))
 
 
 @require_GET
@@ -125,6 +134,30 @@ def chore_list(request):
             "unclaimed": unclaimed,
             "mine": mine,
             "others_claimed": others_claimed,
+        },
+    )
+
+
+@require_GET
+def admin_page(request):
+    """Phone-friendly admin page: invite code + recurring template management."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+    if member.role != Member.Role.ADMIN:
+        return _forbidden_response(request)
+
+    templates = (
+        RecurringTemplate.objects.filter(household_id=member.household_id)
+        .order_by("-is_active", "title", "id")
+    )
+
+    return render(
+        request,
+        "chores/admin.html",
+        {
+            "member": member,
+            "templates": templates,
         },
     )
 
@@ -291,6 +324,29 @@ def create_template(request):
 
 
 @require_POST
+def create_template_html(request):
+    """Form-friendly template create; redirects back to the admin page."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    payload = _request_payload(request)
+    try:
+        create_recurring_template(
+            member,
+            title=payload.get("title"),
+            cadence=payload.get("cadence"),
+            anchor_date=payload.get("anchor_date"),
+        )
+    except TemplateForbiddenError:
+        return _forbidden_response(request)
+    except TemplateValidationError:
+        return _redirect_to_admin()
+
+    return _redirect_to_admin()
+
+
+@require_POST
 def update_template(request, template_id: int):
     """Update a recurring template belonging to the session admin's household."""
     member = get_current_member(request)
@@ -318,6 +374,33 @@ def update_template(request, template_id: int):
 
 
 @require_POST
+def update_template_html(request, template_id: int):
+    """Form-friendly template update; redirects back to the admin page."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    payload = _request_payload(request)
+    try:
+        update_recurring_template(
+            member,
+            template_id,
+            title=payload.get("title"),
+            cadence=payload.get("cadence"),
+            anchor_date=payload.get("anchor_date"),
+            title_provided="title" in payload,
+            cadence_provided="cadence" in payload,
+            anchor_date_provided="anchor_date" in payload,
+        )
+    except TemplateForbiddenError:
+        return _forbidden_response(request)
+    except TemplateValidationError:
+        return _redirect_to_admin()
+
+    return _redirect_to_admin()
+
+
+@require_POST
 def deactivate_template(request, template_id: int):
     """Deactivate a recurring template belonging to the session admin's household."""
     member = get_current_member(request)
@@ -332,3 +415,20 @@ def deactivate_template(request, template_id: int):
         return JsonResponse({"error": str(exc)}, status=400)
 
     return _template_response(template)
+
+
+@require_POST
+def deactivate_template_html(request, template_id: int):
+    """Form-friendly template deactivate; redirects back to the admin page."""
+    member = get_current_member(request)
+    if member is None:
+        return _denied_response(request)
+
+    try:
+        deactivate_recurring_template(member, template_id)
+    except TemplateForbiddenError:
+        return _forbidden_response(request)
+    except TemplateValidationError:
+        return _redirect_to_admin()
+
+    return _redirect_to_admin()

@@ -4,6 +4,7 @@ from django.db import models
 
 class Household(models.Model):
     name = models.CharField(max_length=200)
+    invite_code = models.CharField(max_length=64, blank=True, default="")
 
     def clean(self):
         super().clean()

@@ -12,6 +12,9 @@
     <header class="page-header">
       <h1>{{ member.household.name }}</h1>
       <p class="subtitle">Signed in as {{ member.display_name }}</p>
+      <p class="nav-links">
+        <a href="{% url 'chores:admin_page' %}">Admin / templates</a>
+      </p>
     </header>
 
     <section class="add-chore" aria-labelledby="add-heading">

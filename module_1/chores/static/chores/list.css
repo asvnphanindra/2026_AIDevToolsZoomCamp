@@ -24,20 +24,83 @@ body {
 }
 
 .subtitle {
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.5rem;
   color: #555;
   font-size: 0.95rem;
 }
 
+.nav-links {
+  margin: 0 0 1.25rem;
+}
+
+.nav-links a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
 .segment,
-.add-chore {
+.add-chore,
+.add-template,
+.invite-code {
   margin-bottom: 1.5rem;
 }
 
 .segment h2,
-.add-chore h2 {
+.add-chore h2,
+.add-template h2,
+.invite-code h2 {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
+}
+
+.invite-code-value {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  border: 1px solid #ccc;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.template-form label {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.template-form input,
+.template-form select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.template-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+button.secondary {
+  background: #fff;
+  color: #222;
+  border-color: #888;
 }
 
 .add-form {

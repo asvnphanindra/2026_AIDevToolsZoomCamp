@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — {{ member.household.name }}</title>
+  <link rel="stylesheet" href="{% static 'chores/list.css' %}">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>Admin</h1>
+      <p class="subtitle">{{ member.household.name }} · {{ member.display_name }}</p>
+      <p class="nav-links">
+        <a href="{% url 'chores:chore_list' %}">Back to chores</a>
+      </p>
+    </header>
+
+    <section class="invite-code" aria-labelledby="invite-heading">
+      <h2 id="invite-heading">Invite code</h2>
+      <label class="sr-only" for="invite-code">Household invite code</label>
+      <input
+        id="invite-code"
+        class="invite-code-value"
+        type="text"
+        readonly
+        value="{{ member.household.invite_code }}"
+        aria-label="Household invite code"
+      >
+      <p class="hint">Select and copy the code above to share.</p>
+    </section>
+
+    <section class="add-template" aria-labelledby="create-heading">
+      <h2 id="create-heading">Create template</h2>
+      <form method="post" action="{% url 'chores:create_template_html' %}" class="template-form">
+        {% csrf_token %}
+        <label for="create-title">Title</label>
+        <input id="create-title" name="title" type="text" maxlength="200" required placeholder="Template title">
+
+        <label for="create-cadence">Cadence</label>
+        <select id="create-cadence" name="cadence" required>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+
+        <label for="create-anchor">Anchor date</label>
+        <input id="create-anchor" name="anchor_date" type="date" required>
+
+        <button type="submit">Create</button>
+      </form>
+    </section>
+
+    <section class="segment" id="templates" aria-labelledby="templates-heading">
+      <h2 id="templates-heading">Templates</h2>
+      {% if templates %}
+      <ul class="chore-list">
+        {% for template in templates %}
+        <li class="chore-item template-item" data-template-id="{{ template.id }}">
+          <div class="template-meta">
+            <span class="chore-title">{{ template.title }}</span>
+            <span class="claimer">
+              {{ template.cadence }} · {{ template.anchor_date|date:"Y-m-d" }}
+              · {% if template.is_active %}active{% else %}inactive{% endif %}
+            </span>
+          </div>
+
+          {% if template.is_active %}
+          <form
+            method="post"
+            action="{% url 'chores:update_template_html' template.id %}"
+            class="template-form"
+          >
+            {% csrf_token %}
+            <label class="sr-only" for="title-{{ template.id }}">Title</label>
+            <input
+              id="title-{{ template.id }}"
+              name="title"
+              type="text"
+              maxlength="200"
+              required
+              value="{{ template.title }}"
+            >
+
+            <label class="sr-only" for="cadence-{{ template.id }}">Cadence</label>
+            <select id="cadence-{{ template.id }}" name="cadence" required>
+              <option value="daily" {% if template.cadence == "daily" %}selected{% endif %}>Daily</option>
+              <option value="weekly" {% if template.cadence == "weekly" %}selected{% endif %}>Weekly</option>
+            </select>
+
+            <label class="sr-only" for="anchor-{{ template.id }}">Anchor date</label>
+            <input
+              id="anchor-{{ template.id }}"
+              name="anchor_date"
+              type="date"
+              required
+              value="{{ template.anchor_date|date:'Y-m-d' }}"
+            >
+
+            <div class="actions">
+              <button type="submit">Save</button>
+            </div>
+          </form>
+
+          <form
+            method="post"
+            action="{% url 'chores:deactivate_template_html' template.id %}"
+            class="actions"
+          >
+            {% csrf_token %}
+            <button type="submit" class="secondary">Deactivate</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">No templates yet.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
