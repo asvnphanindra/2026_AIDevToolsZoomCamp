@@ -11,12 +11,15 @@ from chores.helpers import get_current_member
 from chores.services import (
     ClaimConflictError,
     ClaimForbiddenError,
+    CompleteConflictError,
+    CompleteForbiddenError,
     CreateOneOffError,
     ReleaseConflictError,
     ReleaseForbiddenError,
     TemplateForbiddenError,
     TemplateValidationError,
     claim_chore,
+    complete_chore,
     create_one_off_chore,
     create_recurring_template,
     deactivate_recurring_template,
@@ -67,6 +70,9 @@ def _chore_response(chore, *, status: int = 200) -> JsonResponse:
             "household_id": chore.household_id,
             "claimer": chore.claimer_id,
             "claimed_at": chore.claimed_at.isoformat() if chore.claimed_at else None,
+            "completed_at": (
+                chore.completed_at.isoformat() if chore.completed_at else None
+            ),
             "template": chore.template_id,
         },
         status=status,
@@ -128,6 +134,23 @@ def release(request, chore_id: int):
     except ReleaseForbiddenError as exc:
         return JsonResponse({"error": str(exc)}, status=403)
     except ReleaseConflictError as exc:
+        return JsonResponse({"error": str(exc)}, status=409)
+
+    return _chore_response(chore)
+
+
+@require_POST
+def complete(request, chore_id: int):
+    """Mark a claimed chore as done (claimer only; no photo/peer confirmation)."""
+    member = get_current_member(request)
+    if member is None:
+        return JsonResponse({"error": "Authentication required."}, status=401)
+
+    try:
+        chore = complete_chore(member, chore_id)
+    except CompleteForbiddenError as exc:
+        return JsonResponse({"error": str(exc)}, status=403)
+    except CompleteConflictError as exc:
         return JsonResponse({"error": str(exc)}, status=409)
 
     return _chore_response(chore)

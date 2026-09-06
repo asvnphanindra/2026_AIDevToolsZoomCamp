@@ -41,6 +41,14 @@ class ReleaseForbiddenError(Exception):
     """Raised when release is denied (not claimer or wrong household)."""
 
 
+class CompleteConflictError(Exception):
+    """Raised when a chore cannot be completed because it is not claimed."""
+
+
+class CompleteForbiddenError(Exception):
+    """Raised when complete is denied (not claimer or wrong household)."""
+
+
 def create_one_off_chore(member: Member, title: str | None) -> Chore:
     """Create an open one-off chore for the member's household.
 
@@ -267,6 +275,42 @@ def release_chore(member: Member, chore_id: int) -> Chore:
     )
     if updated != 1:
         raise ReleaseConflictError("Chore is not claimed and cannot be released.")
+
+    chore.refresh_from_db()
+    return chore
+
+
+def complete_chore(member: Member, chore_id: int) -> Chore:
+    """Mark a claimed chore as done (claimer only; no photo/peer confirmation).
+
+    Keeps the claimer on the row for history. Uses a conditional update on
+    ``status=claimed`` and ``claimer`` so concurrent changes cannot leave
+    inconsistent state.
+    """
+    chore = _get_household_chore(
+        member, chore_id, forbidden_error=CompleteForbiddenError
+    )
+
+    if chore.status != Chore.Status.CLAIMED:
+        raise CompleteConflictError("Chore is not claimed and cannot be completed.")
+
+    if chore.claimer_id != member.pk:
+        raise CompleteForbiddenError("Only the claimer can complete this chore.")
+
+    completed_at = timezone.now()
+    updated = (
+        Chore.objects.filter(
+            pk=chore.pk,
+            status=Chore.Status.CLAIMED,
+            claimer_id=member.pk,
+            household_id=member.household_id,
+        ).update(
+            status=Chore.Status.DONE,
+            completed_at=completed_at,
+        )
+    )
+    if updated != 1:
+        raise CompleteConflictError("Chore is not claimed and cannot be completed.")
 
     chore.refresh_from_db()
     return chore
