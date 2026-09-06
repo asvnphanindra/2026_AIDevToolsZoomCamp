@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
+from django.utils import timezone
+
 from chores.models import Chore, Member, RecurringTemplate
 
 CHORE_TITLE_MAX_LENGTH = Chore._meta.get_field("title").max_length
@@ -21,6 +23,14 @@ class TemplateValidationError(Exception):
 
 class TemplateForbiddenError(Exception):
     """Raised when a non-admin or cross-household template action is denied."""
+
+
+class ClaimConflictError(Exception):
+    """Raised when a chore cannot be claimed because it is not open."""
+
+
+class ClaimForbiddenError(Exception):
+    """Raised when a claim targets a chore outside the member's household."""
 
 
 def create_one_off_chore(member: Member, title: str | None) -> Chore:
@@ -172,3 +182,43 @@ def deactivate_recurring_template(
     template.is_active = False
     template.save(update_fields=["is_active"])
     return template
+
+
+def _get_household_chore(member: Member, chore_id: int) -> Chore:
+    try:
+        chore = Chore.objects.get(pk=chore_id)
+    except (Chore.DoesNotExist, TypeError, ValueError) as exc:
+        raise ClaimForbiddenError("Chore not found in this household.") from exc
+    if chore.household_id != member.household_id:
+        raise ClaimForbiddenError("Chore not found in this household.")
+    return chore
+
+
+def claim_chore(member: Member, chore_id: int) -> Chore:
+    """Claim an open chore for the acting member (admin or member role).
+
+    Uses a conditional update on ``status=open`` so concurrent claims cannot
+    both succeed — exactly one claimer wins.
+    """
+    chore = _get_household_chore(member, chore_id)
+
+    if chore.status != Chore.Status.OPEN:
+        raise ClaimConflictError("Chore is not open and cannot be claimed.")
+
+    claimed_at = timezone.now()
+    updated = (
+        Chore.objects.filter(
+            pk=chore.pk,
+            status=Chore.Status.OPEN,
+            household_id=member.household_id,
+        ).update(
+            status=Chore.Status.CLAIMED,
+            claimer_id=member.pk,
+            claimed_at=claimed_at,
+        )
+    )
+    if updated != 1:
+        raise ClaimConflictError("Chore is not open and cannot be claimed.")
+
+    chore.refresh_from_db()
+    return chore

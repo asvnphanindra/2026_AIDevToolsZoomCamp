@@ -9,9 +9,12 @@ from django.views.decorators.http import require_POST
 
 from chores.helpers import get_current_member
 from chores.services import (
+    ClaimConflictError,
+    ClaimForbiddenError,
     CreateOneOffError,
     TemplateForbiddenError,
     TemplateValidationError,
+    claim_chore,
     create_one_off_chore,
     create_recurring_template,
     deactivate_recurring_template,
@@ -52,6 +55,21 @@ def _template_response(template, *, status: int = 200) -> JsonResponse:
     )
 
 
+def _chore_response(chore, *, status: int = 200) -> JsonResponse:
+    return JsonResponse(
+        {
+            "id": chore.id,
+            "title": chore.title,
+            "status": chore.status,
+            "household_id": chore.household_id,
+            "claimer": chore.claimer_id,
+            "claimed_at": chore.claimed_at.isoformat() if chore.claimed_at else None,
+            "template": chore.template_id,
+        },
+        status=status,
+    )
+
+
 @require_POST
 def create_one_off(request):
     """Create a one-off open chore for the session member's household."""
@@ -76,6 +94,23 @@ def create_one_off(request):
         },
         status=201,
     )
+
+
+@require_POST
+def claim(request, chore_id: int):
+    """Claim an open chore for the session member's household."""
+    member = get_current_member(request)
+    if member is None:
+        return JsonResponse({"error": "Authentication required."}, status=401)
+
+    try:
+        chore = claim_chore(member, chore_id)
+    except ClaimForbiddenError as exc:
+        return JsonResponse({"error": str(exc)}, status=403)
+    except ClaimConflictError as exc:
+        return JsonResponse({"error": str(exc)}, status=409)
+
+    return _chore_response(chore)
 
 
 @require_POST

@@ -6,6 +6,7 @@ app_name = "chores"
 
 urlpatterns = [
     path("chores/one-off/", views.create_one_off, name="create_one_off"),
+    path("chores/<int:chore_id>/claim/", views.claim, name="claim_chore"),
     path("chores/templates/", views.create_template, name="create_template"),
     path(
         "chores/templates/<int:template_id>/",
