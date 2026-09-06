@@ -42,6 +42,7 @@ def test_due_daily_template_spawns_once(household):
     assert chore.claimer_id is None
     assert chore.household_id == household.pk
     assert chore.template_id == template.pk
+    assert chore.period_key == "2026-09-06"
     assert Chore.objects.filter(template=template).count() == 1
 
 
@@ -60,8 +61,35 @@ def test_second_run_same_period_does_not_duplicate(household):
     second = spawn_recurring_chores(as_of=as_of)
 
     assert len(first) == 1
+    assert first[0].period_key == "2026-09-06"
     assert second == []
     assert Chore.objects.filter(status=Chore.Status.OPEN).count() == 1
+
+
+@pytest.mark.django_db
+def test_incomplete_prior_period_does_not_block_new_period(household):
+    """Open chore from day 1 must not block day-2 spawn for a daily template."""
+    template = RecurringTemplate.objects.create(
+        household=household,
+        title="Wipe counters",
+        cadence=RecurringTemplate.Cadence.DAILY,
+        anchor_date=date(2026, 9, 1),
+        is_active=True,
+    )
+
+    day1 = spawn_recurring_chores(as_of=date(2026, 9, 6))
+    day2 = spawn_recurring_chores(as_of=date(2026, 9, 7))
+
+    assert len(day1) == 1
+    assert day1[0].period_key == "2026-09-06"
+    assert day1[0].status == Chore.Status.OPEN
+    assert len(day2) == 1
+    assert day2[0].period_key == "2026-09-07"
+    assert day2[0].status == Chore.Status.OPEN
+    assert Chore.objects.filter(template=template, status=Chore.Status.OPEN).count() == 2
+    # Same-period re-run still dedups
+    assert spawn_recurring_chores(as_of=date(2026, 9, 7)) == []
+    assert Chore.objects.filter(template=template).count() == 2
 
 
 @pytest.mark.django_db
@@ -87,6 +115,7 @@ def test_weekly_due_and_not_due_behavior(household):
     created = spawn_recurring_chores(as_of=due_day)
     assert len(created) == 1
     assert created[0].template_id == template.pk
+    assert created[0].period_key == "2026-09-08"
 
 
 @pytest.mark.django_db
@@ -143,6 +172,7 @@ def test_claimed_incomplete_blocks_spawn_for_period(household):
         status=Chore.Status.CLAIMED,
         claimer=claimer,
         template=template,
+        period_key="2026-09-06",
         claimed_at=timezone.now(),
     )
 
@@ -166,6 +196,7 @@ def test_management_command_as_of_spawns(household):
     assert chore.title == "Command spawn"
     assert chore.status == Chore.Status.OPEN
     assert chore.template_id is not None
+    assert chore.period_key == "2026-09-06"
 
 
 def test_period_key_daily_and_weekly():

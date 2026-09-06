@@ -122,6 +122,12 @@ class Chore(models.Model):
         blank=True,
         related_name="spawned_chores",
     )
+    period_key = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text="Recurrence period key for spawned chores; null for one-offs.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     claimed_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
