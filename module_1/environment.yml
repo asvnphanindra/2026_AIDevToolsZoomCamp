@@ -1,0 +1,10 @@
+name: module1_chores
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - django>=5.0
+      - pytest
+      - pytest-django
