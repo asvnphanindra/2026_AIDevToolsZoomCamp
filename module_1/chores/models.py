@@ -138,6 +138,14 @@ class Chore(models.Model):
             raise ValidationError({"title": "Title must be non-empty."})
         if self.status not in Chore.Status.values:
             raise ValidationError({"status": "Status must be 'open', 'claimed', or 'done'."})
+        if self.claimer_id is not None and self.claimer.household_id != self.household_id:
+            raise ValidationError(
+                {"claimer": "Claimer must belong to the same household as the chore."}
+            )
+        if self.template_id is not None and self.template.household_id != self.household_id:
+            raise ValidationError(
+                {"template": "Template must belong to the same household as the chore."}
+            )
 
     def __str__(self):
         return f"{self.title} ({self.status})"
