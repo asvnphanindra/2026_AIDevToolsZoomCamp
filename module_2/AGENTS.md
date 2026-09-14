@@ -39,7 +39,21 @@ Do not add out-of-scope features (multi-user sharing, multi-hour slots, week nav
 
 ## Commands
 
+Windows PowerShell (no `make` installed):
+
+```
+.\make.ps1 install
+.\make.ps1 dev
+.\make.ps1 backend
+.\make.ps1 frontend
+.\make.ps1 test
+.\make.ps1 backend -BackendPort 8091
+```
+
+If GNU Make is available (`make`):
+
 - `make install` — install backend + frontend deps
+- `make dev` — run backend + frontend together
 - `make backend` — API at http://127.0.0.1:8000 (`BACKEND_PORT=8091` to override)
 - `make frontend` — UI at http://localhost:8080
 - `make test` — run backend + frontend tests
