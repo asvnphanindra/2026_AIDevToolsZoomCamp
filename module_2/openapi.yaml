@@ -1,0 +1,433 @@
+openapi: 3.1.0
+info:
+  title: Mini Kanban API
+  version: 0.1.0
+  description: |
+    API agreement for the Mini Kanban personal planner (module_2).
+    No authentication in v1.
+
+    Domain:
+      - Project: named container for cards
+      - Card: title + status; belongs to one project; at most one timetable slot
+      - Timetable slot: day (mon–sun) + hour (6–22 start hour for 06:00–23:00 grid)
+      - Week settings: optional Monday start date (display labels only)
+
+servers:
+  - url: http://localhost:8000
+    description: Local FastAPI
+
+tags:
+  - name: projects
+  - name: cards
+  - name: timetable
+  - name: settings
+
+paths:
+  /api/projects:
+    get:
+      tags: [projects]
+      summary: List projects
+      operationId: listProjects
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      tags: [projects]
+      summary: Create project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /api/projects/{project_id}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      tags: [projects]
+      summary: Get project
+      operationId: getProject
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [projects]
+      summary: Rename project
+      operationId: updateProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [projects]
+      summary: Delete project (and its cards)
+      operationId: deleteProject
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/cards:
+    get:
+      tags: [cards]
+      summary: List cards (all projects)
+      operationId: listCards
+      parameters:
+        - name: project_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Optional filter by project
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+    post:
+      tags: [cards]
+      summary: Create card
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/cards/{card_id}:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    get:
+      tags: [cards]
+      summary: Get card
+      operationId: getCard
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [cards]
+      summary: Update card title and/or status
+      operationId: updateCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [cards]
+      summary: Delete card
+      operationId: deleteCard
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/timetable/slots:
+    get:
+      tags: [timetable]
+      summary: List mapped timetable slots
+      operationId: listTimetableSlots
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimetableSlot"
+    put:
+      tags: [timetable]
+      summary: Map a card to a cell (or move an existing mapping)
+      description: |
+        One card ? at most one slot. One cell ? at most one card.
+        Replaces any previous mapping for this card.
+        Fails if the target cell is occupied by another card.
+      operationId: upsertTimetableSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimetableSlotUpsert"
+      responses:
+        "200":
+          description: Mapped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimetableSlot"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Cell occupied by another card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/timetable/slots/{card_id}:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    delete:
+      tags: [timetable]
+      summary: Unmap card from timetable
+      operationId: deleteTimetableSlot
+      responses:
+        "204":
+          description: Unmapped (or already unmapped)
+        "404":
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/settings/week:
+    get:
+      tags: [settings]
+      summary: Get week display settings
+      operationId: getWeekSettings
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekSettings"
+    put:
+      tags: [settings]
+      summary: Set Monday start date (optional; display only)
+      operationId: putWeekSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekSettings"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekSettings"
+
+components:
+  parameters:
+    ProjectId:
+      name: project_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    CardId:
+      name: card_id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    Project:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    ProjectUpdate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    CardStatus:
+      type: string
+      enum: [todo, in_progress, completed]
+
+    Card:
+      type: object
+      required: [id, project_id, title, status]
+      properties:
+        id:
+          type: integer
+        project_id:
+          type: integer
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/CardStatus"
+        slot:
+          description: Present when the card is mapped to the timetable
+          allOf:
+            - $ref: "#/components/schemas/SlotRef"
+          nullable: true
+
+    CardCreate:
+      type: object
+      required: [project_id, title]
+      properties:
+        project_id:
+          type: integer
+        title:
+          type: string
+          minLength: 1
+        status:
+          $ref: "#/components/schemas/CardStatus"
+          default: todo
+
+    CardUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        status:
+          $ref: "#/components/schemas/CardStatus"
+      description: At least one of title or status should be provided
+
+    DayOfWeek:
+      type: string
+      enum: [mon, tue, wed, thu, fri, sat, sun]
+
+    HourStart:
+      type: integer
+      minimum: 6
+      maximum: 22
+      description: Start hour of a 1-hour slot (6 = 06:00–07:00, 22 = 22:00–23:00)
+
+    SlotRef:
+      type: object
+      required: [day, hour]
+      properties:
+        day:
+          $ref: "#/components/schemas/DayOfWeek"
+        hour:
+          $ref: "#/components/schemas/HourStart"
+
+    TimetableSlot:
+      type: object
+      required: [card_id, day, hour]
+      properties:
+        card_id:
+          type: integer
+        day:
+          $ref: "#/components/schemas/DayOfWeek"
+        hour:
+          $ref: "#/components/schemas/HourStart"
+
+    TimetableSlotUpsert:
+      type: object
+      required: [card_id, day, hour]
+      properties:
+        card_id:
+          type: integer
+        day:
+          $ref: "#/components/schemas/DayOfWeek"
+        hour:
+          $ref: "#/components/schemas/HourStart"
+
+    WeekSettings:
+      type: object
+      properties:
+        monday_date:
+          type: string
+          format: date
+          nullable: true
+          description: Optional Monday date; Tue–Sun are derived for display only
