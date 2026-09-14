@@ -1,0 +1,220 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-grid-line: var(--grid-line);
+  --color-slot: var(--slot);
+  --color-slot-hover: var(--slot-hover);
+  --color-status-todo: var(--status-todo);
+  --color-status-progress: var(--status-progress);
+  --color-status-done: var(--status-done);
+  --color-project-1: var(--project-1);
+  --color-project-2: var(--project-2);
+  --color-project-3: var(--project-3);
+  --color-project-4: var(--project-4);
+  --color-project-5: var(--project-5);
+  --color-project-6: var(--project-6);
+  --shadow-card: 0 1px 0 0 var(--grid-line), 0 6px 16px -12px oklch(0.28 0.05 40 / 0.35);
+  --shadow-lift: 0 14px 28px -14px oklch(0.28 0.05 40 / 0.45);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.972 0.012 85.5);
+  --foreground: oklch(0.246 0.024 45);
+  --card: oklch(0.995 0.005 85);
+  --card-foreground: oklch(0.246 0.024 45);
+  --popover: oklch(0.995 0.005 85);
+  --popover-foreground: oklch(0.246 0.024 45);
+  --primary: oklch(0.52 0.155 34);
+  --primary-foreground: oklch(0.985 0.008 85);
+  --secondary: oklch(0.93 0.018 85);
+  --secondary-foreground: oklch(0.3 0.03 45);
+  --muted: oklch(0.938 0.014 85);
+  --muted-foreground: oklch(0.52 0.02 55);
+  --accent: oklch(0.46 0.07 195);
+  --accent-foreground: oklch(0.985 0.008 85);
+  --destructive: oklch(0.53 0.19 26);
+  --destructive-foreground: oklch(0.985 0.008 85);
+  --border: oklch(0.884 0.016 80);
+  --input: oklch(0.884 0.016 80);
+  --ring: oklch(0.52 0.155 34);
+
+  --surface: oklch(0.995 0.005 85);
+  --surface-sunken: oklch(0.953 0.012 84);
+  --grid-line: oklch(0.887 0.015 80);
+  --slot: oklch(0.982 0.008 85);
+  --slot-hover: oklch(0.905 0.05 34);
+
+  --status-todo: oklch(0.55 0.02 55);
+  --status-progress: oklch(0.64 0.14 62);
+  --status-done: oklch(0.52 0.11 158);
+
+  --project-1: oklch(0.52 0.155 34);
+  --project-2: oklch(0.46 0.09 205);
+  --project-3: oklch(0.52 0.11 158);
+  --project-4: oklch(0.55 0.13 300);
+  --project-5: oklch(0.6 0.14 78);
+  --project-6: oklch(0.45 0.12 12);
+
+  --chart-1: var(--project-1);
+  --chart-2: var(--project-2);
+  --chart-3: var(--project-3);
+  --chart-4: var(--project-4);
+  --chart-5: var(--project-5);
+  --sidebar: oklch(0.953 0.012 84);
+  --sidebar-foreground: oklch(0.246 0.024 45);
+  --sidebar-primary: oklch(0.52 0.155 34);
+  --sidebar-primary-foreground: oklch(0.985 0.008 85);
+  --sidebar-accent: oklch(0.93 0.018 85);
+  --sidebar-accent-foreground: oklch(0.3 0.03 45);
+  --sidebar-border: oklch(0.884 0.016 80);
+  --sidebar-ring: oklch(0.52 0.155 34);
+}
+
+.dark {
+  --background: oklch(0.19 0.015 50);
+  --foreground: oklch(0.955 0.01 85);
+  --card: oklch(0.235 0.017 50);
+  --card-foreground: oklch(0.955 0.01 85);
+  --popover: oklch(0.235 0.017 50);
+  --popover-foreground: oklch(0.955 0.01 85);
+  --primary: oklch(0.66 0.15 38);
+  --primary-foreground: oklch(0.19 0.015 50);
+  --secondary: oklch(0.28 0.018 50);
+  --secondary-foreground: oklch(0.955 0.01 85);
+  --muted: oklch(0.28 0.018 50);
+  --muted-foreground: oklch(0.72 0.015 65);
+  --accent: oklch(0.66 0.09 200);
+  --accent-foreground: oklch(0.19 0.015 50);
+  --destructive: oklch(0.62 0.19 25);
+  --destructive-foreground: oklch(0.19 0.015 50);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.66 0.15 38);
+
+  --surface: oklch(0.235 0.017 50);
+  --surface-sunken: oklch(0.215 0.016 50);
+  --grid-line: oklch(1 0 0 / 12%);
+  --slot: oklch(0.225 0.016 50);
+  --slot-hover: oklch(0.33 0.06 38);
+
+  --status-todo: oklch(0.72 0.015 65);
+  --status-progress: oklch(0.75 0.13 68);
+  --status-done: oklch(0.7 0.12 160);
+
+  --project-1: oklch(0.68 0.15 38);
+  --project-2: oklch(0.68 0.1 210);
+  --project-3: oklch(0.7 0.12 160);
+  --project-4: oklch(0.72 0.12 300);
+  --project-5: oklch(0.78 0.13 82);
+  --project-6: oklch(0.65 0.15 14);
+}
+
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Project accent classes, indexed by Project.colorIndex. */
+.project-accent-0 { --project-accent: var(--project-1); }
+.project-accent-1 { --project-accent: var(--project-2); }
+.project-accent-2 { --project-accent: var(--project-3); }
+.project-accent-3 { --project-accent: var(--project-4); }
+.project-accent-4 { --project-accent: var(--project-5); }
+.project-accent-5 { --project-accent: var(--project-6); }
+
+.accent-bar {
+  background-color: var(--project-accent, var(--project-1));
+}
+.accent-dot {
+  background-color: var(--project-accent, var(--project-1));
+}
+.accent-tint {
+  background-color: color-mix(in oklab, var(--project-accent, var(--project-1)) 8%, var(--surface));
+}
+.accent-text {
+  color: var(--project-accent, var(--project-1));
+}

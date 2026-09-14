@@ -39,6 +39,14 @@ uv run uvicorn app.main:app --reload --port 8000
 uv run pytest
 ```
 
+## Check the database
+
+```bash
+uv run python check_db.py
+```
+
+Uses `DATABASE_URL` (same as the server). Prints tables and sample rows.
+
 ## Seed credentials
 
 | Username | Password |

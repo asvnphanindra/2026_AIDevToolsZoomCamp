@@ -50,6 +50,9 @@ Windows PowerShell (no `make` installed):
 .\make.ps1 backend -BackendPort 8091
 ```
 
+Frontend talks to the API via `VITE_API_URL` (default `http://127.0.0.1:8000`).
+Run backend + frontend together (`.\make.ps1 dev`), then sign in with `demo` / `demo123`.
+
 If GNU Make is available (`make`):
 
 - `make install` — install backend + frontend deps
