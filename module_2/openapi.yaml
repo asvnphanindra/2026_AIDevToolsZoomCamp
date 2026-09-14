@@ -3,44 +3,53 @@ info:
   title: Mini Kanban API
   version: 0.1.0
   description: |
-    API agreement for the Mini Kanban personal planner (module_2).
-    No authentication in v1.
+    HTTP contract expected by the frontend `KanbanService` boundary
+    (`frontend/src/services/kanban-service.ts` + `types.ts`).
+
+    v1 is a single-user personal planner: **no authentication** on any endpoint.
 
     Domain:
-      - Project: named container for cards
+      - Board: aggregate of projects, cards, and week settings (primary read)
+      - Project: named container; `colorIndex` drives card accent color
       - Card: title + status; belongs to one project; at most one timetable slot
-      - Timetable slot: day (mon–sun) + hour (6–22 start hour for 06:00–23:00 grid)
-      - Week settings: optional Monday start date (display labels only)
+      - Slot: `day` 0–6 (Mon–Sun), `hour` 6–23 (one-hour cell)
+      - Settings: optional Monday start date (display labels only)
 
 servers:
   - url: http://localhost:8000
     description: Local FastAPI
 
 tags:
+  - name: board
   - name: projects
   - name: cards
-  - name: timetable
   - name: settings
 
 paths:
-  /api/projects:
+  /api/board:
     get:
-      tags: [projects]
-      summary: List projects
-      operationId: listProjects
+      tags: [board]
+      summary: Get full board
+      description: |
+        Corresponds to `KanbanService.getBoard()`.
+        Returns all projects, all cards (with optional slots), and week settings.
+      operationId: getBoard
+      security: []
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Project"
+                $ref: "#/components/schemas/Board"
+
+  /api/projects:
     post:
       tags: [projects]
       summary: Create project
+      description: Corresponds to `KanbanService.createProject({ name })`.
       operationId: createProject
+      security: []
       requestBody:
         required: true
         content:
@@ -54,33 +63,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
-  /api/projects/{project_id}:
+  /api/projects/{id}:
     parameters:
       - $ref: "#/components/parameters/ProjectId"
-    get:
-      tags: [projects]
-      summary: Get project
-      operationId: getProject
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Project"
-        "404":
-          $ref: "#/components/responses/NotFound"
     patch:
       tags: [projects]
       summary: Rename project
-      operationId: updateProject
+      description: Corresponds to `KanbanService.renameProject({ id, name })`.
+      operationId: renameProject
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProjectUpdate"
+              $ref: "#/components/schemas/ProjectRename"
       responses:
         "200":
           description: OK
@@ -88,12 +88,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
       tags: [projects]
-      summary: Delete project (and its cards)
+      summary: Delete project
+      description: |
+        Corresponds to `KanbanService.deleteProject({ id })`.
+        Deletes the project and every card that belongs to it.
       operationId: deleteProject
+      security: []
       responses:
         "204":
           description: Deleted
@@ -101,30 +107,14 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /api/cards:
-    get:
-      tags: [cards]
-      summary: List cards (all projects)
-      operationId: listCards
-      parameters:
-        - name: project_id
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: Optional filter by project
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Card"
     post:
       tags: [cards]
       summary: Create card
+      description: |
+        Corresponds to `KanbanService.createCard({ projectId, title })`.
+        New cards start with status `todo` and `slot: null`.
       operationId: createCard
+      security: []
       requestBody:
         required: true
         content:
@@ -138,6 +128,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           description: Project not found
           content:
@@ -145,26 +137,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /api/cards/{card_id}:
+  /api/cards/{id}:
     parameters:
       - $ref: "#/components/parameters/CardId"
-    get:
-      tags: [cards]
-      summary: Get card
-      operationId: getCard
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Card"
-        "404":
-          $ref: "#/components/responses/NotFound"
     patch:
       tags: [cards]
       summary: Update card title and/or status
+      description: Corresponds to `KanbanService.updateCard({ id, title?, status? })`.
       operationId: updateCard
+      security: []
       requestBody:
         required: true
         content:
@@ -178,125 +159,104 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
       tags: [cards]
       summary: Delete card
+      description: Corresponds to `KanbanService.deleteCard({ id })`.
       operationId: deleteCard
+      security: []
       responses:
         "204":
           description: Deleted
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/timetable/slots:
-    get:
-      tags: [timetable]
-      summary: List mapped timetable slots
-      operationId: listTimetableSlots
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TimetableSlot"
-    put:
-      tags: [timetable]
-      summary: Map a card to a cell (or move an existing mapping)
-      description: |
-        One card ? at most one slot. One cell ? at most one card.
-        Replaces any previous mapping for this card.
-        Fails if the target cell is occupied by another card.
-      operationId: upsertTimetableSlot
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TimetableSlotUpsert"
-      responses:
-        "200":
-          description: Mapped
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TimetableSlot"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          description: Cell occupied by another card
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/timetable/slots/{card_id}:
+  /api/cards/{id}/slot:
     parameters:
       - $ref: "#/components/parameters/CardId"
-    delete:
-      tags: [timetable]
-      summary: Unmap card from timetable
-      operationId: deleteTimetableSlot
-      responses:
-        "204":
-          description: Unmapped (or already unmapped)
-        "404":
-          description: Card not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/settings/week:
-    get:
-      tags: [settings]
-      summary: Get week display settings
-      operationId: getWeekSettings
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WeekSettings"
     put:
-      tags: [settings]
-      summary: Set Monday start date (optional; display only)
-      operationId: putWeekSettings
+      tags: [cards]
+      summary: Map or unmap a card on the timetable
+      description: |
+        Corresponds to `KanbanService.mapCard({ id, slot })`.
+
+        - `slot` set: place the card on that day/hour cell (move if already mapped).
+        - `slot: null`: unmap the card back to the task grid.
+
+        A cell holds at most one card. If the target cell is occupied, the previous
+        occupant is unmapped (`slot` becomes null) and the moved card takes the cell.
+        A card occupies at most one cell.
+      operationId: mapCard
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WeekSettings"
+              $ref: "#/components/schemas/MapCardRequest"
+      responses:
+        "200":
+          description: Mapped or unmapped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/settings/week:
+    put:
+      tags: [settings]
+      summary: Set Monday start date
+      description: |
+        Corresponds to `KanbanService.setMondayDate({ mondayDate })`.
+        Optional display-only week labeling; returns the full board.
+      operationId: setMondayDate
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetMondayDateRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WeekSettings"
+                $ref: "#/components/schemas/Board"
 
 components:
   parameters:
     ProjectId:
-      name: project_id
+      name: id
       in: path
       required: true
       schema:
-        type: integer
+        type: string
+      description: Project id (string, as used by the frontend)
     CardId:
-      name: card_id
+      name: id
       in: path
       required: true
       schema:
-        type: integer
+        type: string
+      description: Card id (string, as used by the frontend)
 
   responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     NotFound:
       description: Resource not found
       content:
@@ -312,14 +272,37 @@ components:
         detail:
           type: string
 
+    CardStatus:
+      type: string
+      enum: [todo, in_progress, completed]
+
+    Slot:
+      type: object
+      required: [day, hour]
+      properties:
+        day:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: 0 = Monday … 6 = Sunday
+        hour:
+          type: integer
+          minimum: 6
+          maximum: 23
+          description: Hour cell in the 06:00–23:00 grid
+
     Project:
       type: object
-      required: [id, name]
+      required: [id, name, colorIndex]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
+        colorIndex:
+          type: integer
+          minimum: 0
+          description: Index into the frontend project color palette
 
     ProjectCreate:
       type: object
@@ -329,7 +312,7 @@ components:
           type: string
           minLength: 1
 
-    ProjectUpdate:
+    ProjectRename:
       type: object
       required: [name]
       properties:
@@ -337,40 +320,33 @@ components:
           type: string
           minLength: 1
 
-    CardStatus:
-      type: string
-      enum: [todo, in_progress, completed]
-
     Card:
       type: object
-      required: [id, project_id, title, status]
+      required: [id, projectId, title, status, slot]
       properties:
         id:
-          type: integer
-        project_id:
-          type: integer
+          type: string
+        projectId:
+          type: string
         title:
           type: string
         status:
           $ref: "#/components/schemas/CardStatus"
         slot:
-          description: Present when the card is mapped to the timetable
-          allOf:
-            - $ref: "#/components/schemas/SlotRef"
-          nullable: true
+          description: null when the card sits in the task grid
+          oneOf:
+            - $ref: "#/components/schemas/Slot"
+            - type: "null"
 
     CardCreate:
       type: object
-      required: [project_id, title]
+      required: [projectId, title]
       properties:
-        project_id:
-          type: integer
+        projectId:
+          type: string
         title:
           type: string
           minLength: 1
-        status:
-          $ref: "#/components/schemas/CardStatus"
-          default: todo
 
     CardUpdate:
       type: object
@@ -381,53 +357,51 @@ components:
         status:
           $ref: "#/components/schemas/CardStatus"
       description: At least one of title or status should be provided
+      additionalProperties: false
 
-    DayOfWeek:
-      type: string
-      enum: [mon, tue, wed, thu, fri, sat, sun]
-
-    HourStart:
-      type: integer
-      minimum: 6
-      maximum: 22
-      description: Start hour of a 1-hour slot (6 = 06:00–07:00, 22 = 22:00–23:00)
-
-    SlotRef:
+    MapCardRequest:
       type: object
-      required: [day, hour]
+      required: [slot]
       properties:
-        day:
-          $ref: "#/components/schemas/DayOfWeek"
-        hour:
-          $ref: "#/components/schemas/HourStart"
+        slot:
+          description: Target cell, or null to unmap
+          oneOf:
+            - $ref: "#/components/schemas/Slot"
+            - type: "null"
 
-    TimetableSlot:
+    BoardSettings:
       type: object
-      required: [card_id, day, hour]
+      required: [mondayDate]
       properties:
-        card_id:
-          type: integer
-        day:
-          $ref: "#/components/schemas/DayOfWeek"
-        hour:
-          $ref: "#/components/schemas/HourStart"
-
-    TimetableSlotUpsert:
-      type: object
-      required: [card_id, day, hour]
-      properties:
-        card_id:
-          type: integer
-        day:
-          $ref: "#/components/schemas/DayOfWeek"
-        hour:
-          $ref: "#/components/schemas/HourStart"
-
-    WeekSettings:
-      type: object
-      properties:
-        monday_date:
-          type: string
+        mondayDate:
+          type:
+            - string
+            - "null"
           format: date
-          nullable: true
-          description: Optional Monday date; Tue–Sun are derived for display only
+          description: ISO date (yyyy-mm-dd) labeling the Monday column; display only
+
+    SetMondayDateRequest:
+      type: object
+      required: [mondayDate]
+      properties:
+        mondayDate:
+          type:
+            - string
+            - "null"
+          format: date
+          description: ISO date (yyyy-mm-dd), or null to clear
+
+    Board:
+      type: object
+      required: [projects, cards, settings]
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        settings:
+          $ref: "#/components/schemas/BoardSettings"
