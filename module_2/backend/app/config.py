@@ -4,11 +4,11 @@ import os
 
 # SQLAlchemy URL. Defaults to a local SQLite file.
 # Examples:
-#   sqlite:///./kanban.db
+#   sqlite:///./weekslot.db
 #   sqlite:///:memory:
-#   postgresql+psycopg://user:pass@localhost:5432/kanban
+#   postgresql+psycopg://user:pass@localhost:5432/weekslot
 DATABASE_URL_ENV = "DATABASE_URL"
-DEFAULT_DATABASE_URL = "sqlite:///./kanban.db"
+DEFAULT_DATABASE_URL = "sqlite:///./weekslot.db"
 
 
 def get_database_url() -> str:

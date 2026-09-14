@@ -47,7 +47,7 @@ export function Board({ onLogout }: BoardProps) {
             <CalendarRange className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <h1 className="text-base font-bold leading-tight">Mini Kanban</h1>
+            <h1 className="text-base font-bold leading-tight">Weekslot</h1>
             <p className="text-xs text-muted-foreground">
               {scheduled.length} scheduled · {unscheduled.length} waiting
             </p>
@@ -111,7 +111,7 @@ export function Board({ onLogout }: BoardProps) {
 
       <footer className="border-t border-grid-line bg-surface px-5 py-2 text-[0.7rem] leading-snug text-muted-foreground">
         <p>
-          © {new Date().getFullYear()} Mini Kanban. All rights reserved. This
+          © {new Date().getFullYear()} Weekslot. All rights reserved. This
           weekly timetable + task-grid planning concept, design, and software are
           proprietary. Others may not copy, reuse, or build a substantially similar
           working planning product without prior written permission.

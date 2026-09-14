@@ -1,4 +1,4 @@
-# Mini Kanban (module_2)
+# Weekslot (module_2)
 #
 # Usage:
 #   make help
@@ -16,7 +16,7 @@ FRONTEND_PORT ?= 8080
 .PHONY: help install install-backend install-frontend dev backend frontend test test-backend test-frontend
 
 help:
-	@echo "Mini Kanban commands"
+	@echo "Weekslot commands"
 	@echo ""
 	@echo "  make install          Install backend + frontend deps"
 	@echo "  make dev              Run backend + frontend together"

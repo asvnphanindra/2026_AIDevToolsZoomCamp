@@ -1,6 +1,6 @@
 import type { Board } from "../types";
 
-export const STORAGE_KEY = "mini-kanban-board-v1";
+export const STORAGE_KEY = "weekslot-board-v1";
 
 export function seedBoard(): Board {
   return {

@@ -1,4 +1,4 @@
-const TOKEN_KEY = "mini-kanban-access-token";
+const TOKEN_KEY = "weekslot-access-token";
 
 export const UNAUTHORIZED_EVENT = "kanban:unauthorized";
 

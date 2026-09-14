@@ -1,7 +1,7 @@
 [project]
-name = "mini-kanban-backend"
+name = "weekslot-backend"
 version = "0.1.0"
-description = "FastAPI backend for Mini Kanban (module_2)"
+description = "FastAPI backend for Weekslot (module_2)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

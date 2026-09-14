@@ -1,4 +1,4 @@
-# AGENTS.md - Mini Kanban (module_2)
+# AGENTS.md - Weekslot (module_2)
 
 Instructions for coding agents working in this project.
 

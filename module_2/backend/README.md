@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI API for Mini Kanban (`module_2`). Implements `../openapi.yaml`.
+FastAPI API for Weekslot (`module_2`). Implements `../openapi.yaml`.
 
 ## Setup
 
@@ -15,11 +15,11 @@ Connection is configured with the `DATABASE_URL` environment variable
 
 ```bash
 # default (if unset)
-sqlite:///./kanban.db
+sqlite:///./weekslot.db
 
 # examples
-set DATABASE_URL=sqlite:///./kanban.db
-set DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/kanban
+set DATABASE_URL=sqlite:///./weekslot.db
+set DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/weekslot
 ```
 
 The app uses SQLAlchemy and stays database-agnostic: switching engines is a

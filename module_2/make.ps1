@@ -1,4 +1,4 @@
-# Mini Kanban task runner for Windows PowerShell (Makefile alternative).
+# Weekslot task runner for Windows PowerShell (Makefile alternative).
 # Usage: .\make.ps1 help | install | dev | backend | frontend | test | ...
 
 param(
@@ -49,7 +49,7 @@ function Stop-ProcessTree {
 
 switch ($Target) {
     "help" {
-        Write-Host "Mini Kanban commands"
+        Write-Host "Weekslot commands"
         Write-Host ""
         Write-Host "  .\make.ps1 install          Install backend + frontend deps"
         Write-Host "  .\make.ps1 dev              Run backend + frontend together"

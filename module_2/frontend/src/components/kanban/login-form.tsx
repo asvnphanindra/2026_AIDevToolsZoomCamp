@@ -41,7 +41,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             <CalendarRange className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <h1 className="text-base font-bold leading-tight">Mini Kanban</h1>
+            <h1 className="text-base font-bold leading-tight">Weekslot</h1>
             <p className="text-xs text-muted-foreground">Sign in to your board</p>
           </div>
         </div>

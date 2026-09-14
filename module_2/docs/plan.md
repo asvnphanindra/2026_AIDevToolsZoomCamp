@@ -1,4 +1,4 @@
-# Mini Kanban board — Plan
+# Weekslot — Plan
 
 ## Overview
 

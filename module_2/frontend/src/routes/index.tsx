@@ -12,13 +12,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mini Kanban — Weekly Timetable Planner" },
+      { title: "Weekslot — Weekly Timetable Planner" },
       {
         name: "description",
         content:
           "Plan your week by dragging project tasks onto an hourly Monday–Sunday timetable. One personal board for every project.",
       },
-      { property: "og:title", content: "Mini Kanban — Weekly Timetable Planner" },
+      { property: "og:title", content: "Weekslot — Weekly Timetable Planner" },
       {
         property: "og:description",
         content:

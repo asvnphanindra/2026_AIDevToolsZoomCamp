@@ -1,6 +1,6 @@
 # Lovable Board Builder
 
-Create a frontend for mini kanban board application. refer to the attached plan document. 
+Create a frontend for Weekslot board application. refer to the attached plan document. 
 
 Centralize every backend call in one services layer, and create a mock
 implementation of it so the whole app runs without a real backend.

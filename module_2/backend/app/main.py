@@ -18,9 +18,9 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="Mini Kanban API",
+    title="Weekslot API",
     version="0.1.0",
-    description="Backend for the Mini Kanban personal planner.",
+    description="Backend for the Weekslot personal planner.",
     lifespan=lifespan,
 )
 

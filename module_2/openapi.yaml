@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Mini Kanban API
+  title: Weekslot API
   version: 0.1.0
   description: |
     HTTP contract expected by the frontend `KanbanService` boundary

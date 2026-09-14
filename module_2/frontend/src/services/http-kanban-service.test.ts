@@ -37,7 +37,7 @@ describe("HttpKanbanService", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     // Seed token as if logged in.
-    window.localStorage.setItem("mini-kanban-access-token", "abc");
+    window.localStorage.setItem("weekslot-access-token", "abc");
     const service = new HttpKanbanService("http://api.test");
     await service.getBoard();
 

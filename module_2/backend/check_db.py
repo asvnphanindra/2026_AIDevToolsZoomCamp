@@ -1,6 +1,6 @@
-"""Quick DB smoke check for Mini Kanban.
+"""Quick DB smoke check for Weekslot.
 
-Uses the same DATABASE_URL as the API (default: sqlite:///./kanban.db).
+Uses the same DATABASE_URL as the API (default: sqlite:///./weekslot.db).
 
 Usage (from backend/):
     uv run python check_db.py

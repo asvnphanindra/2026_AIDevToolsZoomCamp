@@ -1,1 +1,1 @@
-"""Mini Kanban FastAPI application."""
+"""Weekslot FastAPI application."""
