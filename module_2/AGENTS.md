@@ -39,9 +39,10 @@ Do not add out-of-scope features (multi-user sharing, multi-hour slots, week nav
 
 ## Commands
 
-- Backend: `uv sync` then `uv run uvicorn app.main:app --reload --port 8000`
-- Frontend: `npm ...` (TBD after scaffold)
-- Tests: `cd backend && uv run pytest`
+- `make install` — install backend + frontend deps
+- `make backend` — API at http://127.0.0.1:8000 (`BACKEND_PORT=8091` to override)
+- `make frontend` — UI at http://localhost:8080
+- `make test` — run backend + frontend tests
 
 Useful backend commands:
 
