@@ -65,7 +65,7 @@ flowchart LR
 
 ## In scope (v1)
 
-- No authentication (single personal app)
+- Bearer-token authentication (hashed passwords; login issues opaque tokens)
 - Split layout: timetable (left) + task grid (right)
 - Fixed week columns Mon–Sun; fixed hours 06:00–23:00
 - Generic week template; optional Monday start date (auto-fills Tue–Sun labels)
@@ -77,7 +77,7 @@ flowchart LR
 
 ## Out of scope (v1)
 
-- Login / multi-user / sharing
+- Multi-user / sharing / OAuth providers
 - Custom timetable days/hours
 - Real calendar week navigation (prev/next week)
 - Multi-hour timetable bookings
@@ -95,7 +95,7 @@ flowchart LR
 
 ## Discovery answers
 
-1. **Audience:** single personal app (no login)
+1. **Audience:** single personal app (simple login + bearer tokens)
 2. **Card status:** Todo / In Progress / Completed via **dropdown on the card**
 3. **Cards:** title only (create, edit title, delete)
 4. **Primary interaction:** drag and drop map from task grid to timetable

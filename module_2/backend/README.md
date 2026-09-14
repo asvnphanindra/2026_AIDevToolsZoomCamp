@@ -1,5 +1,27 @@
 # Backend
 
-FastAPI application and tests live here (Python, managed with **uv**).
+FastAPI API for Mini Kanban (`module_2`). Implements `../openapi.yaml`.
 
-Scaffold TBD — implement against `../openapi.yaml`.
+## Setup
+
+```bash
+uv sync
+```
+
+## Run
+
+```bash
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+## Tests
+
+```bash
+uv run pytest
+```
+
+## Seed credentials
+
+| Username | Password |
+|----------|----------|
+| `demo`   | `demo123` |

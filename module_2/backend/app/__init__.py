@@ -1,0 +1,1 @@
+"""Mini Kanban FastAPI application."""
