@@ -1,18 +1,26 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app import db as db_module
+from app.db import Base, init_db
 from app.main import app
-from app.store import SEED_PASSWORD, SEED_USERNAME, store
+from app.repository import SEED_PASSWORD, SEED_USERNAME
+from app.seed import seed_if_empty
 
 
-@pytest.fixture(autouse=True)
-def reset_store() -> None:
-    store.reset()
-
-
-@pytest.fixture
+@pytest.fixture()
 def client() -> TestClient:
-    return TestClient(app)
+    """Fresh in-memory SQLite DB per test (engine-agnostic URL)."""
+    db_module.reset_engine("sqlite://")
+    Base.metadata.drop_all(bind=db_module.engine)
+    init_db()
+    with db_module.SessionLocal() as db:
+        seed_if_empty(db)
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    Base.metadata.drop_all(bind=db_module.engine)
 
 
 @pytest.fixture

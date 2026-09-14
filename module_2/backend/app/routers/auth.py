@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, status
 
+from app.auth import DbSession
 from app.models import LoginRequest, TokenResponse
-from app.store import store
+from app import repository
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest) -> TokenResponse:
-    token = store.authenticate(body.username, body.password)
+def login(body: LoginRequest, db: DbSession) -> TokenResponse:
+    token = repository.authenticate(db, body.username, body.password)
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

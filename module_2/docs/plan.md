@@ -91,7 +91,7 @@ flowchart LR
 |----------|--------|
 | Frontend | Node.js + React |
 | Backend  | Python + FastAPI (managed with **uv**) |
-| Database | SQLite |
+| Database | SQLite via SQLAlchemy (`DATABASE_URL`; Postgres-ready) |
 
 ## Discovery answers
 

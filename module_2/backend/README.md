@@ -8,6 +8,25 @@ FastAPI API for Mini Kanban (`module_2`). Implements `../openapi.yaml`.
 uv sync
 ```
 
+## Database
+
+Connection is configured with the `DATABASE_URL` environment variable
+(SQLAlchemy URL). Default is a local SQLite file:
+
+```bash
+# default (if unset)
+sqlite:///./kanban.db
+
+# examples
+set DATABASE_URL=sqlite:///./kanban.db
+set DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/kanban
+```
+
+The app uses SQLAlchemy and stays database-agnostic: switching engines is a
+URL (+ driver package) change, not an application rewrite.
+
+On startup the server creates tables and seeds demo data when the DB is empty.
+
 ## Run
 
 ```bash

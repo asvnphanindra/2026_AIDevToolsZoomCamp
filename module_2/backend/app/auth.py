@@ -4,14 +4,17 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
-from app.store import store
+from app.db import get_db
+from app import repository
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def require_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> str:
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
@@ -19,7 +22,7 @@ def require_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    username = store.user_for_token(credentials.credentials)
+    username = repository.user_for_token(db, credentials.credentials)
     if username is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,3 +33,4 @@ def require_user(
 
 
 CurrentUser = Annotated[str, Depends(require_user)]
+DbSession = Annotated[Session, Depends(get_db)]

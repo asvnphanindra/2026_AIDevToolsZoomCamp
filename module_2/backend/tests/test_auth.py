@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.store import SEED_PASSWORD, SEED_USERNAME
+from app.repository import SEED_PASSWORD, SEED_USERNAME
 
 
 def test_login_success(client: TestClient) -> None:

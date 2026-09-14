@@ -26,7 +26,7 @@ Do not add out-of-scope features (multi-user sharing, multi-hour slots, week nav
 
 - **Backend:** Python + FastAPI, managed with **uv**. Prefer `uv add` / `uv run` over pip/venv ad-hoc setups.
 - **Frontend:** Node.js + React.
-- **Database:** In-memory store for now (SQLite later if needed).
+- **Database:** SQLAlchemy + SQLite by default (`DATABASE_URL` env var; Postgres-ready).
 - **API:** Implement and keep the backend aligned with `openapi.yaml`. Update the OpenAPI file when changing endpoints or schemas.
 
 ## Working agreements
