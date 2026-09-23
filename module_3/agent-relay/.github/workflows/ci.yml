@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: agent-relay
+  KIND_CLUSTER: agent-relay
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: relay
+          POSTGRES_PASSWORD: relay
+          POSTGRES_DB: relay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U relay -d relay"
+          --health-interval 3s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Run starter and integration tests against PostgreSQL
+        env:
+          RELAY_DATABASE_URL: postgresql+psycopg://relay:relay@localhost:5432/relay
+        run: uv run pytest -q
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # Deploy only after tests pass (failed tests keep the existing cluster version).
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          docker build -t "${IMAGE_NAME}:${{ steps.meta.outputs.tag }}" -t "${IMAGE_NAME}:local" .
+
+      - name: Create kind cluster if missing
+        run: |
+          if ! command -v kind >/dev/null 2>&1; then
+            curl -fsSL -o ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64
+            chmod +x ./kind
+            sudo mv ./kind /usr/local/bin/kind
+          fi
+          if ! command -v kubectl >/dev/null 2>&1; then
+            curl -fsSL -o kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/kubectl
+          fi
+          if ! kind get clusters 2>/dev/null | grep -qx "${KIND_CLUSTER}"; then
+            kind create cluster --name "${KIND_CLUSTER}"
+          fi
+
+      - name: Load image into kind
+        run: |
+          kind load docker-image "${IMAGE_NAME}:${{ steps.meta.outputs.tag }}" --name "${KIND_CLUSTER}"
+          kind load docker-image "${IMAGE_NAME}:local" --name "${KIND_CLUSTER}"
+
+      - name: Deploy to kind
+        run: |
+          kubectl apply -f k8s/all.yaml
+          kubectl -n agent-relay set image deployment/agent-relay \
+            agent-relay="${IMAGE_NAME}:${{ steps.meta.outputs.tag }}"
+          kubectl -n agent-relay rollout status deployment/agent-relay --timeout=180s
+          kubectl -n agent-relay rollout status deployment/postgres --timeout=180s

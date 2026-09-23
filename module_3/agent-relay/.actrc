@@ -1,0 +1,2 @@
+# Prefer medium image with Node/Python tooling available when needed.
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
