@@ -921,13 +921,15 @@ HEADING_OK: Agent Relay v2
 
 ## Step 11 — Clean up (when you are done for the day)
 
-### 11.1 Stop Kubernetes resources (optional)
+Optional. Do this when you no longer need the local cluster or Compose stack.
+
+### 11.1 Stop Kubernetes resources
 
 ```powershell
 kubectl delete -f k8s/all.yaml
 ```
 
-### 11.2 Delete the kind cluster (optional)
+### 11.2 Delete the kind cluster
 
 ```powershell
 kind delete cluster --name agent-relay
@@ -937,6 +939,24 @@ kind delete cluster --name agent-relay
 
 ```powershell
 docker compose down
+```
+
+**Example terminal output:**
+
+```text
+PS agent-relay> kubectl delete -f k8s/all.yaml
+namespace "agent-relay" deleted
+...
+service "agent-relay" deleted from agent-relay namespace
+
+PS agent-relay> kind delete cluster --name agent-relay
+Deleting cluster "agent-relay" ...
+Deleted nodes: ["agent-relay-control-plane"]
+
+PS agent-relay> docker compose down
+
+PS agent-relay> kind get clusters
+No kind clusters found.
 ```
 
 ---
