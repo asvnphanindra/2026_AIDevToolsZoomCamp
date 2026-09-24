@@ -124,6 +124,8 @@ Your version numbers may differ slightly; that is fine as long as each command w
 
 ### 1.1 Go to the project folder
 
+From the repo root:
+
 ```powershell
 cd module_3\agent-relay
 ```
@@ -136,6 +138,16 @@ uv sync
 
 **What “good” looks like:** the command finishes without an error. A `.venv` folder exists in the project.
 
+**Example terminal output:**
+
+```text
+PS agent-relay> uv sync
+Resolved 35 packages in 33ms
+Audited 33 packages in 215ms
+
+PS agent-relay>
+```
+
 ### 1.3 Start the API server
 
 ```powershell
@@ -146,11 +158,17 @@ uv run uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 Leave this terminal open. Do not close it while you work on Steps 2–4.
 
-> **Screenshot placeholder**
->
-> `![01-local-uvicorn-running](_docs/images/01-local-uvicorn-running.png)`
->
-> *To capture later:* terminal showing uvicorn started successfully on port 8000.
+**Example terminal output:**
+
+```text
+PS agent-relay> uv run uvicorn main:app --reload --host 127.0.0.1 --port 8000
+INFO:     Will watch for changes in these directories: ['...\module_3\agent-relay']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [...] using WatchFiles
+INFO:     Started server process [...]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+```
 
 ### 1.4 Open the empty dashboard
 
@@ -160,34 +178,40 @@ http://127.0.0.1:8000/
 
 **What “good” looks like:** you see the Agent Relay page with a token box (you have not logged in yet).
 
-Also check:
+Also check (second terminal, while the server keeps running):
 
-- http://127.0.0.1:8000/health → should show something like `{"status":"ok"}`  
-- http://127.0.0.1:8000/ready → should show something like `{"status":"ready"}`
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/ready
+```
 
-> **Screenshot placeholder**
->
-> `![01-local-dashboard-empty](_docs/images/01-local-dashboard-empty.png)`
->
-> *To capture later:* browser on http://127.0.0.1:8000/ before any agent token is entered.
+**Example terminal output:**
 
-> **Screenshot placeholder**
->
-> `![01-local-health-ready](_docs/images/01-local-health-ready.png)`
->
-> *To capture later:* browser (or terminal) showing `/health` and `/ready` both OK.
+```text
+PS agent-relay> Invoke-RestMethod http://127.0.0.1:8000/health
+{"status":"ok"}
+
+PS agent-relay> Invoke-RestMethod http://127.0.0.1:8000/ready
+{"status":"ready"}
+
+PS agent-relay>
+```
 
 ---
 
 ## Step 2 — Register two agents and complete one task
 
-Keep the server from Step 1 running. Open a **second** PowerShell window.
+Keep the server from Step 1 running. Open a **second** Cursor Terminal tab (`+` in the Terminal panel).
 
-### 2.1 Go to the project folder again (second window)
+### 2.1 Go to the project folder again (second terminal)
+
+From the repo root:
 
 ```powershell
 cd module_3\agent-relay
 ```
+
+You do **not** put these API lines in a project file. Paste them into this second terminal and press Enter.
 
 ### 2.2 Register Alice and Bob
 
@@ -207,13 +231,20 @@ Write-Host "Bob token:" $bob.token
 ```
 
 **What “good” looks like:** both agents get an `agent_id` and a secret `token`.  
-**Save Alice’s token** — you will paste it into the dashboard next.
+**Save Alice’s token** — you will paste it into the dashboard in Step 3.
 
-> **Screenshot placeholder**
->
-> `![02-register-agents-output](_docs/images/02-register-agents-output.png)`
->
-> *To capture later:* PowerShell printing both agent IDs and tokens (you may blur tokens in the final image).
+**Example terminal output:**
+
+```text
+PS agent-relay> # (after running the register commands)
+Alice id: agent_7475ee59330a48cea2ec168604ed2c2d
+Alice token: agt_BsQzF2nW5btBpYaZi3-YNhE48eU3CDYfXpf4f2H-YyI
+
+Bob id: agent_f67cd64e3e5e46648532b46bdfd9c933
+Bob token: agt_t-8YVINhBArxNpLTl7YM9F9FAxJ236V6pYXhht4g7zU
+```
+
+> **Hint (do later):** blur/redact tokens before sharing this guide publicly.
 
 ### 2.3 Alice sends a task to Bob
 
@@ -237,6 +268,13 @@ Write-Host "Task id:" $task.task_id "status:" $task.status
 
 **What “good” looks like:** status is `queued`.
 
+**Example terminal output:**
+
+```text
+PS agent-relay> # (after send)
+Task id: task_6588fb60535940f7bbc1530fc894c8aa status: queued
+```
+
 ### 2.4 Bob claims the task
 
 ```powershell
@@ -248,6 +286,13 @@ Write-Host "Claimed task:" $claim.task_id
 ```
 
 **What “good” looks like:** you get a `claim_token` and the same `task_id`.
+
+**Example terminal output:**
+
+```text
+PS agent-relay> # (after claim)
+Claimed task: task_6588fb60535940f7bbc1530fc894c8aa
+```
 
 ### 2.5 Bob completes the task
 
@@ -261,6 +306,13 @@ Write-Host "Complete status:" $complete.status
 ```
 
 **What “good” looks like:** status is `completed`.
+
+**Example terminal output:**
+
+```text
+PS agent-relay> # (after complete)
+Complete status: completed
+```
 
 ### 2.6 Alice reads the result
 
@@ -278,11 +330,13 @@ Write-Host "Sender sees output:" $senderView.output
 - status = `completed`  
 - output = `HELLO RELAY`
 
-> **Screenshot placeholder**
->
-> `![02-task-completed-in-terminal](_docs/images/02-task-completed-in-terminal.png)`
->
-> *To capture later:* PowerShell showing sender status `completed` and output `HELLO RELAY`.
+**Example terminal output:**
+
+```text
+PS agent-relay> # (after Alice reads the task)
+Sender sees status: completed
+Sender sees output: HELLO RELAY
+```
 
 ---
 
@@ -292,28 +346,48 @@ Write-Host "Sender sees output:" $senderView.output
 
 Browser: http://127.0.0.1:8000/
 
+You should see the heading **Agent Relay v2** and an empty Agents / My tasks area until you enter a token.
+
 ### 3.2 Paste Alice’s token
 
 1. Paste Alice’s token into the **Agent token** box.  
+   (Use the token printed in Step 2.2 from your run.)  
 2. Click **Use token**.  
 3. Click **Refresh** if needed.
 
 **What “good” looks like:**
 
-- Agents list shows `alice` and `uppercase`  
-- Tasks list shows the task with status `completed` and output `HELLO RELAY`
+- Status line shows something like `Updated …`  
+- Agents list includes `alice` and `uppercase`  
+- My tasks shows the task with status `completed` and output `HELLO RELAY`
 
-> **Screenshot placeholder**
->
-> `![03-dashboard-after-task](_docs/images/03-dashboard-after-task.png)`
->
-> *To capture later:* dashboard after login with Alice’s token, showing agents and a completed task.
+**Example check from the API** (same data the dashboard loads):
+
+```text
+PS agent-relay> # agents (names)
+alice
+uppercase
+...
+
+PS agent-relay> # Alice's sent tasks
+task_6588fb60535940f7bbc1530fc894c8aa status=completed out=HELLO RELAY
+```
+
+You can also confirm in a second terminal:
+
+```powershell
+$token = "<paste-alice-token-here>"
+$h = @{ Authorization = "Bearer $token" }
+(Invoke-RestMethod "http://127.0.0.1:8000/api/v1/agents?limit=100" -Headers $h).items | ForEach-Object { $_.name }
+(Invoke-RestMethod "http://127.0.0.1:8000/api/v1/tasks?direction=sent&limit=100" -Headers $h).items |
+  ForEach-Object { "$($_.task_id) status=$($_.status) out=$($_.output)" }
+```
 
 ---
 
 ## Step 4 — Run automated tests
 
-Keep using the **second** PowerShell window. You can leave the server running; tests use a separate scratch database.
+Keep using the **second** Cursor Terminal tab. You can leave the server running; tests use a separate scratch database (they will not wipe `./agent-relay.db` used by uvicorn).
 
 ### 4.1 Run all tests
 
@@ -329,11 +403,21 @@ Files involved:
 - `test_agent_relay.py` — starter protocol tests  
 - `test_integration_task_flow.py` — “two agents exchange a task” flow  
 
-> **Screenshot placeholder**
->
-> `![04-pytest-all-passed](_docs/images/04-pytest-all-passed.png)`
->
-> *To capture later:* PowerShell showing pytest finished with all tests passed.
+**Example terminal output:**
+
+```text
+PS agent-relay> uv run pytest -q
+
+.....                                                                    [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  ... StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated ...
+5 passed, 1 warning in 1.33s
+
+PS agent-relay>
+```
+
+(A deprecation warning is OK. What matters is **5 passed**.)
 
 ### 4.2 Stop the local server before Docker steps
 
@@ -348,10 +432,19 @@ Go to the uvicorn terminal and press `Ctrl+C`.
 ### 5.1 Make sure Docker Desktop is running
 
 ```powershell
-docker info
+docker version
 ```
 
-**What “good” looks like:** lots of info about the Docker engine (not an error).
+**What “good” looks like:** Client and Server version numbers print (not an error).
+
+**Example terminal output:**
+
+```text
+PS agent-relay> docker version --format "Client: {{.Client.Version}}  Server: {{.Server.Version}}"
+Client: 29.8.0  Server: 29.8.0
+
+PS agent-relay>
+```
 
 ### 5.2 Build the image
 
@@ -360,13 +453,19 @@ cd module_3\agent-relay
 docker build -t agent-relay:local .
 ```
 
-**What “good” looks like:** the build ends with a success line and the image name `agent-relay:local`.
+**What “good” looks like:** the build ends naming `agent-relay:local` (often `naming to docker.io/library/agent-relay:local done`).
 
-> **Screenshot placeholder**
->
-> `![05-docker-build-success](_docs/images/05-docker-build-success.png)`
->
-> *To capture later:* terminal at the end of a successful `docker build -t agent-relay:local .`
+**Example terminal output (end of build):**
+
+```text
+PS agent-relay> docker build -t agent-relay:local .
+...
+#13 naming to docker.io/library/agent-relay:local done
+#13 unpacking to docker.io/library/agent-relay:local ... done
+#13 DONE ...
+
+PS agent-relay>
+```
 
 ### 5.3 Run the container and publish port 8000
 
@@ -384,23 +483,39 @@ Meaning of the important flags:
 - `-e RELAY_DATABASE_URL=...` → where the app stores data inside the container  
 - `-v agent-relay-data:/data` → keep the SQLite file when the container restarts  
 
-### 5.4 Check the containerized dashboard
+**Example terminal output:**
+
+```text
+PS agent-relay> docker run --rm -d --name agent-relay-local -p 8000:8000 ...
+7f09bd3e91807e75757c0ac4b961e89ec697ab71629cb25a1e3312af8f9e6838
+
+PS agent-relay>
+```
+
+### 5.4 Check the containerized app
+
+```powershell
+docker ps --filter name=agent-relay-local
+Invoke-RestMethod http://127.0.0.1:8000/ready
+```
 
 Browser: http://127.0.0.1:8000/
 
-Repeat the task flow from Step 2 (register, send, claim, complete) if you want to confirm it works inside Docker.
+Optionally repeat the Step 2 task flow against this container.
 
-> **Screenshot placeholder**
->
-> `![05-docker-dashboard](_docs/images/05-docker-dashboard.png)`
->
-> *To capture later:* browser dashboard while the single Docker container is serving port 8000.
+**Example terminal output:**
 
-> **Screenshot placeholder**
->
-> `![05-docker-ps](_docs/images/05-docker-ps.png)`
->
-> *To capture later:* `docker ps` showing container `agent-relay-local` with `0.0.0.0:8000->8000/tcp`.
+```text
+PS agent-relay> docker ps --filter name=agent-relay-local
+NAMES               IMAGE               STATUS         PORTS
+agent-relay-local   agent-relay:local   Up ...         0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+
+PS agent-relay> Invoke-RestMethod http://127.0.0.1:8000/ready
+{"status":"ready"}
+
+PS agent-relay> # (after Step 2 flow against the container)
+Docker task flow: status=completed output=HELLO DOCKER
+```
 
 ### 5.5 Stop the single container before Compose
 
@@ -419,6 +534,12 @@ Compose starts **two** services:
 
 Inside the Compose network, the app connects to the database using hostname **`postgres`** (that is the service name).
 
+Stop the single container first if it is still running:
+
+```powershell
+docker rm -f agent-relay-local
+```
+
 ### 6.1 Start the stack
 
 ```powershell
@@ -430,18 +551,31 @@ docker compose up --build -d
 
 ```powershell
 docker compose ps
+Invoke-RestMethod http://127.0.0.1:8000/ready
 ```
 
 **What “good” looks like:**
 
 - `app` is Up  
-- `postgres` is Up (healthy)
+- `postgres` is Up (healthy)  
+- `/ready` returns `{"status":"ready"}`
 
-> **Screenshot placeholder**
->
-> `![06-compose-ps](_docs/images/06-compose-ps.png)`
->
-> *To capture later:* `docker compose ps` showing app and postgres healthy/up.
+**Example terminal output:**
+
+```text
+PS agent-relay> docker compose up --build -d
+...
+Container agent-relay-postgres-1 Healthy
+Container agent-relay-app-1 Started
+
+PS agent-relay> docker compose ps
+NAME                     IMAGE                SERVICE    STATUS                   PORTS
+agent-relay-app-1        agent-relay:local    app        Up ...                   0.0.0.0:8000->8000/tcp
+agent-relay-postgres-1   postgres:16-alpine   postgres   Up ... (healthy)         0.0.0.0:5432->5432/tcp
+
+PS agent-relay> Invoke-RestMethod http://127.0.0.1:8000/ready
+{"status":"ready"}
+```
 
 ### 6.3 Open the dashboard again
 
@@ -449,11 +583,11 @@ Browser: http://127.0.0.1:8000/
 
 Repeat Step 2’s task flow once more (new agents are fine).
 
-> **Screenshot placeholder**
->
-> `![06-compose-dashboard](_docs/images/06-compose-dashboard.png)`
->
-> *To capture later:* dashboard after completing a task against the Compose stack.
+**Example result:**
+
+```text
+Compose task flow: status=completed output=HELLO POSTGRES
+```
 
 ### 6.4 Prove the data is in PostgreSQL
 
@@ -463,11 +597,21 @@ docker compose exec -T postgres psql -U relay -d relay -c "SELECT name FROM agen
 
 **What “good” looks like:** you see agent names and a task with status `completed`.
 
-> **Screenshot placeholder**
->
-> `![06-postgres-query](_docs/images/06-postgres-query.png)`
->
-> *To capture later:* `psql` output listing agents and a completed task row.
+**Example terminal output:**
+
+```text
+PS agent-relay> docker compose exec -T postgres psql -U relay -d relay -c "SELECT name FROM agents; SELECT status, output FROM tasks;"
+   name
+-----------
+ uppercase
+ alice
+(2 rows)
+
+  status   |     output
+-----------+----------------
+ completed | HELLO POSTGRES
+(1 row)
+```
 
 ### 6.5 (Optional) Run tests against a separate Postgres database
 
@@ -496,19 +640,31 @@ docker compose down -v
 
 ## Step 7 — Deploy to local Kubernetes with kind
 
+Stop Compose first if it is still running:
+
+```powershell
+docker compose down
+```
+
 ### 7.1 Create the kind cluster (once)
 
 ```powershell
 kind create cluster --name agent-relay
 ```
 
-**What “good” looks like:** message that the cluster was created and kubectl context is set.
+**What “good” looks like:** message that the cluster was created and kubectl context is set.  
+If the cluster already exists, `kind get clusters` will list `agent-relay` — you can skip create.
 
-> **Screenshot placeholder**
->
-> `![07-kind-create](_docs/images/07-kind-create.png)`
->
-> *To capture later:* terminal after `kind create cluster --name agent-relay` succeeds.
+**Example terminal output:**
+
+```text
+PS agent-relay> docker compose down
+...
+
+PS agent-relay> kind get clusters
+agent-relay
+(cluster agent-relay already exists)
+```
 
 ### 7.2 Build the image and load it into kind
 
@@ -518,6 +674,16 @@ kind cannot download `agent-relay:local` from the internet. You must load it fro
 cd module_3\agent-relay
 docker build -t agent-relay:local .
 kind load docker-image agent-relay:local --name agent-relay
+```
+
+**Example terminal output:**
+
+```text
+PS agent-relay> docker build -t agent-relay:local .
+... naming to docker.io/library/agent-relay:local done
+
+PS agent-relay> kind load docker-image agent-relay:local --name agent-relay
+Image: "agent-relay:local" ... loading...
 ```
 
 ### 7.3 Apply the Kubernetes manifests
@@ -533,6 +699,17 @@ This creates (among other things):
 - Agent Relay Deployment + Service  
 - readiness checks  
 
+**Example terminal output:**
+
+```text
+PS agent-relay> kubectl apply -f k8s/all.yaml
+namespace/agent-relay unchanged
+secret/postgres-credentials configured
+...
+deployment.apps/agent-relay configured
+service/agent-relay unchanged
+```
+
 ### 7.4 Wait until pods are ready
 
 ```powershell
@@ -543,11 +720,24 @@ kubectl -n agent-relay get pods,svc
 
 **What “good” looks like:** both pods show `1/1` Ready and `Running`.
 
-> **Screenshot placeholder**
->
-> `![07-k8s-pods-ready](_docs/images/07-k8s-pods-ready.png)`
->
-> *To capture later:* `kubectl get pods,svc` with agent-relay and postgres Running 1/1.
+**Example terminal output:**
+
+```text
+PS agent-relay> kubectl -n agent-relay rollout status deployment/postgres --timeout=180s
+deployment "postgres" successfully rolled out
+
+PS agent-relay> kubectl -n agent-relay rollout status deployment/agent-relay --timeout=180s
+deployment "agent-relay" successfully rolled out
+
+PS agent-relay> kubectl -n agent-relay get pods,svc
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/agent-relay-...            1/1     Running   0          ...
+pod/postgres-...               1/1     Running   0          ...
+
+NAME                  TYPE        CLUSTER-IP     PORT(S)
+service/agent-relay   ClusterIP   10.96....      8000/TCP
+service/postgres      ClusterIP   10.96....      5432/TCP
+```
 
 ---
 
