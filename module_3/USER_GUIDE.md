@@ -2,18 +2,21 @@
 
 This guide walks through **every step** to run and deploy Agent Relay on your machine.
 
-- Commands are for **Windows PowerShell**.
-- Unless a step says otherwise, run commands from:
+- Commands are for **Windows PowerShell** in the **Cursor Terminal**.
+- Project folder (full path, once):
 
   `E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay`
 
-- Screenshot placeholders look like this: they mark where a real image will go later. **No screenshots are taken yet.**
+  In examples below, the prompt is shortened to **`PS agent-relay>`** (same folder).
+- Unless a step says otherwise, run commands from that folder.
+  From the repo root you can enter it with: `cd module_3\agent-relay`
 
-> **Screenshot placeholder format**
->
-> `![short-name](_docs/images/NN-short-name.png)`
->
-> *To capture later:* one sentence describing exactly what the image should show.
+- **Screenshots:** paused for now (OS capture was unreliable).  
+  Instead, this guide records **real terminal output** under “Example terminal output” where helpful.
+- **Tokens:** if agent tokens appear in examples, you can blur/redact them later before sharing publicly.
+
+> **Optional later:** screenshot placeholders may still appear in some sections as  
+> `![name](_docs/images/....png)` — ignore those until we resume image capture.
 
 ---
 
@@ -68,32 +71,52 @@ If two things use port `8000`, your browser may talk to the wrong one.
 
 ### 0.2 Check that tools are installed
 
-Open PowerShell and run:
+Open the **Terminal** panel in Cursor (`Ctrl+`` or **View → Terminal**).  
+Make sure you are in the `agent-relay` folder, then run:
 
 ```powershell
 uv --version
-docker version
+docker --version
 kind version
 kubectl version --client
 act --version
 ```
 
-**What “good” looks like:** each command prints a version number (not “not recognized”).
+**What “good” looks like:** each command prints a version number (not “not recognized”).  
+After each command you should see a new prompt (shown here as `PS agent-relay>`) before the next command.
 
-If `docker version` fails, open **Docker Desktop**, wait until it says it is running, then run `docker version` again.
+If `docker --version` fails, open **Docker Desktop**, wait until it says it is running, then try again.
 
 If `kind` or `kubectl` is not found, they may be under:
 
 - `%LOCALAPPDATA%\kind\kind.exe`
 - `%LOCALAPPDATA%\kubectl\kubectl.exe`
 
-Add those folders to your user PATH, then open a **new** PowerShell window.
+Add those folders to your user PATH, then open a **new** Terminal tab in Cursor.
 
-> **Screenshot placeholder**
->
-> `![00-tool-versions](_docs/images/00-tool-versions.png)`
->
-> *To capture later:* PowerShell window showing the five version commands succeeding.
+**Example terminal output** (from Cursor Terminal on this machine):
+
+```text
+PS agent-relay> uv --version
+uv 0.9.7 (0adb44480 2025-10-30)
+
+PS agent-relay> docker --version
+Docker version 29.8.0, build 88096ef
+
+PS agent-relay> kind version
+kind v0.27.0 go1.23.6 windows/amd64
+
+PS agent-relay> kubectl version --client
+Client Version: v1.36.1
+Kustomize Version: v5.8.1
+
+PS agent-relay> act --version
+act version 0.2.89
+
+PS agent-relay>
+```
+
+Your version numbers may differ slightly; that is fine as long as each command works.
 
 ---
 
@@ -102,7 +125,7 @@ Add those folders to your user PATH, then open a **new** PowerShell window.
 ### 1.1 Go to the project folder
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 ```
 
 ### 1.2 Install Python dependencies
@@ -163,7 +186,7 @@ Keep the server from Step 1 running. Open a **second** PowerShell window.
 ### 2.1 Go to the project folder again (second window)
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 ```
 
 ### 2.2 Register Alice and Bob
@@ -295,7 +318,7 @@ Keep using the **second** PowerShell window. You can leave the server running; t
 ### 4.1 Run all tests
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 uv run pytest -q
 ```
 
@@ -333,7 +356,7 @@ docker info
 ### 5.2 Build the image
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 docker build -t agent-relay:local .
 ```
 
@@ -399,7 +422,7 @@ Inside the Compose network, the app connects to the database using hostname **`p
 ### 6.1 Start the stack
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 docker compose up --build -d
 ```
 
@@ -492,7 +515,7 @@ kind create cluster --name agent-relay
 kind cannot download `agent-relay:local` from the internet. You must load it from your Docker Desktop images.
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 docker build -t agent-relay:local .
 kind load docker-image agent-relay:local --name agent-relay
 ```
@@ -578,7 +601,7 @@ If tests fail, deployment must **not** replace the running version.
 ### 9.1 Run the test job locally
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 act -j test
 ```
 
@@ -612,7 +635,7 @@ In `dashboard.html`, the main heading should be:
 ### 10.2 Build a unique image tag and load it into kind
 
 ```powershell
-cd E:\repos\2026_AIDevToolsZoomCamp\module_3\agent-relay
+cd module_3\agent-relay
 $tag = "v2-$(Get-Date -Format yyyyMMddHHmmss)"
 docker build -t "agent-relay:$tag" -t agent-relay:local .
 kind load docker-image "agent-relay:$tag" --name agent-relay
@@ -707,25 +730,25 @@ More detail: [`_docs/plan.md`](_docs/plan.md)
 
 When you are ready to capture images, save them under `module_3/_docs/images/` using these names:
 
-| File | What to show |
-| --- | --- |
-| `00-tool-versions.png` | Tool version commands succeeding |
-| `01-local-uvicorn-running.png` | Local uvicorn started |
-| `01-local-dashboard-empty.png` | Empty local dashboard |
-| `01-local-health-ready.png` | `/health` and `/ready` OK |
-| `02-register-agents-output.png` | Agent registration output |
-| `02-task-completed-in-terminal.png` | Sender sees `completed` |
-| `03-dashboard-after-task.png` | Dashboard with completed task |
-| `04-pytest-all-passed.png` | Pytest all passed |
-| `05-docker-build-success.png` | Docker build success |
-| `05-docker-dashboard.png` | Dashboard via single container |
-| `05-docker-ps.png` | `docker ps` with port publish |
-| `06-compose-ps.png` | Compose services up |
-| `06-compose-dashboard.png` | Dashboard via Compose |
-| `06-postgres-query.png` | Postgres rows for agents/tasks |
-| `07-kind-create.png` | kind cluster created |
-| `07-k8s-pods-ready.png` | Pods Running 1/1 |
-| `08-k8s-port-forward-terminal.png` | Port-forward running |
-| `08-k8s-dashboard.png` | Dashboard via kind |
-| `09-act-test-success.png` | act test job succeeded |
-| `10-dashboard-v2.png` | Heading “Agent Relay v2” |
+| File | What to show | Status |
+| --- | --- | --- |
+| `00-tool-versions.png` | Tool version commands succeeding | captured |
+| `01-local-uvicorn-running.png` | Local uvicorn started | pending |
+| `01-local-dashboard-empty.png` | Empty local dashboard | pending |
+| `01-local-health-ready.png` | `/health` and `/ready` OK | pending |
+| `02-register-agents-output.png` | Agent registration output | pending |
+| `02-task-completed-in-terminal.png` | Sender sees `completed` | pending |
+| `03-dashboard-after-task.png` | Dashboard with completed task | pending |
+| `04-pytest-all-passed.png` | Pytest all passed | pending |
+| `05-docker-build-success.png` | Docker build success | pending |
+| `05-docker-dashboard.png` | Dashboard via single container | pending |
+| `05-docker-ps.png` | `docker ps` with port publish | pending |
+| `06-compose-ps.png` | Compose services up | pending |
+| `06-compose-dashboard.png` | Dashboard via Compose | pending |
+| `06-postgres-query.png` | Postgres rows for agents/tasks | pending |
+| `07-kind-create.png` | kind cluster created | pending |
+| `07-k8s-pods-ready.png` | Pods Running 1/1 | pending |
+| `08-k8s-port-forward-terminal.png` | Port-forward running | pending |
+| `08-k8s-dashboard.png` | Dashboard via kind | pending |
+| `09-act-test-success.png` | act test job succeeded | pending |
+| `10-dashboard-v2.png` | Heading “Agent Relay v2” | pending |
