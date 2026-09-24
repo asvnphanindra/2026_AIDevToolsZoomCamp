@@ -996,32 +996,3 @@ No kind clusters found.
 | If a test fails | Keep existing version; do not deploy the new one |
 
 More detail: [`_docs/plan.md`](_docs/plan.md)
-
----
-
-## Screenshot checklist (for later)
-
-When you are ready to capture images, save them under `module_3/_docs/images/` using these names:
-
-| File | What to show | Status |
-| --- | --- | --- |
-| `00-tool-versions.png` | Tool version commands succeeding | captured |
-| `01-local-uvicorn-running.png` | Local uvicorn started | pending |
-| `01-local-dashboard-empty.png` | Empty local dashboard | pending |
-| `01-local-health-ready.png` | `/health` and `/ready` OK | pending |
-| `02-register-agents-output.png` | Agent registration output | pending |
-| `02-task-completed-in-terminal.png` | Sender sees `completed` | pending |
-| `03-dashboard-after-task.png` | Dashboard with completed task | pending |
-| `04-pytest-all-passed.png` | Pytest all passed | pending |
-| `05-docker-build-success.png` | Docker build success | pending |
-| `05-docker-dashboard.png` | Dashboard via single container | pending |
-| `05-docker-ps.png` | `docker ps` with port publish | pending |
-| `06-compose-ps.png` | Compose services up | pending |
-| `06-compose-dashboard.png` | Dashboard via Compose | pending |
-| `06-postgres-query.png` | Postgres rows for agents/tasks | pending |
-| `07-kind-create.png` | kind cluster created | pending |
-| `07-k8s-pods-ready.png` | Pods Running 1/1 | pending |
-| `08-k8s-port-forward-terminal.png` | Port-forward running | pending |
-| `08-k8s-dashboard.png` | Dashboard via kind | pending |
-| `09-act-test-success.png` | act test job succeeded | pending |
-| `10-dashboard-v2.png` | Heading “Agent Relay v2” | pending |

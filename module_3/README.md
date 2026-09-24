@@ -7,10 +7,10 @@ Homework 3 for [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-t
 ```text
 module_3/
 ├── README.md                 ← you are here
-├── USER_GUIDE.md             ← step-by-step guide (+ screenshot placeholders)
+├── USER_GUIDE.md             ← step-by-step guide with terminal examples
 ├── _docs/
 │   ├── plan.md               ← homework plan + verified answers
-│   └── images/               ← screenshots go here later (not captured yet)
+│   └── images/               ← optional images folder
 └── agent-relay/              ← the application
     ├── SPEC.md
     ├── Dockerfile

@@ -7,8 +7,12 @@ Course work for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-
 | Module | Description |
 |--------|-------------|
 | [module_1](module_1/) | Household chores app — Django + SQLite, invite-code join, claim/complete workflow |
+| [module_2](module_2/) | Full-stack app (OpenAPI, backend, frontend) — Weekslot / Mini Kanban style homework |
+| [module_3](module_3/) | Containerize and deploy **Agent Relay** — Docker, Compose + Postgres, kind, CI with act |
 
-## Quick start (Module 1)
+## Quick start
+
+### Module 1
 
 ```text
 cd module_1
@@ -18,6 +22,32 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-App: http://127.0.0.1:8000/
+App: http://127.0.0.1:8000/  
+Details: [module_1/README.md](module_1/README.md)
 
-See [module_1/README.md](module_1/README.md) for setup, usage, and docs.
+### Module 3
+
+```powershell
+cd module_3\agent-relay
+uv sync
+uv run uvicorn main:app --reload
+```
+
+Dashboard: http://127.0.0.1:8000/  
+
+- Overview: [module_3/README.md](module_3/README.md)  
+- Step-by-step (with terminal examples): [module_3/USER_GUIDE.md](module_3/USER_GUIDE.md)  
+- Homework plan and answers: [module_3/_docs/plan.md](module_3/_docs/plan.md)
+
+## Homework answers (Module 3)
+
+| Question | Answer |
+| --- | --- |
+| Architecture | Agents claim tasks from a DB through an HTTP API |
+| Status after result | `completed` |
+| Publish container port | `-p` |
+| Compose DB hostname | `postgres` |
+| Keeps replicas / updates | `Deployment` |
+| If a test fails | Keep existing version; do not deploy the new one |
+
+Submit: https://courses.datatalks.club/ai-dev-tools-2026/homework/hw3
