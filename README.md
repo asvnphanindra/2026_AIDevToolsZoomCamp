@@ -36,18 +36,4 @@ uv run uvicorn main:app --reload
 Dashboard: http://127.0.0.1:8000/  
 
 - Overview: [module_3/README.md](module_3/README.md)  
-- Step-by-step (with terminal examples): [module_3/USER_GUIDE.md](module_3/USER_GUIDE.md)  
-- Homework plan and answers: [module_3/_docs/plan.md](module_3/_docs/plan.md)
-
-## Homework answers (Module 3)
-
-| Question | Answer |
-| --- | --- |
-| Architecture | Agents claim tasks from a DB through an HTTP API |
-| Status after result | `completed` |
-| Publish container port | `-p` |
-| Compose DB hostname | `postgres` |
-| Keeps replicas / updates | `Deployment` |
-| If a test fails | Keep existing version; do not deploy the new one |
-
-Submit: https://courses.datatalks.club/ai-dev-tools-2026/homework/hw3
+- Step-by-step (with terminal examples): [module_3/USER_GUIDE.md](module_3/USER_GUIDE.md)
