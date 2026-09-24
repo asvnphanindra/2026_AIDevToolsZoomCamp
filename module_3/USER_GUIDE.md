@@ -745,29 +745,43 @@ service/postgres      ClusterIP   10.96....      5432/TCP
 
 ### 8.1 Start port-forward
 
+In a terminal you can leave open:
+
 ```powershell
 kubectl -n agent-relay port-forward svc/agent-relay 8000:8000
 ```
 
-Leave this terminal open.
+**What “good” looks like:** a line like `Forwarding from 127.0.0.1:8000 -> 8000` (and/or `[::1]:8000`).
 
-### 8.2 Open the dashboard
+**Example terminal output:**
+
+```text
+PS agent-relay> kubectl -n agent-relay port-forward svc/agent-relay 8000:8000
+Forwarding from 127.0.0.1:8000 -> 8000
+Forwarding from [::1]:8000 -> 8000
+```
+
+Leave this terminal open while you use the app.
+
+### 8.2 Open the dashboard and verify the task flow
 
 Browser: http://127.0.0.1:8000/
 
-Repeat the task flow from Step 2 to confirm Kubernetes is serving the app.
+In a **second** terminal, check ready and optionally repeat Step 2’s task flow:
 
-> **Screenshot placeholder**
->
-> `![08-k8s-port-forward-terminal](_docs/images/08-k8s-port-forward-terminal.png)`
->
-> *To capture later:* terminal running `kubectl port-forward` without errors.
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/ready
+```
 
-> **Screenshot placeholder**
->
-> `![08-k8s-dashboard](_docs/images/08-k8s-dashboard.png)`
->
-> *To capture later:* browser dashboard reached via kind port-forward, after a completed task.
+**Example terminal output:**
+
+```text
+PS agent-relay> Invoke-RestMethod http://127.0.0.1:8000/ready
+{"status":"ready"}
+
+PS agent-relay> # (after Step 2 flow via port-forward)
+k8s task flow: status=completed output=HELLO K8S
+```
 
 ### 8.3 Stop port-forward when finished
 
@@ -797,11 +811,24 @@ act -j test
 
 **What “good” looks like:** act finishes with the test job succeeded and pytest all passed.
 
-> **Screenshot placeholder**
->
-> `![09-act-test-success](_docs/images/09-act-test-success.png)`
->
-> *To capture later:* end of `act -j test` output showing Job succeeded / tests passed.
+**Example terminal output (abbreviated):**
+
+```text
+PS agent-relay> act -j test
+[ci/test] ⭐ Run Set up job
+[ci/test]   ✅  Success - Set up job
+[ci/test] ⭐ Run Main actions/checkout@v4
+[ci/test]   ✅  Success - Main actions/checkout@v4
+[ci/test] ⭐ Run Main Install uv
+[ci/test]   ✅  Success - Main Install uv
+[ci/test] ⭐ Run Main Sync dependencies
+[ci/test]   ✅  Success - Main Sync dependencies
+[ci/test] ⭐ Run Main Run starter and integration tests against PostgreSQL
+[ci/test]   | .....                                                                    [100%]
+[ci/test]   | 5 passed, 1 warning in ...s
+[ci/test]   ✅  Success - Main Run starter and integration tests against PostgreSQL
+[ci/test] 🏁  Job succeeded
+```
 
 ### 9.2 About the deploy job on Windows
 
@@ -822,6 +849,13 @@ In `dashboard.html`, the main heading should be:
 
 (If it still says only `Agent Relay`, change it to `Agent Relay v2` before building.)
 
+**Example check:**
+
+```text
+PS agent-relay> Select-String -Path dashboard.html -Pattern '<h1>'
+dashboard.html:18:  <h1>Agent Relay v2</h1>
+```
+
 ### 10.2 Build a unique image tag and load it into kind
 
 ```powershell
@@ -831,11 +865,32 @@ docker build -t "agent-relay:$tag" -t agent-relay:local .
 kind load docker-image "agent-relay:$tag" --name agent-relay
 ```
 
+**Example terminal output:**
+
+```text
+PS agent-relay> $tag = "v2-20260924094908"
+PS agent-relay> docker build -t "agent-relay:$tag" -t agent-relay:local .
+... naming to docker.io/library/agent-relay:v2-20260924094908 done
+
+PS agent-relay> kind load docker-image "agent-relay:$tag" --name agent-relay
+Image: "agent-relay:v2-20260924094908" ... loading...
+```
+
 ### 10.3 Roll out the new image
 
 ```powershell
 kubectl -n agent-relay set image deployment/agent-relay "agent-relay=agent-relay:$tag"
 kubectl -n agent-relay rollout status deployment/agent-relay --timeout=180s
+```
+
+**Example terminal output:**
+
+```text
+PS agent-relay> kubectl -n agent-relay set image deployment/agent-relay "agent-relay=agent-relay:$tag"
+deployment.apps/agent-relay image updated
+
+PS agent-relay> kubectl -n agent-relay rollout status deployment/agent-relay --timeout=180s
+deployment "agent-relay" successfully rolled out
 ```
 
 ### 10.4 Port-forward and check the heading
@@ -844,15 +899,23 @@ kubectl -n agent-relay rollout status deployment/agent-relay --timeout=180s
 kubectl -n agent-relay port-forward svc/agent-relay 8000:8000
 ```
 
+In a second terminal:
+
+```powershell
+(Invoke-WebRequest http://127.0.0.1:8000/ -UseBasicParsing).Content -match 'Agent Relay v2'
+```
+
 Browser: http://127.0.0.1:8000/
 
-**What “good” looks like:** the page title/heading shows **Agent Relay v2**.
+**What “good” looks like:** the page heading shows **Agent Relay v2**.
 
-> **Screenshot placeholder**
->
-> `![10-dashboard-v2](_docs/images/10-dashboard-v2.png)`
->
-> *To capture later:* browser dashboard clearly showing the heading “Agent Relay v2”.
+**Example terminal output:**
+
+```text
+PS agent-relay> # after port-forward
+HEADING_OK: Agent Relay v2
+{"status":"ready"}
+```
 
 ---
 
