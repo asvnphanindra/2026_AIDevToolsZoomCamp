@@ -1,0 +1,20 @@
+schema_version: 2
+content_id: 0ddd0711-eadb-4a6a-b6cc-871ae5f0ed70
+slug: hw04
+title: "Homework 4: DevOps and Observability for AI-Built Apps"
+instructions_path: homework.md
+due_at: "2026-10-05T23:00:00Z"
+initial_state: open
+form:
+  homework_url: true
+  time_spent_lectures: true
+  time_spent_homework: true
+  faq_contribution: true
+  learning_in_public_cap: 7
+questions:
+  - content_id: 384c9af0-1e2c-46b1-a789-da522165b493
+    id: reflection
+    type: free_form_long
+    answer_type: any
+    prompt: "Describe one practical idea you took from this module."
+    points: 0
