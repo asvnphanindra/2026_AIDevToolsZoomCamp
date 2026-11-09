@@ -9,6 +9,8 @@ Course work for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-
 | [module_1](module_1/) | Household chores app — Django + SQLite, invite-code join, claim/complete workflow |
 | [module_2](module_2/) | Full-stack app (OpenAPI, backend, frontend) — Weekslot / Mini Kanban style homework |
 | [module_3](module_3/) | Containerize and deploy **Agent Relay** — Docker, Compose + Postgres, kind, CI with act |
+| [module_4](module_4/) | **Order Tracker** — OpenTelemetry, Grafana stack, 5xx alerts, AI incident responder (hw4) |
+| [project](project/) | **Final project** — one full-stack app from spec through deploy, observability, and on-call agent |
 
 ## Quick start
 
@@ -37,3 +39,18 @@ Dashboard: http://127.0.0.1:8000/
 
 - Overview: [module_3/README.md](module_3/README.md)  
 - Step-by-step (with terminal examples): [module_3/USER_GUIDE.md](module_3/USER_GUIDE.md)
+
+### Module 4
+
+Homework app (fork): https://github.com/asvnphanindra/order-tracker  
+
+```powershell
+cd module_4\order-tracker   # or clone the fork directly
+docker compose up --build -d --wait
+```
+
+Grafana: http://localhost:3000 — Details: [module_4/README.md](module_4/README.md)
+
+### Final project
+
+Scaffold and scoring checklist: [project/README.md](project/README.md)
