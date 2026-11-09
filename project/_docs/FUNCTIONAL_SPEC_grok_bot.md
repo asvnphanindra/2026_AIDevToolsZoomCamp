@@ -2,7 +2,7 @@
 
 **Project:** AI Dev Tools Zoomcamp, Project 2 (Attempt 2), due Tue 17 Nov 2026, 4:30 AM IST
 **Owner:** A S V N Phanindra (Phani)
-**Status:** Draft v0.1, 9 Nov 2026
+**Status:** Draft v0.2, 9 Nov 2026 (database: Firestore)
 **Goal:** Replace today's static PNG planner with an interactive web app where tasks can be planned, moved, tracked, and reviewed.
 
 ---
@@ -109,18 +109,49 @@ Today the planner is a Python script that renders an image each morning. It work
 
 - NFR-1: Responsive; usable on a phone for viewing and marking done.
 - NFR-2: All times in IST; dates stored as ISO.
-- NFR-3: Data persists in a database (SQLite for dev, Postgres optional for deploy).
+- NFR-3: Data persists in **Cloud Firestore** (document database), hosted on Firebase. Use the Firestore Emulator for local dev and tests.
 - NFR-4: Fast: a drag or edit reflects in under 200 ms.
-- NFR-5: Single user with simple auth (password or OAuth) when deployed.
+- NFR-5: Single user, signed in with **Firebase Authentication** (Google sign-in). Firestore security rules allow reads and writes only for the owner's uid.
 - NFR-6: Export/import JSON; export the week view as PNG for sharing.
+
+## 5a. Firestore data model
+
+Everything lives under the signed-in user, so security rules stay simple: `users/{uid}/...`. Documents are small and read by date range.
+
+| Collection | Doc id | Key fields |
+|---|---|---|
+| `users/{uid}` | uid | name, timezone (`Asia/Kolkata`), settings (default reminder minutes) |
+| `areas` | `job`, `phd`, `family`, `passion` | name, colour, order |
+| `bands` | auto | level (high/medium/medlow/low), start `HH:mm`, end `HH:mm`, weekdays |
+| `routines` | auto | label, start, end, weekdays, showLabel (meals true) |
+| `timetable` | auto | section, period, start, end, weekday, kind (lecture/lab/tutorial), room |
+| `dayTypes` | `YYYY-MM-DD` | type (normal/holiday/noClasses/online/exam), label, onlineSlots[] |
+| `classChanges` | auto | date, kind (substitute/cancel/extra), section, start, end, note |
+| `tasks` | auto | title, areaId, durationMin, priority, due (timestamp), status (backlog/planned/done/partly/notDone), remainingMin, notes, goalId?, paused |
+| `blocks` | auto | taskId?, date `YYYY-MM-DD`, start, end, areaId, status, statusAskedAt, note |
+| `goals` | `YYYY-Www-n` | week (`2026-W46`), areaId, title, starred, progress, carriedFrom? |
+| `focusTasks` | auto | areaId, title, subtitle, order |
+| `events` | auto | date, endDate?, kind (exam/project/family/academic/series), label, time?, seriesId? |
+| `series` | auto | label, kind, rule (every 3 weeks / every 4 months on 24th), startDate, paused |
+| `phdLogs` | auto | date, blockId, note |
+| `dailyLogs` | `YYYY-MM-DD` | energy (high/medium/low), summary {area: plannedMin, doneMin} |
+
+Design notes:
+- Store dates as `YYYY-MM-DD` strings and times as `HH:mm` strings in IST, so range queries by `date` are simple and no time-zone shifting happens.
+- Query the week view with `blocks where date >= from and date <= to` (one composite index on `date`, `start`).
+- Denormalise `areaId` and title onto `blocks` so the grid renders from one query.
+- Recurring series are expanded on read (client or function), not stored as many copies.
+- Composite indexes go in `firestore.indexes.json`; rules in `firestore.rules`, both in the repo.
 
 ## 6. Suggested tech (fits the Zoomcamp project requirements)
 
 - Frontend: React + TypeScript (or similar), a calendar/grid component with drag and drop.
-- Backend: REST API (FastAPI or Express) with an OpenAPI spec.
-- Database: SQLite / Postgres.
-- Tests: unit tests for rules (daily PhD block, conflicts, day types) and integration tests for the API.
-- Containerised with Docker / docker-compose; CI with GitHub Actions; deploy to a cloud host.
+- Hosting: **Firebase Hosting** for the frontend.
+- Database: **Cloud Firestore** (document database), with offline persistence so the phone view works on the bus.
+- Backend logic: **Cloud Functions for Firebase** for rules that should not live in the browser (daily PhD-block check, end-of-day summary, recurring series expansion, reminders via scheduled functions). Expose them as HTTPS endpoints with an OpenAPI spec if the course needs a documented API.
+- Auth: Firebase Authentication.
+- Tests: unit tests for rules (daily PhD block, conflicts, day types); integration tests against the Firebase Emulator Suite (Firestore, Auth, Functions); security-rules tests.
+- CI with GitHub Actions running tests on the emulators, then `firebase deploy` on merge to main. Docker is optional (only for running the emulators in CI).
 - Document AI-assisted development (prompts, tools, MCP) in the README as the course expects.
 
 ## 7. MVP scope (for the 17 Nov deadline)
@@ -129,7 +160,7 @@ Must have: FR-1 to FR-3, FR-5, FR-7, FR-8, FR-9, FR-12, FR-14, FR-15, FR-16, FR-
 
 Later: bands auto-refinement, reminders and digest, PhD status generator, PNG export, mobile polish.
 
-## 8. Example API (draft)
+## 8. Example API (draft, Cloud Functions or direct Firestore access)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -144,6 +175,6 @@ Later: bands auto-refinement, reminders and digest, PhD status generator, PNG ex
 
 ## 9. Open questions
 
-1. Should the timetable be imported from a file (CSV/Excel) or entered in the app?
-2. Should phone notifications go through the browser only, or also Telegram/WhatsApp?
+1. Should the timetable be imported from a file (CSV/Excel) into Firestore or entered in the app?
+2. Should phone notifications use Firebase Cloud Messaging (browser push), or also Telegram/WhatsApp?
 3. Single user only, or allow sharing a read-only view with family?
