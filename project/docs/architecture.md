@@ -7,9 +7,9 @@
 | UI | React + TypeScript (SPA) |
 | Auth | Firebase Authentication — Google (demo may use Anonymous) |
 | DB | Cloud Firestore (`users/{uid}/…`) |
-| Host | Firebase Hosting (static build) |
-| Local | Firebase Emulator Suite (+ optional Docker Compose wrapper) |
-| CI | GitHub Actions against emulators (later) |
+| Host (later) | Firebase Hosting — **after course submission** only |
+| Local | Firebase Emulator Suite (+ Docker Compose for reviewers) |
+| CI | GitHub Actions against emulators (later); no Hosting deploy required pre-submission |
 
 ## Trust boundaries
 

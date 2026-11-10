@@ -10,7 +10,7 @@ How coding agents collaborate on this project. Adapted from Weekslot (`module_2`
 | **Frontend agent** | React UI, drag/grid, Firebase client SDK | Security rules, CI secrets |
 | **Backend / data agent** | Firestore model, rules, indexes, seed scripts, Cloud Functions if any | Visual polish |
 | **QA agent** | Unit + emulator integration + rules tests | Product scope changes |
-| **DevOps agent** | Docker Compose, GitHub Actions, Hosting deploy | Feature UX |
+| **DevOps agent** | Docker Compose, GitHub Actions; Hosting only post-submission | Feature UX |
 | **On-call agent** (later) | Alert response + remediation | Spec changes |
 
 One human owner (Phani) is the product authority. Agents propose; they do not expand MVP without an Issue update.

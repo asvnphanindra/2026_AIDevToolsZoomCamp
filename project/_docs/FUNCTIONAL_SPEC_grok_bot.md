@@ -233,5 +233,5 @@ Also in MVP: the 3-day view (FR-1 grid limited to today + 2) and the 3-week view
 3. Users: single user only.
 4. MVP scope (section 7): confirmed.
 5. Privacy: demo project + fictional seed data for reviewers; personal data stays in a separate project and out of git.
-6. Docker: used to run the app with the Firebase Emulator Suite for review and CI; production on Firebase Hosting.
+6. Docker: used to run the app with the Firebase Emulator Suite for review and CI; Firebase Hosting remains the intended production host but is deployed **only after course submission** (local run/test first).
 7. Planning horizons: 3 days and 3 weeks in MVP; 3 months and 3 quarters in Phase 2 (data model ready now).

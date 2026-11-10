@@ -18,7 +18,7 @@ App folders (`frontend/`, Firebase config, Docker, tests) arrive in Section B+.
 
 Read [product-spec.md](product-spec.md) before changing behavior. MVP:
 
-- Firebase Auth (Google) + Firestore + Hosting
+- Firebase Auth (Google) + Firestore; local emulators first (Hosting after submission — [docs/plan.md](docs/plan.md))
 - Day / 3-day grid + thin week + 3-week goals; drag tasks to blocks
 - Done / Partly / Not done; life areas; seeded timetable; day types
 - Demo seed only in public paths
@@ -29,6 +29,7 @@ Do not add Phase 2 features (month/quarter break-down, push digests, PNG export)
 
 | Doc | Use when |
 |-----|----------|
+| [docs/plan.md](docs/plan.md) | Build order: local first, Hosting after submission |
 | [docs/process.md](docs/process.md) | How to work, DoD, planned commands |
 | [docs/agent-team.md](docs/agent-team.md) | Roles and collaboration |
 | [docs/architecture.md](docs/architecture.md) | Stack and data boundaries |

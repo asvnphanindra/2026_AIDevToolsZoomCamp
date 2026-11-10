@@ -3,7 +3,7 @@
 **Status:** Section A (spec + tracker); app build is Section B+  
 **Source draft:** [`_docs/FUNCTIONAL_SPEC_grok_bot.md`](_docs/FUNCTIONAL_SPEC_grok_bot.md)  
 **Public tracker:** [docs/task-tracker.md](docs/task-tracker.md)  
-**Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · Firebase Hosting · React + TypeScript · Emulator Suite for local/CI
+**Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** remains the intended production host, but deploy is **after course submission** (local run/test first — see [docs/plan.md](docs/plan.md)).
 
 ## 1. Problem
 
@@ -55,9 +55,9 @@ Collections (see draft §5a for fields): `areas`, `bands`, `routines`, `timetabl
 
 ## 6. Local / Docker / Hosting (planned)
 
-- Production: static Hosting + Firestore + Auth (Spark).
-- Local/review: Docker Compose → Firebase Emulators + demo seed (`localhost:5000` app, `:4000` Emulator UI).
-- CI: tests against emulators; deploy demo Hosting on merge (later section).
+- **Before submission:** local run + tests via Firebase Emulator Suite; Docker Compose for reviewers (`localhost:5000` app, `:4000` Emulator UI) + demo seed. CI runs tests against emulators.
+- **After course submission:** optional `firebase deploy` to Hosting + Firestore on the Spark demo project for a public URL.
+- Stack still targets Auth + Firestore (+ Hosting later); do not block MVP on cloud Hosting.
 
 ## 7. Decisions (locked)
 
@@ -65,4 +65,5 @@ Collections (see draft §5a for fields): `areas`, `bands`, `routines`, `timetabl
 2. Reminders: in-app while open only (Spark).
 3. Single user.
 4. Horizons: 3-day + 3-week MVP; month/quarter Phase 2.
-5. Firebase Auth + Firestore + Hosting (not Supabase).
+5. Firebase Auth + Firestore (not Supabase); Hosting only after course submission.
+6. Local run/test first (see [docs/plan.md](docs/plan.md)).
