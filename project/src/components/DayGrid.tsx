@@ -31,10 +31,6 @@ import {
   type TimedItem,
 } from "@/lib/blocks";
 import {
-  REPEAT_DRAG_MIME,
-  type RepeatingTask,
-} from "@/lib/repeating";
-import {
   isBlockEnded,
   loadCheckIns,
   outcomeLabel,
@@ -460,22 +456,6 @@ export function DayGrid({
     });
   }
 
-  function dropRepeatingOnDay(
-    dayKey: string,
-    clientY: number,
-    colEl: HTMLElement,
-    template: RepeatingTask,
-  ) {
-    // Place-only: no backlog task until the user moves it back to backlog.
-    placeNewBlock(dayKey, clientY, colEl, {
-      taskId: "",
-      title: template.title,
-      areaId: template.areaId,
-      durationMin: template.durationMin,
-      deepWork: template.deepWork,
-    });
-  }
-
   /** Double-click empty grid to create a task block in place. */
   function addDirectOnDay(
     dayKey: string,
@@ -758,18 +738,8 @@ export function DayGrid({
     const col = e.currentTarget;
     const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
     const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
-    const repeatRaw = e.dataTransfer.getData(REPEAT_DRAG_MIME);
     if (taskId) dropTaskOnDay(dayKey, e.clientY, col, taskId);
-    else if (repeatRaw) {
-      try {
-        const template = JSON.parse(repeatRaw) as RepeatingTask;
-        if (template?.title && template.areaId) {
-          dropRepeatingOnDay(dayKey, e.clientY, col, template);
-        }
-      } catch {
-        /* ignore bad payload */
-      }
-    } else if (blockId) dropMoveBlock(dayKey, e.clientY, col, blockId);
+    else if (blockId) dropMoveBlock(dayKey, e.clientY, col, blockId);
   }
 
   function startResize(item: GridItem, e: MouseEvent) {
@@ -835,8 +805,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Double-click a day to add · drag from backlog / repeating · drag a
-          placed block back to backlog · right-click for more
+          Double-click a day to add · drag from backlog · drag a placed block
+          back to backlog · right-click for more
         </p>
       </div>
 

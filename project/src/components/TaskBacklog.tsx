@@ -20,7 +20,7 @@ type Props = {
 
 const PRIORITIES = ["low", "med", "high"] as const;
 
-/** US-C1 backlog + accept placed blocks from grid. Repeating is separate. */
+/** US-C1 backlog + accept placed blocks from grid. */
 export function TaskBacklog({
   isDemo,
   areas,
@@ -256,7 +256,7 @@ export function TaskBacklog({
 
       {openTasks.length === 0 ? (
         <p className="muted">
-          No open backlog tasks — double-click the grid or use Repeating above.
+          No open backlog tasks — double-click the grid to add one.
         </p>
       ) : (
         <div className="backlog-by-area">
