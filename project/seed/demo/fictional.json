@@ -92,7 +92,8 @@
       "start": "10:00",
       "end": "10:30",
       "weekday": 1,
-      "kind": "meeting"
+      "kind": "meeting",
+      "location": "Zoom"
     },
     {
       "id": "s-lab",
@@ -100,7 +101,42 @@
       "start": "15:00",
       "end": "16:30",
       "weekday": 3,
-      "kind": "class"
+      "kind": "class",
+      "location": "Room 2"
+    },
+    {
+      "id": "s-office",
+      "title": "Office hours",
+      "start": "11:00",
+      "end": "12:00",
+      "weekday": 2,
+      "kind": "meeting",
+      "location": "Hall A"
+    },
+    {
+      "id": "s-seminar",
+      "title": "Research seminar",
+      "start": "14:00",
+      "end": "15:30",
+      "weekday": 4,
+      "kind": "class",
+      "location": "Auditorium"
+    },
+    {
+      "id": "s-sync",
+      "title": "Weekly sync",
+      "start": "16:00",
+      "end": "16:45",
+      "weekday": 5,
+      "kind": "meeting",
+      "location": "Teams"
+    }
+  ],
+  "dayTypes": [
+    {
+      "dayOffset": 1,
+      "type": "holiday",
+      "label": "Demo holiday"
     }
   ],
   "blocks": [

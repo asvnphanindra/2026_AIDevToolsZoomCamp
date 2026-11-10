@@ -6,6 +6,7 @@ import {
   itemPlacement,
   slotBandLevel,
 } from "@/lib/day-grid";
+import { dayTypeForOffset } from "@/lib/schedule";
 import {
   buildHalfHourSlots,
   formatDayLabel,
@@ -45,7 +46,7 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           <time dateTime={model.updatedAt.toISOString()}>
             {formatLastUpdated(model.updatedAt, model.timezone)}
           </time>{" "}
-          ({model.timezone})
+          ({model.timezone}) · {model.scheduleFromSeed} fixed seed items
         </p>
       </div>
 
@@ -81,6 +82,12 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           >
             {key === model.todayKey ? "Today · " : null}
             {formatDayLabel(key, model.timezone)}
+            {(() => {
+              const dt = dayTypeForOffset(dayIdx, model.dayTypes);
+              return dt ? (
+                <span className="day-type-tag"> · {dt.label}</span>
+              ) : null;
+            })()}
           </div>
         ))}
 

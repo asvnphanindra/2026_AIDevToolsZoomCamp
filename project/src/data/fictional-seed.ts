@@ -53,6 +53,20 @@ export type SeedSchedule = {
   end: string;
   weekday: number;
   kind: string;
+  location?: string;
+};
+
+export type DayTypeKind =
+  | "normal"
+  | "holiday"
+  | "no-fixed-schedule"
+  | "online"
+  | "exam";
+
+export type SeedDayType = {
+  dayOffset: number;
+  type: DayTypeKind;
+  label: string;
 };
 
 export type SeedBlock = {
@@ -72,6 +86,7 @@ export type FictionalSeed = {
   tasks: SeedTask[];
   routines: SeedRoutine[];
   schedule: SeedSchedule[];
+  dayTypes: SeedDayType[];
   blocks: SeedBlock[];
 };
 

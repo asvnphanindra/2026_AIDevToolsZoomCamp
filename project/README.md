@@ -61,6 +61,7 @@ project/
 | US-A1 / US-A2 (Issues #23 / #24) | ☑ local emulator |
 | US-B1 3-day grid (Issue #25) | ☑ |
 | US-B2 energy bands (Issue #26) | ☑ |
+| US-B3 fixed schedule from seed (Issue #27) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -106,6 +107,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 2. Energy strip (E) beside times: green high / amber medium / rose low.
 3. Warning for **Deep focus write-up** in the evening low band; block outlined.
 4. Google sign-in still shows the energy strip (default bands) with an empty day grid.
+
+### Verify US-B3 (Issue #27)
+
+1. `npm start` → **Try demo** (or Google — fixed items still load from seed).
+2. Orange fixed-schedule blocks appear on matching weekdays (standup Mon, office Tue, lab Wed, …).
+3. Tomorrow shows **Demo holiday** and **no** fixed-schedule items that day.
+4. No schedule edit UI (seed-only).
 
 ## Links
 

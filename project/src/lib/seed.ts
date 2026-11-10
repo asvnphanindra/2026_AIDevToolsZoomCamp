@@ -106,11 +106,25 @@ async function writeSeedToUser(
     const { id, ...fields } = task;
     batch.set(doc(db, "users", uid, "tasks", id), fields);
   }
+  // US-B3 — fixed schedule seeded once (no edit UI).
+  for (const item of seed.schedule) {
+    const { id, ...fields } = item;
+    batch.set(doc(db, "users", uid, "schedule", id), fields);
+  }
+  for (const band of seed.bands) {
+    const { id, ...fields } = band;
+    batch.set(doc(db, "users", uid, "bands", id), fields);
+  }
+  for (const dayType of seed.dayTypes) {
+    const dateKey = `offset-${dayType.dayOffset}`;
+    batch.set(doc(db, "users", uid, "dayTypes", dateKey), dayType);
+  }
   // Shared fictional template (read-only for reviewers via rules).
   batch.set(doc(db, "demo", "seed"), {
     label: "Fictional Work Planner sample",
     areaCount: seed.areas.length,
     taskCount: seed.tasks.length,
+    scheduleCount: seed.schedule.length,
     updatedAt: serverTimestamp(),
   });
   await batch.commit();

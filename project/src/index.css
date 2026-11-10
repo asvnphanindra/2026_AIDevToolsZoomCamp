@@ -233,6 +233,11 @@ code {
   opacity: 0.72;
 }
 
+.day-type-tag {
+  font-weight: 500;
+  font-size: 0.8em;
+}
+
 .day-grid-time {
   grid-column: 1;
   font-size: 0.7rem;
