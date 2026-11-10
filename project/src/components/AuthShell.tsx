@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
 import { AreasConfig } from "@/components/AreasConfig";
 import { DayGrid } from "@/components/DayGrid";
+import { LiveClock } from "@/components/LiveClock";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
+import { SecondClockProvider } from "@/hooks/useSecondClock";
 import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
 import { loadAreas, writeAreas } from "@/lib/areas";
 import {
@@ -105,76 +107,81 @@ export function AuthShell() {
   }
 
   return (
-    <main className="shell shell-wide">
-      <header className="brand brand-row">
-        <div>
-          <h1>Work Planner</h1>
-          <p className="lede">
-            {isDemo ? "Demo mode · " : ""}
-            {view?.displayName || user.email || user.uid}
-          </p>
-        </div>
-        <div className="header-actions">
-          <nav className="app-nav" aria-label="App views">
-            <button
-              type="button"
-              className={appView === "planner" ? "nav-active" : "secondary"}
-              onClick={() => setAppView("planner")}
-            >
-              Planner
-            </button>
-            <button
-              type="button"
-              className={appView === "areas" ? "nav-active" : "secondary"}
-              onClick={() => setAppView("areas")}
-            >
-              Areas
-            </button>
-          </nav>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            onClick={signOut}
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      {appView === "areas" ? (
-        <AreasConfig
-          areas={areas}
-          onAreasChange={onAreasChange}
-          rules={rules}
-          onRulesChange={onRulesChange}
-        />
-      ) : (
-        <div className="planner-layout">
-          <div className="planner-main">
-            <DayGrid
-              isDemo={isDemo}
-              areas={areas}
-              rules={rules}
-              timezone="Asia/Kolkata"
-              tasks={tasks}
-              onTasksChange={onTasksChange}
-              placedBlocks={blocks}
-              onPlacedBlocksChange={onBlocksChange}
-            />
+    <SecondClockProvider>
+      <main className="shell shell-wide">
+        <header className="brand brand-row">
+          <div>
+            <h1>Work Planner</h1>
+            <p className="lede">
+              {isDemo ? "Demo mode · " : ""}
+              {view?.displayName || user.email || user.uid}
+            </p>
           </div>
-          <aside className="planner-side">
-            <TaskBacklog
-              isDemo={isDemo}
-              areas={areas}
-              tasks={tasks}
-              onTasksChange={onTasksChange}
-            />
-          </aside>
-        </div>
-      )}
+          <div className="header-actions">
+            <nav className="app-nav" aria-label="App views">
+              <button
+                type="button"
+                className={appView === "planner" ? "nav-active" : "secondary"}
+                onClick={() => setAppView("planner")}
+              >
+                Planner
+              </button>
+              <button
+                type="button"
+                className={appView === "areas" ? "nav-active" : "secondary"}
+                onClick={() => setAppView("areas")}
+              >
+                Areas
+              </button>
+            </nav>
+            <div className="header-session">
+              <button
+                type="button"
+                className="secondary"
+                disabled={busy}
+                onClick={signOut}
+              >
+                Sign out
+              </button>
+              <LiveClock timeZone="Asia/Kolkata" />
+            </div>
+          </div>
+        </header>
 
-      {error ? <p className="error">{error}</p> : null}
-    </main>
+        {appView === "areas" ? (
+          <AreasConfig
+            areas={areas}
+            onAreasChange={onAreasChange}
+            rules={rules}
+            onRulesChange={onRulesChange}
+          />
+        ) : (
+          <div className="planner-layout">
+            <div className="planner-main">
+              <DayGrid
+                isDemo={isDemo}
+                areas={areas}
+                rules={rules}
+                timezone="Asia/Kolkata"
+                tasks={tasks}
+                onTasksChange={onTasksChange}
+                placedBlocks={blocks}
+                onPlacedBlocksChange={onBlocksChange}
+              />
+            </div>
+            <aside className="planner-side">
+              <TaskBacklog
+                isDemo={isDemo}
+                areas={areas}
+                tasks={tasks}
+                onTasksChange={onTasksChange}
+              />
+            </aside>
+          </div>
+        )}
+
+        {error ? <p className="error">{error}</p> : null}
+      </main>
+    </SecondClockProvider>
   );
 }

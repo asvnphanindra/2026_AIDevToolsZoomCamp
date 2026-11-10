@@ -11,6 +11,7 @@ import {
   type BlockMenuAction,
 } from "@/components/BlockContextMenu";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
+import { NowIndicator } from "@/components/NowIndicator";
 import {
   DAY_TYPE_LABELS,
   fictionalSeed,
@@ -217,8 +218,9 @@ export function DayGrid({
     };
   }, [ctx]);
 
+  /** Slow tick for check-in due detection only — not the live clock/now-line. */
   useEffect(() => {
-    const id = window.setInterval(() => setClock(Date.now()), 30_000);
+    const id = window.setInterval(() => setClock(Date.now()), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -912,6 +914,15 @@ export function DayGrid({
               <span className="day-grid-hover-label">{hover.label}</span>
             </div>
           ) : null}
+
+          <NowIndicator
+            timeZone={model.timezone}
+            startHour={model.startHour}
+            endHour={model.endHour}
+            dayCount={model.dayKeys.length}
+            todayIndex={model.todayIndex}
+            todayKey={model.todayKey}
+          />
         </div>
       </div>
 
