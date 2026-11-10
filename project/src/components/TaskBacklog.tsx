@@ -1,8 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
 import {
-  areaColour,
-  areaName,
   emptyTask,
   loadBacklog,
   TASK_DRAG_MIME,
