@@ -23,26 +23,29 @@ export function hidesFixedSchedule(type: DayTypeKind | undefined): boolean {
   return type === "holiday" || type === "no-fixed-schedule";
 }
 
+/** `relativeOffset` is days from today (−3…+3 on the week grid). */
 export function dayTypeForOffset(
-  dayOffset: number,
+  relativeOffset: number,
   dayTypes: SeedDayType[] = fictionalSeed.dayTypes,
 ): SeedDayType | undefined {
-  return dayTypes.find((d) => d.dayOffset === dayOffset);
+  return dayTypes.find((d) => d.dayOffset === relativeOffset);
 }
 
 /**
  * US-B3 — expand seeded weekly schedule onto concrete dates.
- * Stored once in seed; no edit UI. Skips dates whose day type hides fixed items.
+ * `todayIndex` marks which dayKeys entry is today (3 on the 7-day grid).
  */
 export function expandFixedSchedule(
   dayKeys: string[],
   timezone: string,
+  todayIndex: number,
   schedule: SeedSchedule[] = fictionalSeed.schedule,
   dayTypes: SeedDayType[] = fictionalSeed.dayTypes,
 ): ScheduleGridItem[] {
   const items: ScheduleGridItem[] = [];
-  dayKeys.forEach((dayKey, offset) => {
-    const dayType = dayTypeForOffset(offset, dayTypes);
+  dayKeys.forEach((dayKey, index) => {
+    const relative = index - todayIndex;
+    const dayType = dayTypeForOffset(relative, dayTypes);
     if (hidesFixedSchedule(dayType?.type)) return;
     const wd = weekdaySun0(dayKey, timezone);
     for (const fixed of schedule) {

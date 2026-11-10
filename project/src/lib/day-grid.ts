@@ -17,7 +17,7 @@ import {
 import {
   DEFAULT_TZ,
   minutesOf,
-  nextDayKeys,
+  weekCenteredDayKeys,
   weekdaySun0,
 } from "@/lib/time";
 
@@ -52,6 +52,7 @@ export type DayGridModel = {
   endHour: number;
   dayKeys: string[];
   todayKey: string;
+  todayIndex: number;
   items: GridItem[];
   areas: SeedArea[];
   bands: SeedBand[];
@@ -61,7 +62,7 @@ export type DayGridModel = {
   updatedAt: Date;
 };
 
-/** Build today+2 grid. Fixed schedule always from seed (US-B3). */
+/** Build today−3…today+3 grid. Fixed schedule always from seed (US-B3). */
 export function buildDayGrid(opts: {
   isDemo: boolean;
   areas: SeedArea[];
@@ -75,16 +76,16 @@ export function buildDayGrid(opts: {
     opts.startHour ?? fictionalSeed.profile.settings.gridStartHour;
   const endHour = opts.endHour ?? fictionalSeed.profile.settings.gridEndHour;
   const now = opts.now ?? new Date();
-  const dayKeys = nextDayKeys(3, timezone, now);
-  const todayKey = dayKeys[0]!;
+  const { keys: dayKeys, todayIndex } = weekCenteredDayKeys(timezone, now);
+  const todayKey = dayKeys[todayIndex]!;
   const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
   const bands = fictionalSeed.bands;
   const dayTypes = fictionalSeed.dayTypes;
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
-  const scheduleItems = expandFixedSchedule(dayKeys, timezone);
+  const scheduleItems = expandFixedSchedule(dayKeys, timezone, todayIndex);
   const demoItems = opts.isDemo
-    ? expandDemoExtras(dayKeys, timezone, areaColour, dayTypes)
+    ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)
     : [];
   const items = [...scheduleItems, ...demoItems];
 
@@ -94,6 +95,7 @@ export function buildDayGrid(opts: {
     endHour,
     dayKeys,
     todayKey,
+    todayIndex,
     items,
     areas,
     bands,
@@ -107,15 +109,19 @@ export function buildDayGrid(opts: {
 /** Routines + task blocks for demo; commute hidden when day type hides fixed. */
 function expandDemoExtras(
   dayKeys: string[],
+  todayIndex: number,
   timezone: string,
   areaColour: Map<string, string>,
   dayTypes: SeedDayType[],
 ): GridItem[] {
   const items: GridItem[] = [];
 
-  for (const [offset, dayKey] of dayKeys.entries()) {
+  for (const [index, dayKey] of dayKeys.entries()) {
+    const relative = index - todayIndex;
     const wd = weekdaySun0(dayKey, timezone);
-    const hideCommute = hidesFixedSchedule(dayTypeForOffset(offset, dayTypes)?.type);
+    const hideCommute = hidesFixedSchedule(
+      dayTypeForOffset(relative, dayTypes)?.type,
+    );
     for (const routine of fictionalSeed.routines as SeedRoutine[]) {
       if (!routine.weekdays.includes(wd)) continue;
       if (hideCommute && /commute/i.test(routine.label)) continue;
@@ -132,7 +138,8 @@ function expandDemoExtras(
   }
 
   for (const block of fictionalSeed.blocks as SeedBlock[]) {
-    const date = dayKeys[block.dayOffset];
+    const index = todayIndex + block.dayOffset;
+    const date = dayKeys[index];
     if (!date) continue;
     items.push({
       id: block.id,
@@ -154,7 +161,6 @@ export function bandColour(level: EnergyLevel): string {
   return BAND_COLOURS[level];
 }
 
-/** Per half-hour slot colour from configured bands (first matching band). */
 export function slotBandLevel(
   slotHhmm: string,
   bands: SeedBand[],
@@ -212,7 +218,6 @@ function rangesOverlap(
   );
 }
 
-/** Row span for a grid item within the visible window. */
 export function itemPlacement(
   item: GridItem,
   startHour: number,

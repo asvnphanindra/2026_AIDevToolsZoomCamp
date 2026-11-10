@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, type MouseEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
 import {
   bandColour,
@@ -10,7 +10,9 @@ import { dayTypeForOffset } from "@/lib/schedule";
 import {
   buildHalfHourSlots,
   formatDayLabel,
+  formatHhmm,
   formatLastUpdated,
+  minutesOf,
   weekdaySun0,
 } from "@/lib/time";
 
@@ -20,7 +22,11 @@ type Props = {
   timezone?: string;
 };
 
-/** US-B1 grid + US-B2 energy strip and deep-work warnings. */
+const HOVER_MARK_START = "05:00";
+const HOVER_MARK_END = "22:00";
+const ROW_PX = 1.35; // rem — keep in sync with CSS
+
+/** Week grid (today−3…today+3) + energy strip + 15-min hover markers. */
 export function DayGrid({ isDemo, areas, timezone }: Props) {
   const model = useMemo(
     () => buildDayGrid({ isDemo, areas, timezone }),
@@ -34,19 +40,45 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
     () => new Set(model.warnings.map((w) => w.blockId)),
     [model.warnings],
   );
-  // Strip uses today's weekday pattern (bands are time-of-day).
   const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
+    null,
+  );
+
+  function onBodyMove(event: MouseEvent<HTMLDivElement>) {
+    const el = bodyRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const y = event.clientY - rect.top;
+    if (y < 0 || y > rect.height) {
+      setHover(null);
+      return;
+    }
+    const windowStart = model.startHour * 60;
+    const windowEnd = model.endHour * 60;
+    const markStart = minutesOf(HOVER_MARK_START);
+    const markEnd = minutesOf(HOVER_MARK_END);
+    const ratio = y / rect.height;
+    let mins = windowStart + ratio * (windowEnd - windowStart);
+    mins = Math.round(mins / 15) * 15;
+    mins = Math.min(Math.max(mins, markStart), markEnd);
+    mins = Math.min(Math.max(mins, windowStart), windowEnd);
+    const topPx = ((mins - windowStart) / (windowEnd - windowStart)) * rect.height;
+    setHover({ topPx, label: formatHhmm(mins) });
+  }
 
   return (
-    <section className="day-grid" aria-label="Three-day hourly grid">
+    <section className="day-grid" aria-label="Seven-day hourly grid">
       <div className="day-grid-meta">
-        <h2>Next 3 days</h2>
+        <h2>This week</h2>
         <p className="muted">
           Last updated{" "}
           <time dateTime={model.updatedAt.toISOString()}>
             {formatLastUpdated(model.updatedAt, model.timezone)}
           </time>{" "}
-          ({model.timezone}) · {model.scheduleFromSeed} fixed seed items
+          ({model.timezone}) · {model.scheduleFromSeed} fixed seed items ·
+          hover for 15-min marks ({HOVER_MARK_START}–{HOVER_MARK_END})
         </p>
       </div>
 
@@ -61,35 +93,42 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
       ) : null}
 
       <div
-        className="day-grid-board has-energy"
+        className="day-grid-board has-energy week-7"
         style={{
-          gridTemplateRows: `auto repeat(${slots.length}, minmax(1.35rem, auto))`,
+          gridTemplateRows: `auto repeat(${slots.length}, minmax(${ROW_PX}rem, auto))`,
         }}
       >
         <div className="day-grid-corner" aria-hidden />
         <div className="day-grid-energy-head" title="Energy">
           E
         </div>
-        {model.dayKeys.map((key, dayIdx) => (
-          <div
-            key={key}
-            className={
-              key === model.todayKey
-                ? "day-grid-head is-today"
-                : "day-grid-head is-later"
-            }
-            style={{ gridColumn: dayIdx + 3, gridRow: 1 }}
-          >
-            {key === model.todayKey ? "Today · " : null}
-            {formatDayLabel(key, model.timezone)}
-            {(() => {
-              const dt = dayTypeForOffset(dayIdx, model.dayTypes);
-              return dt ? (
-                <span className="day-type-tag"> · {dt.label}</span>
-              ) : null;
-            })()}
-          </div>
-        ))}
+        {model.dayKeys.map((key, dayIdx) => {
+          const relative = dayIdx - model.todayIndex;
+          const isPast = relative < 0;
+          const isToday = relative === 0;
+          return (
+            <div
+              key={key}
+              className={
+                isToday
+                  ? "day-grid-head is-today"
+                  : isPast
+                    ? "day-grid-head is-past"
+                    : "day-grid-head is-future"
+              }
+              style={{ gridColumn: dayIdx + 3, gridRow: 1 }}
+            >
+              {isToday ? "Today · " : null}
+              {formatDayLabel(key, model.timezone)}
+              {(() => {
+                const dt = dayTypeForOffset(relative, model.dayTypes);
+                return dt ? (
+                  <span className="day-type-tag"> · {dt.label}</span>
+                ) : null;
+              })()}
+            </div>
+          );
+        })}
 
         {slots.map((slot, idx) => (
           <div
@@ -121,55 +160,79 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           })}
         </div>
 
-        {model.dayKeys.map((dayKey, dayIdx) => (
-          <div
-            key={`col-${dayKey}`}
-            className={
-              dayKey === model.todayKey
-                ? "day-grid-col is-today"
-                : "day-grid-col is-later"
-            }
-            style={{
-              gridColumn: dayIdx + 3,
-              gridRow: `2 / span ${slots.length}`,
-            }}
-          >
-            {slots.map((slot) => (
-              <div key={`${dayKey}-${slot}`} className="day-grid-slot" />
-            ))}
-            {model.items
-              .filter((item) => item.date === dayKey)
-              .map((item) => {
-                const place = itemPlacement(
-                  item,
-                  model.startHour,
-                  model.endHour,
-                );
-                if (!place) return null;
-                const warned = warnIds.has(item.id);
-                return (
-                  <article
-                    key={item.id}
-                    className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}`}
-                    style={{
-                      top: `calc(${(place.rowStart - 2) * 1.35}rem)`,
-                      height: `calc(${place.rowSpan * 1.35}rem - 2px)`,
-                      background: item.colour,
-                    }}
-                    title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}`}
-                  >
-                    <span className="day-grid-item-title">
-                      {warned ? "! " : ""}
-                      {item.title}
-                    </span>
-                    <span className="day-grid-item-time">
-                      {item.start}–{item.end}
-                    </span>
-                  </article>
-                );
-              })}
-          </div>
-        ))}
+        <div
+          ref={bodyRef}
+          className="day-grid-body"
+          style={{
+            gridColumn: `3 / span ${model.dayKeys.length}`,
+            gridRow: `2 / span ${slots.length}`,
+          }}
+          onMouseMove={onBodyMove}
+          onMouseLeave={() => setHover(null)}
+        >
+          {model.dayKeys.map((dayKey, dayIdx) => {
+            const relative = dayIdx - model.todayIndex;
+            const isPast = relative < 0;
+            const isToday = relative === 0;
+            return (
+              <div
+                key={`col-${dayKey}`}
+                className={
+                  isToday
+                    ? "day-grid-col is-today"
+                    : isPast
+                      ? "day-grid-col is-past"
+                      : "day-grid-col is-future"
+                }
+              >
+                {slots.map((slot) => (
+                  <div key={`${dayKey}-${slot}`} className="day-grid-slot" />
+                ))}
+                {model.items
+                  .filter((item) => item.date === dayKey)
+                  .map((item) => {
+                    const place = itemPlacement(
+                      item,
+                      model.startHour,
+                      model.endHour,
+                    );
+                    if (!place) return null;
+                    const warned = warnIds.has(item.id);
+                    return (
+                      <article
+                        key={item.id}
+                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}`}
+                        style={{
+                          top: `calc(${(place.rowStart - 2) * ROW_PX}rem)`,
+                          height: `calc(${place.rowSpan * ROW_PX}rem - 2px)`,
+                          background: item.colour,
+                        }}
+                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}`}
+                      >
+                        <span className="day-grid-item-title">
+                          {warned ? "! " : ""}
+                          {item.title}
+                        </span>
+                        <span className="day-grid-item-time">
+                          {item.start}–{item.end}
+                        </span>
+                      </article>
+                    );
+                  })}
+              </div>
+            );
+          })}
+
+          {hover ? (
+            <div
+              className="day-grid-hover-guide"
+              style={{ top: hover.topPx }}
+              aria-hidden
+            >
+              <span className="day-grid-hover-label">{hover.label}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <ul className="day-grid-legend muted">

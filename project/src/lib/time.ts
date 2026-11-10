@@ -10,7 +10,34 @@ export function dateKeyInTz(date: Date, timeZone = DEFAULT_TZ): string {
   }).format(date);
 }
 
-/** Today + next `count-1` days as YYYY-MM-DD keys in TZ. */
+/**
+ * Seven day keys centered on today: today-3 … today … today+3.
+ * Returns `{ keys, todayIndex }` where todayIndex is always 3.
+ */
+export function weekCenteredDayKeys(
+  timeZone = DEFAULT_TZ,
+  from = new Date(),
+): { keys: string[]; todayIndex: number } {
+  const todayIndex = 3;
+  const keys: string[] = [];
+  for (let offset = -todayIndex; offset <= todayIndex; offset++) {
+    const d = new Date(from.getTime() + offset * 86_400_000);
+    keys.push(dateKeyInTz(d, timeZone));
+  }
+  // DST safety: rebuild by walking calendar days if duplicates.
+  if (new Set(keys).size === 7) return { keys, todayIndex };
+
+  const out: string[] = [];
+  let cursor = new Date(from.getTime() - todayIndex * 86_400_000);
+  while (out.length < 7) {
+    const key = dateKeyInTz(cursor, timeZone);
+    if (!out.includes(key)) out.push(key);
+    cursor = new Date(cursor.getTime() + 86_400_000);
+  }
+  return { keys: out, todayIndex };
+}
+
+/** @deprecated prefer weekCenteredDayKeys */
 export function nextDayKeys(
   count: number,
   timeZone = DEFAULT_TZ,
@@ -21,7 +48,6 @@ export function nextDayKeys(
     const d = new Date(from.getTime() + i * 86_400_000);
     keys.push(dateKeyInTz(d, timeZone));
   }
-  // Deduplicate DST edge by walking calendar via noon UTC offset retry if needed.
   if (new Set(keys).size === count) return keys;
   const out: string[] = [];
   let cursor = new Date(from);
@@ -34,7 +60,6 @@ export function nextDayKeys(
 }
 
 export function weekdaySun0(dateKey: string, timeZone = DEFAULT_TZ): number {
-  // Parse as local noon in TZ via formatter parts.
   const [y, m, d] = dateKey.split("-").map(Number);
   const utcGuess = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
   const weekday = new Intl.DateTimeFormat("en-US", {
@@ -81,6 +106,12 @@ export function minutesOf(hhmm: string): number {
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
+export function formatHhmm(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function buildHalfHourSlots(
   startHour: number,
   endHour: number,
@@ -92,6 +123,18 @@ export function buildHalfHourSlots(
     slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
   }
   return slots;
+}
+
+/** Inclusive 15-minute markers from startHhmm through endHhmm. */
+export function buildQuarterHourMarkers(
+  startHhmm: string,
+  endHhmm: string,
+): string[] {
+  const markers: string[] = [];
+  for (let mins = minutesOf(startHhmm); mins <= minutesOf(endHhmm); mins += 15) {
+    markers.push(formatHhmm(mins));
+  }
+  return markers;
 }
 
 export { DEFAULT_TZ };

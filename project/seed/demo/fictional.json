@@ -3,8 +3,8 @@
     "displayName": "Alex Rivera (demo)",
     "timezone": "Asia/Kolkata",
     "settings": {
-      "gridStartHour": 6,
-      "gridEndHour": 23,
+      "gridStartHour": 5,
+      "gridEndHour": 22,
       "reminderMinutes": 10
     }
   },
@@ -18,7 +18,7 @@
     {
       "id": "band-high",
       "level": "high",
-      "start": "06:00",
+      "start": "05:00",
       "end": "12:00",
       "weekdays": [0, 1, 2, 3, 4, 5, 6]
     },
@@ -33,7 +33,7 @@
       "id": "band-low",
       "level": "low",
       "start": "17:00",
-      "end": "23:00",
+      "end": "22:00",
       "weekdays": [0, 1, 2, 3, 4, 5, 6]
     }
   ],
@@ -67,6 +67,16 @@
       "status": "backlog",
       "horizon": "day",
       "deepWork": false
+    },
+    {
+      "id": "t4",
+      "title": "Guitar practice",
+      "areaId": "passion",
+      "durationMin": 30,
+      "priority": "low",
+      "status": "backlog",
+      "horizon": "day",
+      "deepWork": false
     }
   ],
   "routines": [
@@ -83,6 +93,13 @@
       "start": "08:30",
       "end": "09:00",
       "weekdays": [1, 2, 3, 4, 5]
+    },
+    {
+      "id": "r-breakfast",
+      "label": "Breakfast",
+      "start": "07:00",
+      "end": "07:30",
+      "weekdays": [0, 1, 2, 3, 4, 5, 6]
     }
   ],
   "schedule": [
@@ -96,15 +113,6 @@
       "location": "Zoom"
     },
     {
-      "id": "s-lab",
-      "title": "Study lab",
-      "start": "15:00",
-      "end": "16:30",
-      "weekday": 3,
-      "kind": "class",
-      "location": "Room 2"
-    },
-    {
       "id": "s-office",
       "title": "Office hours",
       "start": "11:00",
@@ -112,6 +120,15 @@
       "weekday": 2,
       "kind": "meeting",
       "location": "Hall A"
+    },
+    {
+      "id": "s-lab",
+      "title": "Study lab",
+      "start": "15:00",
+      "end": "16:30",
+      "weekday": 3,
+      "kind": "class",
+      "location": "Room 2"
     },
     {
       "id": "s-seminar",
@@ -130,6 +147,42 @@
       "weekday": 5,
       "kind": "meeting",
       "location": "Teams"
+    },
+    {
+      "id": "s-mosque",
+      "title": "Community class",
+      "start": "10:00",
+      "end": "11:30",
+      "weekday": 6,
+      "kind": "class",
+      "location": "Library"
+    },
+    {
+      "id": "s-review",
+      "title": "Sunday planning",
+      "start": "09:00",
+      "end": "10:00",
+      "weekday": 0,
+      "kind": "meeting",
+      "location": "Home"
+    },
+    {
+      "id": "s-1on1",
+      "title": "Mentor 1:1",
+      "start": "15:00",
+      "end": "15:45",
+      "weekday": 1,
+      "kind": "meeting",
+      "location": "Cafe"
+    },
+    {
+      "id": "s-clinic",
+      "title": "Writing clinic",
+      "start": "16:00",
+      "end": "17:00",
+      "weekday": 2,
+      "kind": "class",
+      "location": "Lab 3"
     }
   ],
   "dayTypes": [
@@ -140,6 +193,33 @@
     }
   ],
   "blocks": [
+    {
+      "id": "b-past-a",
+      "title": "Shipped patch notes",
+      "areaId": "work",
+      "dayOffset": -3,
+      "start": "09:30",
+      "end": "10:30",
+      "deepWork": true
+    },
+    {
+      "id": "b-past-b",
+      "title": "Lit review skim",
+      "areaId": "study",
+      "dayOffset": -2,
+      "start": "14:00",
+      "end": "15:00",
+      "deepWork": false
+    },
+    {
+      "id": "b-past-c",
+      "title": "School pickup",
+      "areaId": "family",
+      "dayOffset": -1,
+      "start": "15:30",
+      "end": "16:15",
+      "deepWork": false
+    },
     {
       "id": "b1",
       "title": "Draft sprint notes",
@@ -159,15 +239,6 @@
       "deepWork": false
     },
     {
-      "id": "b3",
-      "title": "Family walk",
-      "areaId": "family",
-      "dayOffset": 1,
-      "start": "18:00",
-      "end": "18:40",
-      "deepWork": false
-    },
-    {
       "id": "b4",
       "title": "Deep focus write-up",
       "areaId": "work",
@@ -177,12 +248,48 @@
       "deepWork": true
     },
     {
+      "id": "b3",
+      "title": "Family walk",
+      "areaId": "family",
+      "dayOffset": 1,
+      "start": "18:00",
+      "end": "18:40",
+      "deepWork": false
+    },
+    {
       "id": "b5",
       "title": "Sketch side project",
       "areaId": "passion",
       "dayOffset": 2,
-      "start": "20:00",
-      "end": "21:00",
+      "start": "19:30",
+      "end": "20:30",
+      "deepWork": false
+    },
+    {
+      "id": "b6",
+      "title": "Guitar practice",
+      "areaId": "passion",
+      "dayOffset": 3,
+      "start": "17:30",
+      "end": "18:00",
+      "deepWork": false
+    },
+    {
+      "id": "b7",
+      "title": "Proposal outline",
+      "areaId": "study",
+      "dayOffset": 2,
+      "start": "10:00",
+      "end": "11:00",
+      "deepWork": true
+    },
+    {
+      "id": "b8",
+      "title": "Inbox zero",
+      "areaId": "work",
+      "dayOffset": 3,
+      "start": "09:00",
+      "end": "09:30",
       "deepWork": false
     }
   ]

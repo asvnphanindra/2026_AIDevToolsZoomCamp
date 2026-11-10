@@ -94,12 +94,12 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 4. Emulator UI :4000 → confirm Auth users and Firestore `users/{uid}/areas`.
 5. Repo check: only fictional seed committed; `.env` / `seed/personal` git-ignored.
 
-### Verify US-B1 (Issue #25)
+### Verify week grid UX
 
 1. `npm start` → **Try demo**.
-2. See **today + next 2 days**, 30-min rows 06:00–23:00; today highlighted; later days dimmed.
-3. Area-coloured blocks, grey routines, distinct fixed-schedule colour; **Last updated** in `Asia/Kolkata`.
-4. **Sign in with Google** → empty grid skeleton (no demo items).
+2. Seven columns **today−3 … today … today+3**; past three greyed; today centered/highlighted.
+3. Rich seed: fixed schedule + blocks across the week; energy strip still works.
+4. Hover the grid → 15-minute time marker (05:00–22:00).
 
 ### Verify US-B2 (Issue #26)
 
