@@ -221,7 +221,7 @@ flowchart LR
 - **Backend:** Firestore accessed directly from the client with security rules; optional Cloud Functions for logic that shouldn't run in the browser.
 - **Docker:** production is static hosting, so Docker is used for **local run and review**. `docker compose up` starts the Firebase Emulator Suite (Hosting, Auth, Firestore) with demo seed data. No Firebase account needed.
 - **Environments:** a public demo project with sample data, and private user projects; the repo defaults to the demo.
-- **CI/CD:** GitHub Actions runs unit, rules, and integration tests on the emulators, then deploys to the demo project on merge to `main`.
+- **CI/CD:** GitHub Actions runs unit, rules, and integration tests on the emulators. **Firebase Hosting deploy is after course submission** (local run/test first); optional deploy to the demo project later.
 
 ## 8. Scope
 
@@ -236,3 +236,4 @@ flowchart LR
 3. Single user per account; no sharing in the MVP.
 4. The data model includes `horizon`, `period`, and `parentId` from the start, so the 3-month and 3-quarter views need no migration.
 5. Reviewers only ever see fictional demo data.
+6. **Local first:** run and test with the Emulator Suite / Docker before any cloud Hosting deploy; Hosting only after course submission.

@@ -18,14 +18,13 @@ App folders (`frontend/`, Firebase config, Docker, tests) arrive in Section B+.
 
 ## Product scope
 
-Read [product-spec.md](product-spec.md) before changing behavior. MVP:
+Read [product-spec.md](product-spec.md) and [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) before changing behavior. MVP = US-A1, A2, B1–B5, C1–C3, D1, D2, E1–E3, F1, F2.
 
 - Firebase Auth (Google) + Firestore; local emulators first (Hosting after submission — [plan.md](plan.md))
-- Day / 3-day grid + thin week + 3-week goals; drag tasks to blocks
-- Done / Partly / Not done; life areas; seeded timetable; day types
+- 3-day grid, energy bands, seeded fixed schedule, day types, drag tasks, daily minimums, check-in/replan, focus + weekly goals, 3-week view, calendar/series
 - Demo seed only in public paths
 
-Do not add Phase 2 features (month/quarter break-down, push digests, PNG export) unless an Issue is opened and prioritized.
+Do not add Phase 2 US-* unless explicitly prioritized in [task-tracker.md](task-tracker.md).
 
 ## Modular docs (same folder)
 
@@ -35,18 +34,18 @@ Do not add Phase 2 features (month/quarter break-down, push digests, PNG export)
 | [process.md](process.md) | How to work, DoD, planned commands |
 | [agent-team.md](agent-team.md) | Roles and collaboration |
 | [architecture.md](architecture.md) | Stack and data boundaries |
-| [task-tracker.md](task-tracker.md) | Public Issues + acceptance criteria + evidence |
+| [task-tracker.md](task-tracker.md) | MVP backlog (US-*) + short AC — **no new GitHub Issues unless asked** |
 
 ## Working agreements
 
-1. Prefer the simplest option that matches `product-spec.md`.
-2. Track work in public GitHub Issues (`work-planner` label); put AC on the Issue.
+1. Prefer the simplest option that matches `product-spec.md` + FUNCTIONAL_SPEC US-* AC.
+2. Track work via `_docs/task-tracker.md` backlog ids (`US-B1`, …). Do **not** create GitHub Issues unless the owner asks.
 3. Adapt patterns from `../../module_2` — never modify `module_2` for this project.
 4. No secrets, no personal seed, no real PII in git.
-5. Commit and push regularly; small PRs linked to Issues.
-6. Section A is docs-only — do not scaffold the app until Section B is assigned.
-7. Keep markdown (except README) under `_docs/`.
+5. Commit and push regularly; small PRs that name the US-* id.
+6. Keep markdown (except README) under `_docs/`.
+7. If FUNCTIONAL_SPEC and product-spec disagree, update both in the same change; **US-* AC in FUNCTIONAL_SPEC win for detail**.
 
 ## Source draft
 
-Detailed FR list and Firestore field tables: [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md). If draft and `product-spec.md` disagree, **product-spec + Issue AC win** for MVP; update the draft in the same change set.
+User stories + full AC + data model: [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md).
