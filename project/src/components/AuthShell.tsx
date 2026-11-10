@@ -1,5 +1,7 @@
 import { DayGrid } from "@/components/DayGrid";
+import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
+import { fictionalSeed } from "@/data/fictional-seed";
 
 /** US-A1/A2 auth shell + US-B1 day grid when signed in. */
 export function AuthShell() {
@@ -76,9 +78,14 @@ export function AuthShell() {
         </button>
       </header>
 
+      <TaskBacklog
+        isDemo={isDemo}
+        areas={view?.areas?.length ? view.areas : fictionalSeed.areas}
+      />
+
       <DayGrid
         isDemo={isDemo}
-        areas={view?.areas ?? []}
+        areas={view?.areas?.length ? view.areas : fictionalSeed.areas}
         timezone="Asia/Kolkata"
       />
 

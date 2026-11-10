@@ -64,6 +64,7 @@ project/
 | US-B3 fixed schedule from seed (Issue #27) | ☑ |
 | US-B4 special day types (Issue #28) | ☑ |
 | US-B5 one-off schedule changes (Issue #29) | ☑ |
+| US-C1 capture tasks (Issue #30) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -117,6 +118,12 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 2. Seed: brown **Doctor visit** (extra today), **Cover teaching** (sub), cancel on today−2 10:00 slot.
 3. Form: pick day/kind/times → on overlap, confirm replace vs extra.
 4. Cancel removes overlapping fixed items that date only.
+
+### Verify US-C1 (Issue #30)
+
+1. `npm start` → **Try demo**.
+2. Backlog shows seed tasks; **Add** title/area/duration/priority/due.
+3. **Edit** / **Delete** a backlog row; list updates (localStorage).
 
 ### Verify US-B2 (Issue #26)
 
