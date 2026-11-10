@@ -185,6 +185,32 @@
       "location": "Lab 3"
     }
   ],
+  "scheduleChanges": [
+    {
+      "id": "sc-extra-doc",
+      "dayOffset": 0,
+      "kind": "extra",
+      "title": "Doctor visit",
+      "start": "11:00",
+      "end": "11:45"
+    },
+    {
+      "id": "sc-cancel-am",
+      "dayOffset": -2,
+      "kind": "cancel",
+      "title": "Cancel 10:00 slot",
+      "start": "10:00",
+      "end": "10:30"
+    },
+    {
+      "id": "sc-sub-pm",
+      "dayOffset": 0,
+      "kind": "substitute",
+      "title": "Cover teaching block",
+      "start": "15:00",
+      "end": "16:00"
+    }
+  ],
   "dayTypes": [
     {
       "dayOffset": -1,

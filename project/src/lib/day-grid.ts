@@ -8,7 +8,9 @@ import {
   type SeedDayType,
   type SeedRoutine,
 } from "@/data/fictional-seed";
+import type { SeedScheduleChange } from "@/data/fictional-seed";
 import {
+  applyScheduleChanges,
   dayTypeForOffset,
   expandFixedSchedule,
   hidesCommute,
@@ -72,6 +74,8 @@ export function buildDayGrid(opts: {
   now?: Date;
   /** Effective day types (seed + user overrides). */
   dayTypes?: SeedDayType[];
+  /** Seed + user one-off schedule changes (US-B5). */
+  scheduleChanges?: SeedScheduleChange[];
 }): DayGridModel {
   const timezone = opts.timezone || DEFAULT_TZ;
   const startHour =
@@ -83,14 +87,22 @@ export function buildDayGrid(opts: {
   const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
   const bands = fictionalSeed.bands;
   const dayTypes = opts.dayTypes ?? fictionalSeed.dayTypes;
+  const scheduleChanges =
+    opts.scheduleChanges ?? fictionalSeed.scheduleChanges ?? [];
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
-  const scheduleItems = expandFixedSchedule(
+  const baseSchedule = expandFixedSchedule(
     dayKeys,
     timezone,
     todayIndex,
     fictionalSeed.schedule,
     dayTypes,
+  );
+  const scheduleItems = applyScheduleChanges(
+    baseSchedule,
+    dayKeys,
+    todayIndex,
+    scheduleChanges,
   );
   const demoItems = opts.isDemo
     ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)

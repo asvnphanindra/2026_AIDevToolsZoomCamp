@@ -1,10 +1,18 @@
-import { useMemo, useRef, useState, type MouseEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from "react";
 import {
   DAY_TYPE_LABELS,
   fictionalSeed,
   type DayTypeKind,
+  type ScheduleChangeKind,
   type SeedArea,
   type SeedDayType,
+  type SeedScheduleChange,
 } from "@/data/fictional-seed";
 import {
   bandColour,
@@ -15,7 +23,9 @@ import {
 import {
   dayTypeForOffset,
   defaultLabelFor,
+  findOverlappingSchedule,
   mergeDayTypes,
+  mergeScheduleChanges,
 } from "@/lib/schedule";
 import {
   buildHalfHourSlots,
@@ -36,6 +46,7 @@ const HOVER_MARK_START = "05:00";
 const HOVER_MARK_END = "22:00";
 const ROW_PX = 1.35;
 const STORAGE_KEY = "work-planner.day-type-overrides";
+const CHANGES_KEY = "work-planner.schedule-changes";
 
 const DAY_TYPE_OPTIONS: DayTypeKind[] = [
   "normal",
@@ -45,30 +56,59 @@ const DAY_TYPE_OPTIONS: DayTypeKind[] = [
   "exam",
 ];
 
-function readOverrides(): SeedDayType[] {
+function readJson<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as SeedDayType[];
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-/** Week grid + US-B4 day-type marking. */
+/** Week grid + US-B4 day types + US-B5 one-off schedule changes. */
 export function DayGrid({ isDemo, areas, timezone }: Props) {
   const [overrides, setOverrides] = useState<SeedDayType[]>(() =>
-    typeof localStorage === "undefined" ? [] : readOverrides(),
+    typeof localStorage === "undefined"
+      ? []
+      : readJson<SeedDayType[]>(STORAGE_KEY, []),
   );
+  const [extraChanges, setExtraChanges] = useState<SeedScheduleChange[]>(() =>
+    typeof localStorage === "undefined"
+      ? []
+      : readJson<SeedScheduleChange[]>(CHANGES_KEY, []),
+  );
+  const [form, setForm] = useState({
+    dayOffset: 0,
+    kind: "extra" as ScheduleChangeKind,
+    title: "",
+    start: "10:00",
+    end: "10:30",
+  });
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
     [overrides],
   );
+  const scheduleChanges = useMemo(
+    () =>
+      mergeScheduleChanges(
+        fictionalSeed.scheduleChanges ?? [],
+        extraChanges,
+      ),
+    [extraChanges],
+  );
 
   const model = useMemo(
-    () => buildDayGrid({ isDemo, areas, timezone, dayTypes }),
-    [isDemo, areas, timezone, dayTypes],
+    () =>
+      buildDayGrid({
+        isDemo,
+        areas,
+        timezone,
+        dayTypes,
+        scheduleChanges,
+      }),
+    [isDemo, areas, timezone, dayTypes, scheduleChanges],
   );
   const slots = useMemo(
     () => buildHalfHourSlots(model.startHour, model.endHour),
@@ -102,6 +142,46 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextList));
       return nextList;
     });
+  }
+
+  function submitOneOff(event: FormEvent) {
+    event.preventDefault();
+    const title = form.title.trim();
+    if (!title) return;
+    const date = model.dayKeys[model.todayIndex + form.dayOffset];
+    if (!date) return;
+
+    let kind = form.kind;
+    if (kind !== "cancel") {
+      const overlaps = findOverlappingSchedule(
+        model.items,
+        date,
+        form.start,
+        form.end,
+      );
+      if (overlaps.length) {
+        const names = overlaps.map((o) => `${o.title} ${o.start}–${o.end}`).join("; ");
+        const replace = window.confirm(
+          `Overlaps: ${names}\n\nOK = replace (substitute)\nCancel = add as extra`,
+        );
+        kind = replace ? "substitute" : "extra";
+      }
+    }
+
+    const entry: SeedScheduleChange = {
+      id: `user-${Date.now()}`,
+      dayOffset: form.dayOffset,
+      kind,
+      title,
+      start: form.start,
+      end: form.end,
+    };
+    setExtraChanges((prev) => {
+      const next = [...prev, entry];
+      localStorage.setItem(CHANGES_KEY, JSON.stringify(next));
+      return next;
+    });
+    setForm((f) => ({ ...f, title: "" }));
   }
 
   function onBodyMove(event: MouseEvent<HTMLDivElement>) {
@@ -150,6 +230,87 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           .
         </div>
       ) : null}
+
+      <form className="one-off-form" onSubmit={submitOneOff}>
+        <h3>One-off schedule change</h3>
+        <div className="one-off-row">
+          <label>
+            Day
+            <select
+              value={form.dayOffset}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  dayOffset: Number(e.target.value),
+                }))
+              }
+            >
+              {model.dayKeys.map((key, idx) => {
+                const rel = idx - model.todayIndex;
+                return (
+                  <option key={key} value={rel}>
+                    {rel === 0 ? "Today · " : ""}
+                    {formatDayLabel(key, model.timezone)}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          <label>
+            Kind
+            <select
+              value={form.kind}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  kind: e.target.value as ScheduleChangeKind,
+                }))
+              }
+            >
+              <option value="extra">Extra</option>
+              <option value="substitute">Substitute</option>
+              <option value="cancel">Cancel</option>
+            </select>
+          </label>
+          <label>
+            Title
+            <input
+              value={form.title}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, title: e.target.value }))
+              }
+              placeholder="Session title"
+              required
+            />
+          </label>
+          <label>
+            Start
+            <input
+              type="time"
+              value={form.start}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, start: e.target.value }))
+              }
+              required
+            />
+          </label>
+          <label>
+            End
+            <input
+              type="time"
+              value={form.end}
+              onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))}
+              required
+            />
+          </label>
+          <button type="submit">Apply</button>
+        </div>
+        <p className="muted hint-inline">
+          Overlap prompts replace vs extra. Cancel removes overlapping fixed
+          items that day only. Seed demos: doctor (extra), cancel −2, cover
+          (sub).
+        </p>
+      </form>
 
       <div
         className="day-grid-board has-energy week-7"
@@ -338,6 +499,9 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         <li>
           <span className="swatch" style={{ background: "#5B7C99" }} /> Online
           slot
+        </li>
+        <li>
+          <span className="swatch" style={{ background: "#8B4513" }} /> One-off
         </li>
       </ul>
     </section>

@@ -4,13 +4,15 @@ import {
   type DayTypeKind,
   type SeedDayType,
   type SeedSchedule,
+  type SeedScheduleChange,
+  type ScheduleChangeKind,
 } from "@/data/fictional-seed";
-import { weekdaySun0 } from "@/lib/time";
+import { minutesOf, weekdaySun0 } from "@/lib/time";
 
 export const SCHEDULE_COLOUR = "#C45C26";
-/** Fixed items on Online days are greyed (US-B4 AC2). */
 export const GREYED_SCHEDULE_COLOUR = "#9B9B9B";
 export const ONLINE_SLOT_COLOUR = "#5B7C99";
+export const ONE_OFF_COLOUR = "#8B4513";
 
 export type ScheduleGridItem = {
   id: string;
@@ -22,6 +24,7 @@ export type ScheduleGridItem = {
   colour: string;
   greyed?: boolean;
   onlineSlot?: boolean;
+  oneOff?: ScheduleChangeKind;
 };
 
 export function hidesFixedSchedule(type: DayTypeKind | undefined): boolean {
@@ -40,7 +43,6 @@ export function isOnlineDay(type: DayTypeKind | undefined): boolean {
   return type === "online";
 }
 
-/** `relativeOffset` is days from today (−3…+3 on the week grid). */
 export function dayTypeForOffset(
   relativeOffset: number,
   dayTypes: SeedDayType[] = fictionalSeed.dayTypes,
@@ -48,9 +50,19 @@ export function dayTypeForOffset(
   return dayTypes.find((d) => d.dayOffset === relativeOffset);
 }
 
+export function rangesOverlap(
+  aStart: string,
+  aEnd: string,
+  bStart: string,
+  bEnd: string,
+): boolean {
+  return (
+    minutesOf(aStart) < minutesOf(bEnd) && minutesOf(aEnd) > minutesOf(bStart)
+  );
+}
+
 /**
- * Expand seeded weekly schedule + online slots for US-B3/B4.
- * Holiday / No-fixed: hide. Online: grey fixed + show onlineSlots.
+ * Expand seeded weekly schedule + online slots (US-B3/B4).
  */
 export function expandFixedSchedule(
   dayKeys: string[],
@@ -101,6 +113,67 @@ export function expandFixedSchedule(
   return items;
 }
 
+/** US-B5 — apply date-scoped cancel / substitute / extra onto schedule items. */
+export function applyScheduleChanges(
+  items: ScheduleGridItem[],
+  dayKeys: string[],
+  todayIndex: number,
+  changes: SeedScheduleChange[],
+): ScheduleGridItem[] {
+  let next = [...items];
+  for (const change of changes) {
+    const date = dayKeys[todayIndex + change.dayOffset];
+    if (!date) continue;
+
+    if (change.kind === "cancel" || change.kind === "substitute") {
+      next = next.filter(
+        (item) =>
+          !(
+            item.date === date &&
+            item.kind === "schedule" &&
+            !item.oneOff &&
+            rangesOverlap(item.start, item.end, change.start, change.end)
+          ),
+      );
+    }
+
+    if (change.kind === "cancel") continue;
+
+    next.push({
+      id: `oneoff-${change.id}`,
+      date,
+      title:
+        change.kind === "substitute"
+          ? `${change.title} (sub)`
+          : `${change.title} (extra)`,
+      start: change.start,
+      end: change.end,
+      kind: "schedule",
+      colour: ONE_OFF_COLOUR,
+      oneOff: change.kind,
+    });
+  }
+  return next;
+}
+
+export function findOverlappingSchedule(
+  items: { date: string; start: string; end: string; title: string }[],
+  date: string,
+  start: string,
+  end: string,
+): { title: string; start: string; end: string }[] {
+  return items
+    .filter(
+      (item) =>
+        item.date === date && rangesOverlap(item.start, item.end, start, end),
+    )
+    .map((item) => ({
+      title: item.title,
+      start: item.start,
+      end: item.end,
+    }));
+}
+
 export function seededScheduleCount(): number {
   return fictionalSeed.schedule.length;
 }
@@ -120,4 +193,14 @@ export function mergeDayTypes(
 
 export function defaultLabelFor(type: DayTypeKind): string {
   return DAY_TYPE_LABELS[type];
+}
+
+export function mergeScheduleChanges(
+  base: SeedScheduleChange[],
+  extras: SeedScheduleChange[],
+): SeedScheduleChange[] {
+  const map = new Map<string, SeedScheduleChange>();
+  for (const c of base) map.set(c.id, c);
+  for (const c of extras) map.set(c.id, c);
+  return [...map.values()];
 }

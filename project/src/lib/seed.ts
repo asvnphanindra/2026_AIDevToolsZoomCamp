@@ -119,12 +119,17 @@ async function writeSeedToUser(
     const dateKey = `offset-${dayType.dayOffset}`;
     batch.set(doc(db, "users", uid, "dayTypes", dateKey), dayType);
   }
+  for (const change of seed.scheduleChanges ?? []) {
+    const { id, ...fields } = change;
+    batch.set(doc(db, "users", uid, "scheduleChanges", id), fields);
+  }
   // Shared fictional template (read-only for reviewers via rules).
   batch.set(doc(db, "demo", "seed"), {
     label: "Fictional Work Planner sample",
     areaCount: seed.areas.length,
     taskCount: seed.tasks.length,
     scheduleCount: seed.schedule.length,
+    scheduleChangeCount: (seed.scheduleChanges ?? []).length,
     updatedAt: serverTimestamp(),
   });
   await batch.commit();

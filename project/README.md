@@ -63,6 +63,7 @@ project/
 | US-B2 energy bands (Issue #26) | ☑ |
 | US-B3 fixed schedule from seed (Issue #27) | ☑ |
 | US-B4 special day types (Issue #28) | ☑ |
+| US-B5 one-off schedule changes (Issue #29) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -109,6 +110,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 3. Holiday / No-fixed: no orange fixed items + no commute.
 4. Online: grey fixed items + blue online slots; no commute.
 5. Change a day’s dropdown → header label + grid behaviour update.
+
+### Verify US-B5 (Issue #29)
+
+1. `npm start` → **Try demo**.
+2. Seed: brown **Doctor visit** (extra today), **Cover teaching** (sub), cancel on today−2 10:00 slot.
+3. Form: pick day/kind/times → on overlap, confirm replace vs extra.
+4. Cancel removes overlapping fixed items that date only.
 
 ### Verify US-B2 (Issue #26)
 

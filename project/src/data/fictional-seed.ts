@@ -76,6 +76,18 @@ export type SeedDayType = {
   onlineSlots?: OnlineSlot[];
 };
 
+export type ScheduleChangeKind = "substitute" | "extra" | "cancel";
+
+/** One-off change for a single date (US-B5). dayOffset relative to today. */
+export type SeedScheduleChange = {
+  id: string;
+  dayOffset: number;
+  kind: ScheduleChangeKind;
+  title: string;
+  start: string;
+  end: string;
+};
+
 export type SeedBlock = {
   id: string;
   title: string;
@@ -93,6 +105,7 @@ export type FictionalSeed = {
   tasks: SeedTask[];
   routines: SeedRoutine[];
   schedule: SeedSchedule[];
+  scheduleChanges: SeedScheduleChange[];
   dayTypes: SeedDayType[];
   blocks: SeedBlock[];
 };
