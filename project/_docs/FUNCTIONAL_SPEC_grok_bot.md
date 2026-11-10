@@ -2,7 +2,7 @@
 
 **Project:** AI Dev Tools Zoomcamp, Project 2 (Attempt 2), due Tue 17 Nov 2026, 4:30 AM IST
 **Owner:** A S V N Phanindra (Phani)
-**Status:** Draft v0.3, 9 Nov 2026 (Firestore, privacy and Docker decided)
+**Status:** Draft v0.4, 10 Nov 2026 (adds 3-3-3-3 planning horizons)
 **Goal:** Replace today's static PNG planner with an interactive web app where tasks can be planned, moved, tracked, and reviewed.
 
 ---
@@ -105,6 +105,26 @@ Today the planner is a Python script that renders an image each morning. It work
 - FR-32: Log a short note when a PhD block is marked done.
 - FR-33: "Generate status update" builds a summary of all PhD notes since the last status date, ready to copy.
 
+### 4.10 Planning horizons (3 days, 3 weeks, 3 months, 3 quarters)
+
+Plan at four zoom levels, each looking three units ahead. Bigger items break down into smaller ones.
+
+| Horizon | View | What you plan | Unit |
+|---|---|---|---|
+| **3 days** | Hourly grid (today + next 2 days) | Time blocks | Day |
+| **3 weeks** | Week columns with day rows, no clock times | Tasks assigned to a day or "sometime this week", weekly goals | Week (Mon–Sun, ISO week) |
+| **3 months** | Month columns with week rows | Monthly goals and milestones (e.g. "PhD Status #4", "Project 2 submitted") | Month |
+| **3 quarters** | Quarter columns | Quarterly objectives per life area (e.g. "Finish survey paper draft") | Quarter (Q1 = Jan–Mar) |
+
+- FR-34: Switch horizons with tabs; each shows the current unit plus the next two. The 3-month calendar (FR-26) stays as a side panel.
+- FR-35: Every plan item has a `horizon` (day / week / month / quarter) and a `period` key (`2026-11-10`, `2026-W46`, `2026-11`, `2026-Q4`).
+- FR-36: **Break down:** from a quarter objective create monthly goals; from a monthly goal create weekly goals; from a weekly goal create tasks; from a task create time blocks. Children link to their parent (`parentId`).
+- FR-37: **Roll up:** a parent shows progress from its children (e.g. 3 of 5 weekly goals done).
+- FR-38: Drag an item to a later period to postpone it; unfinished items at period end are offered "carry over" (same as FR-21).
+- FR-39: Each item belongs to one life area; each horizon view can be filtered by area.
+
+**Phasing:** the MVP has only the **3-day** view (the hourly grid) and the **3-week** view (weekly goals and tasks by day). The 3-month and 3-quarter planning views, break-down, and roll-up come in **Phase 2**. The data model includes `horizon`, `period`, and `parentId` from the start, so Phase 2 needs no migration.
+
 ## 5. Non-functional requirements
 
 - NFR-1: Responsive; usable on a phone for viewing and marking done.
@@ -128,9 +148,9 @@ Everything lives under the signed-in user, so security rules stay simple: `users
 | `timetable` | auto | section, period, start, end, weekday, kind (lecture/lab/tutorial), room |
 | `dayTypes` | `YYYY-MM-DD` | type (normal/holiday/noClasses/online/exam), label, onlineSlots[] |
 | `classChanges` | auto | date, kind (substitute/cancel/extra), section, start, end, note |
-| `tasks` | auto | title, areaId, durationMin, priority, due (timestamp), status (backlog/planned/done/partly/notDone), remainingMin, notes, goalId?, paused |
+| `tasks` | auto | horizon `day`/`week`, period (`2026-11-10` or `2026-W46`), parentId (goal)?, title, areaId, durationMin, priority, due (timestamp), status (backlog/planned/done/partly/notDone), remainingMin, notes, goalId?, paused |
 | `blocks` | auto | taskId?, date `YYYY-MM-DD`, start, end, areaId, status, statusAskedAt, note |
-| `goals` | `YYYY-Www-n` | week (`2026-W46`), areaId, title, starred, progress, carriedFrom? |
+| `goals` | auto | horizon (week/month/quarter), period (`2026-W46` / `2026-11` / `2026-Q4`), areaId, title, starred, progress, parentId?, carriedFrom? |
 | `focusTasks` | auto | areaId, title, subtitle, order |
 | `events` | auto | date, endDate?, kind (exam/project/family/academic/series), label, time?, seriesId? |
 | `series` | auto | label, kind, rule (every 3 weeks / every 4 months on 24th), startDate, paused |
@@ -189,7 +209,9 @@ flowchart LR
 
 Must have: FR-1 to FR-3, FR-5, FR-7, FR-8, FR-9, FR-12, FR-14, FR-15, FR-16, FR-19, FR-20, FR-22, FR-24, FR-26, NFR-2, NFR-3.
 
-Later: bands auto-refinement, reminders and digest, PhD status generator, PNG export, mobile polish.
+Also in MVP: the 3-day view (FR-1 grid limited to today + 2) and the 3-week view (FR-34, FR-35 for week and day only).
+
+**Phase 2:** 3-month and 3-quarter planning views, break-down and roll-up (FR-36 to FR-39), bands auto-refinement, reminders and digest, PhD status generator, PNG export, mobile polish.
 
 ## 8. Example API (draft, Cloud Functions or direct Firestore access)
 
@@ -212,3 +234,4 @@ Later: bands auto-refinement, reminders and digest, PhD status generator, PNG ex
 4. MVP scope (section 7): confirmed.
 5. Privacy: demo project + fictional seed data for reviewers; personal data stays in a separate project and out of git.
 6. Docker: used to run the app with the Firebase Emulator Suite for review and CI; production on Firebase Hosting.
+7. Planning horizons: 3 days and 3 weeks in MVP; 3 months and 3 quarters in Phase 2 (data model ready now).
