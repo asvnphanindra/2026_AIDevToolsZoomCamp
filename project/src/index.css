@@ -1017,6 +1017,17 @@ button.nav-active {
   border-top: 1px solid rgba(213, 205, 192, 0.7);
 }
 
+.day-grid-col.is-drop-over {
+  background: rgba(15, 107, 76, 0.12);
+  outline: 2px solid rgba(15, 107, 76, 0.55);
+  outline-offset: -2px;
+}
+
+.day-grid-slot.is-drop-slot {
+  background: rgba(15, 107, 76, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(15, 107, 76, 0.45);
+}
+
 .day-grid-item {
   position: absolute;
   left: 0.2rem;

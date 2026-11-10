@@ -157,6 +157,9 @@ export function DayGrid({
   const [checkInTarget, setCheckInTarget] = useState<GridItem | null>(null);
   const [snoozedIds, setSnoozedIds] = useState<Set<string>>(() => new Set());
   const [clock, setClock] = useState(() => Date.now());
+  const [dropHl, setDropHl] = useState<{ dayKey: string; slot: string } | null>(
+    null,
+  );
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
@@ -222,6 +225,16 @@ export function DayGrid({
   useEffect(() => {
     const id = window.setInterval(() => setClock(Date.now()), 60_000);
     return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const clear = () => setDropHl(null);
+    window.addEventListener("dragend", clear);
+    window.addEventListener("drop", clear);
+    return () => {
+      window.removeEventListener("dragend", clear);
+      window.removeEventListener("drop", clear);
+    };
   }, []);
 
   const dueCheckIns = useMemo(() => {
@@ -594,8 +607,46 @@ export function DayGrid({
     setHover({ topPx, label: formatHhmm(mins) });
   }
 
+  function clearDropHighlight() {
+    setDropHl(null);
+  }
+
+  function slotUnderCursor(
+    clientY: number,
+    colEl: HTMLElement,
+  ): string {
+    const rect = colEl.getBoundingClientRect();
+    if (rect.height <= 0 || !slots.length) return slots[0] ?? "00:00";
+    const ratio = (clientY - rect.top) / rect.height;
+    const idx = Math.min(
+      slots.length - 1,
+      Math.max(0, Math.floor(ratio * slots.length)),
+    );
+    return slots[idx]!;
+  }
+
+  function onColDragOver(dayKey: string, e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const types = Array.from(e.dataTransfer.types);
+    const movingBlock = types.includes(BLOCK_DRAG_MIME);
+    e.dataTransfer.dropEffect = movingBlock ? "move" : "copy";
+    const slot = slotUnderCursor(e.clientY, e.currentTarget);
+    setDropHl((prev) =>
+      prev?.dayKey === dayKey && prev.slot === slot
+        ? prev
+        : { dayKey, slot },
+    );
+  }
+
+  function onColDragLeave(dayKey: string, e: DragEvent<HTMLDivElement>) {
+    const related = e.relatedTarget as Node | null;
+    if (related && e.currentTarget.contains(related)) return;
+    setDropHl((prev) => (prev?.dayKey === dayKey ? null : prev));
+  }
+
   function onColDrop(dayKey: string, e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
+    clearDropHighlight();
     const col = e.currentTarget;
     const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
     const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
@@ -836,20 +887,26 @@ export function DayGrid({
               <div
                 key={`col-${dayKey}`}
                 className={
-                  isToday
+                  (isToday
                     ? "day-grid-col is-today drop-target"
                     : isPast
                       ? "day-grid-col is-past drop-target"
-                      : "day-grid-col is-future drop-target"
+                      : "day-grid-col is-future drop-target") +
+                  (dropHl?.dayKey === dayKey ? " is-drop-over" : "")
                 }
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "copy";
-                }}
+                onDragOver={(e) => onColDragOver(dayKey, e)}
+                onDragLeave={(e) => onColDragLeave(dayKey, e)}
                 onDrop={(e) => onColDrop(dayKey, e)}
               >
                 {slots.map((slot) => (
-                  <div key={`${dayKey}-${slot}`} className="day-grid-slot" />
+                  <div
+                    key={`${dayKey}-${slot}`}
+                    className={
+                      dropHl?.dayKey === dayKey && dropHl.slot === slot
+                        ? "day-grid-slot is-drop-slot"
+                        : "day-grid-slot"
+                    }
+                  />
                 ))}
                 {model.items
                   .filter((item) => item.date === dayKey)
