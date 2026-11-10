@@ -8,7 +8,10 @@ import {
   type SeedDayType,
   type SeedRoutine,
 } from "@/data/fictional-seed";
-import type { SeedScheduleChange } from "@/data/fictional-seed";
+import type {
+  ScheduleChangeKind,
+  SeedScheduleChange,
+} from "@/data/fictional-seed";
 import type { PlacedBlock } from "@/lib/blocks";
 import {
   applyScheduleChanges,
@@ -39,6 +42,10 @@ export type GridItem = {
   /** User-placed from backlog (US-C2); movable/resizable. */
   placed?: boolean;
   taskId?: string;
+  /** US-B5 one-off marker when kind is schedule. */
+  oneOff?: ScheduleChangeKind;
+  /** Underlying schedule-change id for removable one-offs. */
+  changeId?: string;
 };
 
 export type DeepWorkWarning = {
@@ -104,12 +111,24 @@ export function buildDayGrid(opts: {
     fictionalSeed.schedule,
     dayTypes,
   );
-  const scheduleItems = applyScheduleChanges(
+  const scheduleItems: GridItem[] = applyScheduleChanges(
     baseSchedule,
     dayKeys,
     todayIndex,
     scheduleChanges,
-  );
+  ).map((item) => ({
+    id: item.id,
+    date: item.date,
+    title: item.title,
+    start: item.start,
+    end: item.end,
+    kind: "schedule" as const,
+    colour: item.colour,
+    oneOff: item.oneOff,
+    changeId: item.id.startsWith("oneoff-")
+      ? item.id.slice("oneoff-".length)
+      : undefined,
+  }));
   const demoItems = opts.isDemo
     ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)
     : [];

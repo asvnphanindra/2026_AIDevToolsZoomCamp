@@ -15,8 +15,9 @@ Static calendars show *what* is planned, not whether it got done, whether the sl
 Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)** · map in [`_docs/task-tracker.md`](_docs/task-tracker.md)
 
 - Sign-in + demo mode (US-A1, A2)
-- 3-day grid, energy bands, seeded fixed schedule, day types, one-offs (US-B1–B5)
-- Tasks, drag/move/resize, daily minimums (US-C1–C3)
+- 5-day grid (left) + area-column backlog (right); energy bands, seeded schedule, day types
+- One-offs via right-click on grid cards (US-B5); Areas config for life areas + daily mins (US-C3)
+- Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
 - Focus panel, weekly goals, 3-week view (US-E1–E3)
 - 3-month calendar + recurring series (US-F1, F2)
@@ -27,7 +28,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
-5. Missing daily minimum → badge + suggested slot (never auto-placed).
+5. Areas view: edit life areas + daily mins. Planner: shortfall badge → suggest slot (confirm only). Right-click cards for one-offs / unschedule.
 6. Weekly goals with one-click carry-over; 3-week and calendar views for what’s ahead.
 
 ## Non-goals (MVP)

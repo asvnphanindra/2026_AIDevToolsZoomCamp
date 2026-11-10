@@ -12,7 +12,7 @@ People juggling several roles (work, study, family, side projects) need more tha
 
 | Concept | Meaning |
 |---------|---------|
-| Life area | User-defined category + colour (defaults: Work, Study, Family, Passion) |
+| Life area | User-defined category + colour (defaults: Work, Study, Family, Passion); create/edit + daily minimums live in the **Areas** config view (not on the planner surface) |
 | Task | Title, area, duration, priority, optional due, status |
 | Time block | Task on a date with start–end |
 | Routine | Repeating grey fixed block (meals, commute, sleep) |
@@ -34,10 +34,10 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 | US-B2 | Energy bands + deep-work warning |
 | US-B3 | Fixed schedule from seed |
 | US-B4 | Mark special day types |
-| US-B5 | One-off schedule changes |
+| US-B5 | One-off schedule changes (via right-click on grid cards; no standalone one-off form) |
 | US-C1 | Capture tasks to backlog |
 | US-C2 | Drag / move / resize on grid + conflict warn |
-| US-C3 | Daily minimum rules (suggest, never auto-place) |
+| US-C3 | Daily minimum rules (Areas config; planner badges + suggest-on-confirm) |
 | US-D1 | Done / Partly / Not done after block end |
 | US-D2 | Replan unfinished → backlog |
 | US-E1 | Focus panel by life area |

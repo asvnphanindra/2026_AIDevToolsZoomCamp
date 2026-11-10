@@ -1,16 +1,21 @@
 import { useCallback, useState } from "react";
+import { AreasConfig } from "@/components/AreasConfig";
 import { DayGrid } from "@/components/DayGrid";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
-import { fictionalSeed } from "@/data/fictional-seed";
+import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
+import { loadAreas, writeAreas } from "@/lib/areas";
 import {
   readPlacedBlocks,
   writePlacedBlocks,
   type PlacedBlock,
 } from "@/lib/blocks";
+import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
 import { writeBacklog, type BacklogTask } from "@/lib/tasks";
 
-/** Auth shell + backlog + week grid (US-C1/C2). */
+type AppView = "planner" | "areas";
+
+/** Auth shell + planner / areas config. */
 export function AuthShell() {
   const {
     user,
@@ -24,9 +29,18 @@ export function AuthShell() {
     signOut,
   } = useAuth();
 
+  const [appView, setAppView] = useState<AppView>("planner");
   const [tasks, setTasks] = useState<BacklogTask[]>([]);
   const [blocks, setBlocks] = useState<PlacedBlock[]>(() =>
     typeof localStorage === "undefined" ? [] : readPlacedBlocks(),
+  );
+  const [areas, setAreas] = useState<SeedArea[]>(() =>
+    typeof localStorage === "undefined"
+      ? fictionalSeed.areas
+      : loadAreas(view?.areas?.length ? view.areas : fictionalSeed.areas),
+  );
+  const [rules, setRules] = useState<DailyRule[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadRules(),
   );
 
   const onTasksChange = useCallback((next: BacklogTask[]) => {
@@ -39,7 +53,15 @@ export function AuthShell() {
     writePlacedBlocks(next);
   }, []);
 
-  const areas = view?.areas?.length ? view.areas : fictionalSeed.areas;
+  const onAreasChange = useCallback((next: SeedArea[]) => {
+    setAreas(next);
+    writeAreas(next);
+  }, []);
+
+  const onRulesChange = useCallback((next: DailyRule[]) => {
+    setRules(next);
+    writeRules(next);
+  }, []);
 
   if (!ready) {
     return (
@@ -92,37 +114,65 @@ export function AuthShell() {
             {view?.displayName || user.email || user.uid}
           </p>
         </div>
-        <button
-          type="button"
-          className="secondary"
-          disabled={busy}
-          onClick={signOut}
-        >
-          Sign out
-        </button>
+        <div className="header-actions">
+          <nav className="app-nav" aria-label="App views">
+            <button
+              type="button"
+              className={appView === "planner" ? "nav-active" : "secondary"}
+              onClick={() => setAppView("planner")}
+            >
+              Planner
+            </button>
+            <button
+              type="button"
+              className={appView === "areas" ? "nav-active" : "secondary"}
+              onClick={() => setAppView("areas")}
+            >
+              Areas
+            </button>
+          </nav>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy}
+            onClick={signOut}
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
-      <div className="planner-layout">
-        <div className="planner-main">
-          <DayGrid
-            isDemo={isDemo}
-            areas={areas}
-            timezone="Asia/Kolkata"
-            tasks={tasks}
-            onTasksChange={onTasksChange}
-            placedBlocks={blocks}
-            onPlacedBlocksChange={onBlocksChange}
-          />
+      {appView === "areas" ? (
+        <AreasConfig
+          areas={areas}
+          onAreasChange={onAreasChange}
+          rules={rules}
+          onRulesChange={onRulesChange}
+        />
+      ) : (
+        <div className="planner-layout">
+          <div className="planner-main">
+            <DayGrid
+              isDemo={isDemo}
+              areas={areas}
+              rules={rules}
+              timezone="Asia/Kolkata"
+              tasks={tasks}
+              onTasksChange={onTasksChange}
+              placedBlocks={blocks}
+              onPlacedBlocksChange={onBlocksChange}
+            />
+          </div>
+          <aside className="planner-side">
+            <TaskBacklog
+              isDemo={isDemo}
+              areas={areas}
+              tasks={tasks}
+              onTasksChange={onTasksChange}
+            />
+          </aside>
         </div>
-        <aside className="planner-side">
-          <TaskBacklog
-            isDemo={isDemo}
-            areas={areas}
-            tasks={tasks}
-            onTasksChange={onTasksChange}
-          />
-        </aside>
-      </div>
+      )}
 
       {error ? <p className="error">{error}</p> : null}
     </main>

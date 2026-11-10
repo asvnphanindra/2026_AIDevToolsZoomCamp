@@ -1,12 +1,15 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
   type DragEvent,
-  type FormEvent,
   type MouseEvent,
 } from "react";
-import { DailyRulesPanel } from "@/components/DailyRulesPanel";
+import {
+  BlockContextMenu,
+  type BlockMenuAction,
+} from "@/components/BlockContextMenu";
 import {
   DAY_TYPE_LABELS,
   fictionalSeed,
@@ -26,10 +29,8 @@ import {
 } from "@/lib/blocks";
 import {
   evaluateDayRules,
-  loadRules,
   shortfallBadgeText,
   suggestFreeSlot,
-  writeRules,
   type DailyRule,
   type RuleShortfall,
 } from "@/lib/rules";
@@ -44,7 +45,6 @@ import {
 import {
   dayTypeForOffset,
   defaultLabelFor,
-  findOverlappingSchedule,
   mergeDayTypes,
   mergeScheduleChanges,
 } from "@/lib/schedule";
@@ -59,6 +59,7 @@ import {
 type Props = {
   isDemo: boolean;
   areas: SeedArea[];
+  rules: DailyRule[];
   timezone?: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
@@ -71,6 +72,8 @@ type OverlapPrompt = {
   conflicts: TimedItem[];
   mode: "create" | "update";
 };
+
+type CtxMenu = { x: number; y: number; item: GridItem };
 
 const HOVER_MARK_START = "05:00";
 const HOVER_MARK_END = "22:00";
@@ -115,10 +118,11 @@ function yToStart(
   return formatHhmm(mins);
 }
 
-/** Week grid + day types + one-offs + US-C2 drag/drop. */
+/** Week grid + day types + context-menu one-offs + US-C2 drag/drop. */
 export function DayGrid({
   isDemo,
   areas,
+  rules,
   timezone,
   tasks,
   onTasksChange,
@@ -135,17 +139,8 @@ export function DayGrid({
       ? []
       : readJson<SeedScheduleChange[]>(CHANGES_KEY, []),
   );
-  const [form, setForm] = useState({
-    dayOffset: 0,
-    kind: "extra" as ScheduleChangeKind,
-    title: "",
-    start: "10:00",
-    end: "10:30",
-  });
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
-  const [rules, setRules] = useState<DailyRule[]>(() =>
-    typeof localStorage === "undefined" ? [] : loadRules(),
-  );
+  const [ctx, setCtx] = useState<CtxMenu | null>(null);
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
@@ -187,12 +182,25 @@ export function DayGrid({
     }
     return map;
   }, [model.dayKeys, model.items, rules]);
-  const todayShortfalls = ruleStatusByDate.get(model.todayKey) ?? [];
   const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!ctx) return;
+    const close = () => setCtx(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [ctx]);
 
   function timedUniverse(excludeId?: string): TimedItem[] {
     return model.items
@@ -219,11 +227,13 @@ export function DayGrid({
   function applyBlock(candidate: PlacedBlock, mode: "create" | "update") {
     if (mode === "create") {
       onPlacedBlocksChange([...placedBlocks, candidate]);
-      onTasksChange(
-        tasks.map((t) =>
-          t.id === candidate.taskId ? { ...t, status: "planned" } : t,
-        ),
-      );
+      if (candidate.taskId) {
+        onTasksChange(
+          tasks.map((t) =>
+            t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+          ),
+        );
+      }
     } else {
       onPlacedBlocksChange(
         placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
@@ -254,7 +264,6 @@ export function DayGrid({
     } else if (action === "shorten-other") {
       const otherPlaced = nextBlocks.find((b) => b.id === first.id);
       if (!otherPlaced) {
-        // Can't shorten seed/routine/fixed — fall back to shorten mine.
         if (minutesOf(first.start) > minutesOf(candidate.start)) {
           candidate = { ...candidate, end: first.start };
         } else {
@@ -274,7 +283,7 @@ export function DayGrid({
             ? [...nextBlocks, candidate]
             : nextBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
         );
-        if (overlap.mode === "create") {
+        if (overlap.mode === "create" && candidate.taskId) {
           onTasksChange(
             tasks.map((t) =>
               t.id === candidate.taskId ? { ...t, status: "planned" } : t,
@@ -287,11 +296,13 @@ export function DayGrid({
     }
     if (overlap.mode === "create") {
       onPlacedBlocksChange([...nextBlocks, candidate]);
-      onTasksChange(
-        tasks.map((t) =>
-          t.id === candidate.taskId ? { ...t, status: "planned" } : t,
-        ),
-      );
+      if (candidate.taskId) {
+        onTasksChange(
+          tasks.map((t) =>
+            t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+          ),
+        );
+      }
     } else {
       onPlacedBlocksChange(
         nextBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
@@ -308,12 +319,7 @@ export function DayGrid({
   ) {
     const task = tasks.find((t) => t.id === taskId && t.status === "backlog");
     if (!task) return;
-    const start = yToStart(
-      clientY,
-      colEl,
-      model.startHour,
-      model.endHour,
-    );
+    const start = yToStart(clientY, colEl, model.startHour, model.endHour);
     let end = addMinutes(start, task.durationMin);
     const windowEnd = model.endHour * 60;
     if (minutesOf(end) > windowEnd) end = formatHhmm(windowEnd);
@@ -372,14 +378,37 @@ export function DayGrid({
     });
   }
 
-  function onRulesChange(next: DailyRule[]) {
-    setRules(next);
-    writeRules(next);
+  function persistChanges(next: SeedScheduleChange[]) {
+    setExtraChanges(next);
+    localStorage.setItem(CHANGES_KEY, JSON.stringify(next));
+  }
+
+  function dayOffsetForDate(date: string): number | null {
+    const idx = model.dayKeys.indexOf(date);
+    if (idx < 0) return null;
+    return idx - model.todayIndex;
+  }
+
+  function addOneOff(
+    kind: ScheduleChangeKind,
+    item: GridItem,
+    title: string,
+  ) {
+    const dayOffset = dayOffsetForDate(item.date);
+    if (dayOffset == null) return;
+    const entry: SeedScheduleChange = {
+      id: `user-${Date.now()}`,
+      dayOffset,
+      kind,
+      title,
+      start: item.start,
+      end: item.end,
+    };
+    persistChanges([...extraChanges, entry]);
   }
 
   /** Suggest a free slot for a shortfall — place only after confirm (US-C3). */
-  function onSuggestShortfall(shortfall: RuleShortfall) {
-    const date = model.todayKey;
+  function onSuggestShortfall(date: string, shortfall: RuleShortfall) {
     const slot = suggestFreeSlot(
       date,
       shortfall.missing,
@@ -412,46 +441,67 @@ export function DayGrid({
     commitBlock(candidate, "create");
   }
 
-  function submitOneOff(event: FormEvent) {
-    event.preventDefault();
-    const title = form.title.trim();
-    if (!title) return;
-    const date = model.dayKeys[model.todayIndex + form.dayOffset];
-    if (!date) return;
+  function onBlockContext(item: GridItem, e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtx({ x: e.clientX, y: e.clientY, item });
+  }
 
-    let kind = form.kind;
-    if (kind !== "cancel") {
-      const overlaps = findOverlappingSchedule(
-        model.items,
-        date,
-        form.start,
-        form.end,
+  function onMenuAction(action: BlockMenuAction) {
+    if (!ctx) return;
+    const item = ctx.item;
+    setCtx(null);
+
+    if (action === "cancel-session") {
+      addOneOff("cancel", item, item.title);
+      return;
+    }
+    if (action === "replace-session") {
+      const title = window.prompt("Replacement title", item.title);
+      if (!title?.trim()) return;
+      addOneOff("substitute", item, title.trim());
+      return;
+    }
+    if (action === "extra-session") {
+      const title = window.prompt("Extra session title", "Extra session");
+      if (!title?.trim()) return;
+      addOneOff("extra", item, title.trim());
+      return;
+    }
+    if (action === "remove-one-off") {
+      const changeId = item.changeId;
+      if (!changeId) return;
+      const seedIds = new Set(
+        (fictionalSeed.scheduleChanges ?? []).map((c) => c.id),
       );
-      if (overlaps.length) {
-        const names = overlaps
-          .map((o) => `${o.title} ${o.start}–${o.end}`)
-          .join("; ");
-        const replace = window.confirm(
-          `Overlaps: ${names}\n\nOK = replace (substitute)\nCancel = add as extra`,
+      if (seedIds.has(changeId)) {
+        window.alert("Seeded one-offs can’t be removed here.");
+        return;
+      }
+      persistChanges(extraChanges.filter((c) => c.id !== changeId));
+      return;
+    }
+    if (action === "edit-placed") {
+      const title = window.prompt("Block title", item.title);
+      if (!title?.trim()) return;
+      onPlacedBlocksChange(
+        placedBlocks.map((b) =>
+          b.id === item.id ? { ...b, title: title.trim() } : b,
+        ),
+      );
+      return;
+    }
+    if (action === "unschedule-placed") {
+      if (!window.confirm(`Unschedule “${item.title}”?`)) return;
+      onPlacedBlocksChange(placedBlocks.filter((b) => b.id !== item.id));
+      if (item.taskId) {
+        onTasksChange(
+          tasks.map((t) =>
+            t.id === item.taskId ? { ...t, status: "backlog" } : t,
+          ),
         );
-        kind = replace ? "substitute" : "extra";
       }
     }
-
-    const entry: SeedScheduleChange = {
-      id: `user-${Date.now()}`,
-      dayOffset: form.dayOffset,
-      kind,
-      title,
-      start: form.start,
-      end: form.end,
-    };
-    setExtraChanges((prev) => {
-      const next = [...prev, entry];
-      localStorage.setItem(CHANGES_KEY, JSON.stringify(next));
-      return next;
-    });
-    setForm((f) => ({ ...f, title: "" }));
   }
 
   function onBodyMove(event: MouseEvent<HTMLDivElement>) {
@@ -512,7 +562,6 @@ export function DayGrid({
         end: formatHhmm(endMins),
         deepWork: item.deepWork,
       };
-      // live preview without conflict until mouseup
       onPlacedBlocksChange(
         placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
       );
@@ -550,8 +599,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Drag tasks from the right backlog onto a day column · move/resize
-          placed blocks · hover for 15-min marks
+          Drag tasks from the right · move/resize placed blocks · right-click a
+          card for one-off / unschedule · click a min-short badge to suggest
         </p>
       </div>
 
@@ -596,90 +645,6 @@ export function DayGrid({
         </div>
       ) : null}
 
-      <DailyRulesPanel
-        areas={areas}
-        rules={rules}
-        onRulesChange={onRulesChange}
-        todayShortfalls={todayShortfalls}
-        onSuggest={onSuggestShortfall}
-      />
-
-      <form className="one-off-form" onSubmit={submitOneOff}>
-        <h3>One-off schedule change</h3>
-        <div className="one-off-row">
-          <label>
-            Day
-            <select
-              value={form.dayOffset}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  dayOffset: Number(e.target.value),
-                }))
-              }
-            >
-              {model.dayKeys.map((key, idx) => {
-                const rel = idx - model.todayIndex;
-                return (
-                  <option key={key} value={rel}>
-                    {rel === 0 ? "Today · " : ""}
-                    {formatDayLabel(key, model.timezone)}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          <label>
-            Kind
-            <select
-              value={form.kind}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  kind: e.target.value as ScheduleChangeKind,
-                }))
-              }
-            >
-              <option value="extra">Extra</option>
-              <option value="substitute">Substitute</option>
-              <option value="cancel">Cancel</option>
-            </select>
-          </label>
-          <label>
-            Title
-            <input
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              placeholder="Session title"
-              required
-            />
-          </label>
-          <label>
-            Start
-            <input
-              type="time"
-              value={form.start}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, start: e.target.value }))
-              }
-              required
-            />
-          </label>
-          <label>
-            End
-            <input
-              type="time"
-              value={form.end}
-              onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))}
-              required
-            />
-          </label>
-          <button type="submit">Apply</button>
-        </div>
-      </form>
-
       <div
         className="day-grid-board has-energy week-5"
         style={{
@@ -696,6 +661,7 @@ export function DayGrid({
           const isToday = relative === 0;
           const dt = dayTypeForOffset(relative, model.dayTypes);
           const currentType: DayTypeKind = dt?.type ?? "normal";
+          const shortfalls = ruleStatusByDate.get(key) ?? [];
           return (
             <div
               key={key}
@@ -731,13 +697,15 @@ export function DayGrid({
               {dt && dt.type !== "normal" ? (
                 <span className="day-type-tag">{dt.label}</span>
               ) : null}
-              {(ruleStatusByDate.get(key) ?? []).length > 0 ? (
-                <span
+              {shortfalls.length > 0 ? (
+                <button
+                  type="button"
                   className="rule-shortfall-badge"
-                  title={shortfallBadgeText(ruleStatusByDate.get(key) ?? [])}
+                  title={`${shortfallBadgeText(shortfalls)} · click to suggest`}
+                  onClick={() => onSuggestShortfall(key, shortfalls[0]!)}
                 >
-                  Min short · {shortfallBadgeText(ruleStatusByDate.get(key) ?? [])}
-                </span>
+                  Min short · {shortfallBadgeText(shortfalls)}
+                </button>
               ) : null}
             </div>
           );
@@ -825,13 +793,14 @@ export function DayGrid({
                           height: `calc(${place.rowSpan * ROW_PX}rem - 2px)`,
                           background: item.colour,
                         }}
-                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}`}
+                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""} · right-click for actions`}
                         draggable={Boolean(item.placed)}
                         onDragStart={(e) => {
                           if (!item.placed) return;
                           e.dataTransfer.setData(BLOCK_DRAG_MIME, item.id);
                           e.dataTransfer.effectAllowed = "move";
                         }}
+                        onContextMenu={(e) => onBlockContext(item, e)}
                       >
                         <span className="day-grid-item-title">
                           {warned ? "! " : ""}
@@ -882,6 +851,16 @@ export function DayGrid({
           <span className="swatch" style={{ background: "#8B4513" }} /> One-off
         </li>
       </ul>
+
+      {ctx ? (
+        <BlockContextMenu
+          x={ctx.x}
+          y={ctx.y}
+          item={ctx.item}
+          onAction={onMenuAction}
+          onClose={() => setCtx(null)}
+        />
+      ) : null}
     </section>
   );
 }
