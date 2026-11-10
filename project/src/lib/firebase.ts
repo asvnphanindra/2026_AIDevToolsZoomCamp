@@ -25,7 +25,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:000000000000:web:demo",
 };
 
-export const AUTH_EMULATOR_URL = "http://127.0.0.1:9099";
+export const AUTH_EMULATOR_URL =
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_URL || "http://127.0.0.1:9099";
 export const FIRESTORE_EMULATOR_HOST = "127.0.0.1";
 export const FIRESTORE_EMULATOR_PORT = 8080;
 

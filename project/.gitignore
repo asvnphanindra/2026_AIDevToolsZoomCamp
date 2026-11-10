@@ -7,7 +7,9 @@ dist-ssr
 
 # Env — keep secrets out of git (demo public keys go in .env.example only)
 .env
+.env.local
 .env.*.local
+firebase.runtime.json
 seed/personal
 
 # Logs / caches

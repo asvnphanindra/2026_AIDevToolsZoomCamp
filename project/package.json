@@ -12,8 +12,8 @@
     "preview": "vite preview",
     "emulators:auth": "firebase emulators:start --only auth --project work-planner-demo",
     "emulators": "firebase emulators:start --only auth,firestore --project work-planner-demo",
-    "start": "concurrently -k -n emu,web -c cyan,magenta \"npm run emulators:auth\" \"npm run dev\"",
-    "start:full": "concurrently -k -n emu,web -c cyan,magenta \"npm run emulators\" \"npm run dev\"",
+    "start": "node scripts/dev-start.mjs",
+    "start:full": "concurrently -n emu,web -c cyan,magenta \"npm run emulators\" \"npm run dev\"",
     "local": "npm start"
   },
   "dependencies": {

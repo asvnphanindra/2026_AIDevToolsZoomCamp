@@ -71,15 +71,16 @@ project/
 cd project
 copy .env.example .env   # first time only
 npm install
-npm start                # Auth emulator (:9099) + Vite — no JDK required
+npm start                # Auth emulator + Vite (reuses/frees busy ports; Vite survives emu fail)
 ```
 
 - App: http://127.0.0.1:5173  
-- Auth emulator: `:9099`  
+- Auth emulator: `:9099` (or `:9100+` if busy; port written to `.env.local`)  
 - Full suite (Auth+Firestore, needs JDK 21+): `npm run start:full` · UI `:4000` · Firestore `:8080`
 
 UI-only: `npm run dev` — **Try demo** still works via offline local session + fictional seed.  
-Auth emulator only: `npm run emulators:auth`
+Auth emulator only: `npm run emulators:auth`  
+If an old emulator is stuck: stop the terminal that started it, or `npm start` will reuse/pick the next free port.
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
