@@ -34,12 +34,12 @@ Do not add Phase 2 US-* unless explicitly prioritized in [task-tracker.md](task-
 | [process.md](process.md) | How to work, DoD, planned commands |
 | [agent-team.md](agent-team.md) | Roles and collaboration |
 | [architecture.md](architecture.md) | Stack and data boundaries |
-| [task-tracker.md](task-tracker.md) | MVP backlog (US-*) + short AC — **no new GitHub Issues unless asked** |
+| [task-tracker.md](task-tracker.md) | MVP Issues #23–#39 (US-A1…US-F2) + short AC |
 
 ## Working agreements
 
 1. Prefer the simplest option that matches `product-spec.md` + FUNCTIONAL_SPEC US-* AC.
-2. Track work via `_docs/task-tracker.md` backlog ids (`US-B1`, …). Do **not** create GitHub Issues unless the owner asks.
+2. Track work via GitHub Issues `work-planner` (#23–#39) and US-* ids in `_docs/task-tracker.md`. Do not open Phase 2 Issues unless asked.
 3. Adapt patterns from `../../module_2` — never modify `module_2` for this project.
 4. No secrets, no personal seed, no real PII in git.
 5. Commit and push regularly; small PRs that name the US-* id.

@@ -1,7 +1,7 @@
 # Work Planner — Product Specification
 
 **Status:** Synced to [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) v1.0 (user stories)  
-**Backlog:** [task-tracker.md](task-tracker.md) (markdown list; old GitHub Issues #13–#22 closed)  
+**Backlog:** [task-tracker.md](task-tracker.md) — GitHub Issues **#23–#39** (US-A1…US-F2); #13–#22 closed  
 **Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** is the intended production host, but deploy is **after course submission** (local run/test first — [plan.md](plan.md)).
 
 ## 1. Problem
@@ -75,4 +75,4 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 4. Horizons: 3-day + 3-week MVP; month/quarter Phase 2 (`horizon` / `period` / `parentId` in model now).
 5. Firebase Auth + Firestore; Hosting only after course submission.
 6. Local run/test first ([plan.md](plan.md)).
-7. **FUNCTIONAL_SPEC US-\* + this product-spec** are MVP source; markdown backlog in `task-tracker.md` (GitHub Issues optional later — do not invent scope outside the backlog list).
+7. **FUNCTIONAL_SPEC US-\* + this product-spec** are MVP source; public tracker = Issues #23–#39 in `task-tracker.md` (no Phase 2 Issues unless asked).

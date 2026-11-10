@@ -17,7 +17,7 @@ One human owner (Phani) is the product authority. Agents propose; they do not ex
 
 ## Collaboration
 
-1. **Single source of truth for work:** markdown backlog in [task-tracker.md](task-tracker.md) (US-* ids). Do not create GitHub Issues unless the owner asks. Every PR names a US-* id.
+1. **Single source of truth for work:** GitHub Issues `work-planner` (#23–#39) mapped in [task-tracker.md](task-tracker.md). Every PR names Issue number + US-* id.
 2. **Context entry:** read [AGENTS.md](AGENTS.md) first (root pointer: [`../AGENTS.md`](../AGENTS.md)), then the linked modular doc for your role.
 3. **Spec before code:** behavior changes update FUNCTIONAL_SPEC / `product-spec.md` (and backlog AC) in the same PR as code, or earlier.
 4. **Small PRs:** one Issue (or tightly related slice) per PR; commit and push regularly.
@@ -28,10 +28,10 @@ One human owner (Phani) is the product authority. Agents propose; they do not ex
 ## Example flow
 
 ```text
-Backlog item picked (US-* in task-tracker.md)
+Issue picked (US-* / #N in task-tracker.md)
   → Spec steward confirms AC match FUNCTIONAL_SPEC
   → Frontend + data agents implement on a cursor/* branch
   → QA runs one-command tests against emulators
   → DevOps wires CI if the change needs it
-  → PR merges → backlog item marked done in task-tracker.md
+  → PR merges → Issue closed
 ```
