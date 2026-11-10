@@ -34,7 +34,7 @@ export function BlockContextMenu({ x, y, item, onAction, onClose }: Props) {
   if (item.placed) {
     items.push(
       { id: "edit-placed", label: "Edit title…" },
-      { id: "unschedule-placed", label: "Unschedule" },
+      { id: "unschedule-placed", label: "Move to backlog" },
     );
   }
 

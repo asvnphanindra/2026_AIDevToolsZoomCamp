@@ -1,5 +1,11 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type DragEvent, type FormEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
+import { BLOCK_DRAG_MIME, type PlacedBlock } from "@/lib/blocks";
+import {
+  seedRepeatingTasks,
+  REPEAT_DRAG_MIME,
+  type RepeatingTask,
+} from "@/lib/repeating";
 import {
   emptyTask,
   loadBacklog,
@@ -13,21 +19,27 @@ type Props = {
   areas: SeedArea[];
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
+  placedBlocks: PlacedBlock[];
+  onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
 };
 
 const PRIORITIES = ["low", "med", "high"] as const;
 
-/** US-C1 backlog + US-C2 drag source. */
+/** US-C1 backlog + repeating templates + accept blocks from grid. */
 export function TaskBacklog({
   isDemo,
   areas,
   tasks,
   onTasksChange,
+  placedBlocks,
+  onPlacedBlocksChange,
 }: Props) {
   const defaultArea = areas[0]?.id ?? "work";
   const [draft, setDraft] = useState<BacklogTask>(() => emptyTask(defaultArea));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [booted, setBooted] = useState(false);
+  const [dropReady, setDropReady] = useState(false);
+  const repeating = seedRepeatingTasks();
 
   useEffect(() => {
     if (booted) return;
@@ -95,15 +107,82 @@ export function TaskBacklog({
     if (editingId === id) resetForm();
   }
 
+  function acceptBlockFromGrid(blockId: string) {
+    const block = placedBlocks.find((b) => b.id === blockId);
+    if (!block) return;
+    onPlacedBlocksChange(placedBlocks.filter((b) => b.id !== blockId));
+    if (block.taskId) {
+      const hit = tasks.find((t) => t.id === block.taskId);
+      if (hit) {
+        persist(
+          tasks.map((t) =>
+            t.id === block.taskId ? { ...t, status: "backlog" } : t,
+          ),
+        );
+        return;
+      }
+    }
+    const taskId = block.taskId || `task-return-${Date.now()}`;
+    const durationMin = Math.max(
+      15,
+      (() => {
+        const [sh, sm] = block.start.split(":").map(Number);
+        const [eh, em] = block.end.split(":").map(Number);
+        return (eh! * 60 + (em ?? 0)) - (sh! * 60 + (sm ?? 0));
+      })(),
+    );
+    persist([
+      {
+        id: taskId,
+        title: block.title,
+        areaId: block.areaId,
+        durationMin,
+        priority: "med",
+        status: "backlog",
+        horizon: "day",
+        deepWork: block.deepWork,
+      },
+      ...tasks.filter((t) => t.id !== taskId),
+    ]);
+  }
+
+  function onBacklogDragOver(e: DragEvent<HTMLElement>) {
+    const types = Array.from(e.dataTransfer.types);
+    if (!types.includes(BLOCK_DRAG_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropReady(true);
+  }
+
+  function onBacklogDrop(e: DragEvent<HTMLElement>) {
+    e.preventDefault();
+    setDropReady(false);
+    const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
+    if (blockId) acceptBlockFromGrid(blockId);
+  }
+
+  function startRepeatDrag(template: RepeatingTask, e: DragEvent) {
+    e.dataTransfer.setData(REPEAT_DRAG_MIME, JSON.stringify(template));
+    e.dataTransfer.setData("text/plain", template.title);
+    e.dataTransfer.effectAllowed = "copy";
+  }
+
   const openTasks = tasks.filter((t) => t.status === "backlog");
   const listAreas = areas.length ? areas : [];
 
   return (
-    <section className="task-backlog" aria-label="Task backlog">
+    <section
+      className={`task-backlog${dropReady ? " is-drop-ready" : ""}`}
+      aria-label="Task backlog"
+      onDragOver={onBacklogDragOver}
+      onDragLeave={() => setDropReady(false)}
+      onDrop={onBacklogDrop}
+    >
       <div className="day-grid-meta">
         <h2>Backlog</h2>
         <p className="muted">
-          Capture tasks, then drag left onto the week grid (US-C2).
+          Drag onto the grid · drop a placed block here to return it · repeating
+          templates stay after placing
         </p>
       </div>
 
@@ -122,9 +201,7 @@ export function TaskBacklog({
             Area
             <select
               value={draft.areaId}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, areaId: e.target.value }))
-              }
+              onChange={(e) => setDraft((d) => ({ ...d, areaId: e.target.value }))}
               required
             >
               {listAreas.map((a) => (
@@ -135,17 +212,14 @@ export function TaskBacklog({
             </select>
           </label>
           <label>
-            Duration (min)
+            Minutes
             <input
               type="number"
               min={5}
               step={5}
               value={draft.durationMin}
               onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  durationMin: Number(e.target.value),
-                }))
+                setDraft((d) => ({ ...d, durationMin: Number(e.target.value) }))
               }
               required
             />
@@ -166,13 +240,11 @@ export function TaskBacklog({
             </select>
           </label>
           <label>
-            Due (optional)
+            Due
             <input
               type="date"
               value={draft.due ?? ""}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, due: e.target.value }))
-              }
+              onChange={(e) => setDraft((d) => ({ ...d, due: e.target.value }))}
             />
           </label>
           <label className="task-check">
@@ -194,8 +266,43 @@ export function TaskBacklog({
         </div>
       </form>
 
+      <div className="repeating-panel">
+        <h3>Repeating</h3>
+        <p className="muted hint-inline">
+          Drag a template onto the grid (keeps the template).
+        </p>
+        <ul className="task-list repeating-list">
+          {repeating.map((item) => {
+            const area = listAreas.find((a) => a.id === item.areaId);
+            return (
+              <li
+                key={item.id}
+                className="task-row is-draggable repeating-row"
+                draggable
+                onDragStart={(e) => startRepeatDrag(item, e)}
+              >
+                <span
+                  className="swatch"
+                  style={{ background: area?.colour ?? "#666" }}
+                  aria-hidden
+                />
+                <div className="task-main">
+                  <strong>{item.title}</strong>
+                  <span className="muted">
+                    {area?.name ?? item.areaId} · {item.durationMin}m
+                    {item.deepWork ? " · deep" : ""}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
       {openTasks.length === 0 ? (
-        <p className="muted">No open backlog tasks — drag created blocks on the grid.</p>
+        <p className="muted">
+          No open backlog tasks — double-click the grid or drag repeating.
+        </p>
       ) : (
         <div className="backlog-by-area">
           {listAreas.map((area) => {

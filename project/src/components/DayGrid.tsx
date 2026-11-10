@@ -23,12 +23,17 @@ import {
 } from "@/data/fictional-seed";
 import {
   addMinutes,
+  BLOCK_DRAG_MIME,
   durationMinutes,
   findConflicts,
   snapMinutes,
   type PlacedBlock,
   type TimedItem,
 } from "@/lib/blocks";
+import {
+  REPEAT_DRAG_MIME,
+  type RepeatingTask,
+} from "@/lib/repeating";
 import {
   isBlockEnded,
   loadCheckIns,
@@ -90,7 +95,6 @@ const HOVER_MARK_END = "22:00";
 const ROW_PX = 1.35;
 const STORAGE_KEY = "work-planner.day-type-overrides";
 const CHANGES_KEY = "work-planner.schedule-changes";
-const BLOCK_DRAG_MIME = "application/x-work-planner-block";
 
 const DAY_TYPE_OPTIONS: DayTypeKind[] = [
   "normal",
@@ -304,11 +308,31 @@ export function DayGrid({
     if (mode === "create") {
       onPlacedBlocksChange([...placedBlocks, candidate]);
       if (candidate.taskId) {
-        onTasksChange(
-          tasks.map((t) =>
-            t.id === candidate.taskId ? { ...t, status: "planned" } : t,
-          ),
-        );
+        const hit = tasks.find((t) => t.id === candidate.taskId);
+        if (hit) {
+          onTasksChange(
+            tasks.map((t) =>
+              t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+            ),
+          );
+        } else {
+          onTasksChange([
+            {
+              id: candidate.taskId,
+              title: candidate.title,
+              areaId: candidate.areaId,
+              durationMin: Math.max(
+                15,
+                durationMinutes(candidate.start, candidate.end),
+              ),
+              priority: "med",
+              status: "planned",
+              horizon: "day",
+              deepWork: candidate.deepWork,
+            },
+            ...tasks,
+          ]);
+        }
       }
     } else {
       onPlacedBlocksChange(
@@ -387,6 +411,38 @@ export function DayGrid({
     setOverlap(null);
   }
 
+  function placeNewBlock(
+    dayKey: string,
+    clientY: number,
+    colEl: HTMLElement,
+    opts: {
+      taskId: string;
+      title: string;
+      areaId: string;
+      durationMin: number;
+      deepWork?: boolean;
+    },
+  ) {
+    const start = yToStart(clientY, colEl, model.startHour, model.endHour);
+    let end = addMinutes(start, opts.durationMin);
+    const windowEnd = model.endHour * 60;
+    if (minutesOf(end) > windowEnd) end = formatHhmm(windowEnd);
+    if (durationMinutes(start, end) < 15) return;
+    const area = areas.find((a) => a.id === opts.areaId);
+    const candidate: PlacedBlock = {
+      id: `placed-${Date.now()}`,
+      taskId: opts.taskId,
+      title: opts.title,
+      areaId: opts.areaId,
+      colour: area?.colour ?? "#0F6B4C",
+      date: dayKey,
+      start,
+      end,
+      deepWork: opts.deepWork,
+    };
+    commitBlock(candidate, "create");
+  }
+
   function dropTaskOnDay(
     dayKey: string,
     clientY: number,
@@ -395,24 +451,82 @@ export function DayGrid({
   ) {
     const task = tasks.find((t) => t.id === taskId && t.status === "backlog");
     if (!task) return;
-    const start = yToStart(clientY, colEl, model.startHour, model.endHour);
-    let end = addMinutes(start, task.durationMin);
-    const windowEnd = model.endHour * 60;
-    if (minutesOf(end) > windowEnd) end = formatHhmm(windowEnd);
-    if (durationMinutes(start, end) < 15) return;
-    const area = areas.find((a) => a.id === task.areaId);
-    const candidate: PlacedBlock = {
-      id: `placed-${Date.now()}`,
+    placeNewBlock(dayKey, clientY, colEl, {
       taskId: task.id,
       title: task.title,
       areaId: task.areaId,
-      colour: area?.colour ?? "#0F6B4C",
-      date: dayKey,
-      start,
-      end,
+      durationMin: task.durationMin,
       deepWork: task.deepWork,
+    });
+  }
+
+  function dropRepeatingOnDay(
+    dayKey: string,
+    clientY: number,
+    colEl: HTMLElement,
+    template: RepeatingTask,
+  ) {
+    placeNewBlock(dayKey, clientY, colEl, {
+      taskId: `task-rep-${Date.now()}`,
+      title: template.title,
+      areaId: template.areaId,
+      durationMin: template.durationMin,
+      deepWork: template.deepWork,
+    });
+  }
+
+  /** Double-click empty grid to create a task block in place. */
+  function addDirectOnDay(
+    dayKey: string,
+    clientY: number,
+    colEl: HTMLElement,
+  ) {
+    const title = window.prompt("New task title");
+    if (!title?.trim()) return;
+    const areaId = areas[0]?.id ?? "work";
+    const durationRaw = window.prompt("Duration (minutes)", "30");
+    const durationMin = Math.max(15, Number(durationRaw) || 30);
+    placeNewBlock(dayKey, clientY, colEl, {
+      taskId: `task-grid-${Date.now()}`,
+      title: title.trim(),
+      areaId,
+      durationMin,
+    });
+  }
+
+  function returnPlacedToBacklog(item: GridItem) {
+    const existing = placedBlocks.find((b) => b.id === item.id);
+    if (!existing) return;
+    onPlacedBlocksChange(placedBlocks.filter((b) => b.id !== item.id));
+    if (existing.taskId) {
+      const hit = tasks.find((t) => t.id === existing.taskId);
+      if (hit) {
+        onTasksChange(
+          tasks.map((t) =>
+            t.id === existing.taskId ? { ...t, status: "backlog" } : t,
+          ),
+        );
+        return;
+      }
+    }
+    const taskId = existing.taskId || `task-return-${Date.now()}`;
+    const task: BacklogTask = {
+      id: taskId,
+      title: existing.title,
+      areaId: existing.areaId,
+      durationMin: Math.max(
+        15,
+        durationMinutes(existing.start, existing.end),
+      ),
+      priority: "med",
+      status: "backlog",
+      horizon: "day",
+      deepWork: existing.deepWork,
     };
-    commitBlock(candidate, "create");
+    onTasksChange([
+      task,
+      ...tasks.filter((t) => t.id !== taskId),
+    ]);
   }
 
   function dropMoveBlock(
@@ -568,15 +682,8 @@ export function DayGrid({
       return;
     }
     if (action === "unschedule-placed") {
-      if (!window.confirm(`Unschedule “${item.title}”?`)) return;
-      onPlacedBlocksChange(placedBlocks.filter((b) => b.id !== item.id));
-      if (item.taskId) {
-        onTasksChange(
-          tasks.map((t) =>
-            t.id === item.taskId ? { ...t, status: "backlog" } : t,
-          ),
-        );
-      }
+      if (!window.confirm(`Move “${item.title}” back to backlog?`)) return;
+      returnPlacedToBacklog(item);
       return;
     }
     if (action === "check-in") {
@@ -650,8 +757,18 @@ export function DayGrid({
     const col = e.currentTarget;
     const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
     const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
+    const repeatRaw = e.dataTransfer.getData(REPEAT_DRAG_MIME);
     if (taskId) dropTaskOnDay(dayKey, e.clientY, col, taskId);
-    else if (blockId) dropMoveBlock(dayKey, e.clientY, col, blockId);
+    else if (repeatRaw) {
+      try {
+        const template = JSON.parse(repeatRaw) as RepeatingTask;
+        if (template?.title && template.areaId) {
+          dropRepeatingOnDay(dayKey, e.clientY, col, template);
+        }
+      } catch {
+        /* ignore bad payload */
+      }
+    } else if (blockId) dropMoveBlock(dayKey, e.clientY, col, blockId);
   }
 
   function startResize(item: GridItem, e: MouseEvent) {
@@ -717,8 +834,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Drag tasks from the right · right-click cards · after a block ends,
-          check in (Done / Partly / Not done — never auto-done)
+          Double-click a day to add · drag from backlog / repeating · drag a
+          placed block back to backlog · right-click for more
         </p>
       </div>
 
@@ -897,6 +1014,11 @@ export function DayGrid({
                 onDragOver={(e) => onColDragOver(dayKey, e)}
                 onDragLeave={(e) => onColDragLeave(dayKey, e)}
                 onDrop={(e) => onColDrop(dayKey, e)}
+                onDoubleClick={(e) => {
+                  if ((e.target as HTMLElement).closest(".day-grid-item"))
+                    return;
+                  addDirectOnDay(dayKey, e.clientY, e.currentTarget);
+                }}
               >
                 {slots.map((slot) => (
                   <div

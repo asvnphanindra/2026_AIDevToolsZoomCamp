@@ -46,6 +46,15 @@ export type SeedRoutine = {
   weekdays: number[];
 };
 
+/** Drag-to-place templates (instances; template remains). */
+export type SeedRepeatingTask = {
+  id: string;
+  title: string;
+  areaId: string;
+  durationMin: number;
+  deepWork?: boolean;
+};
+
 export type SeedSchedule = {
   id: string;
   title: string;
@@ -112,6 +121,7 @@ export type FictionalSeed = {
   bands: SeedBand[];
   tasks: SeedTask[];
   routines: SeedRoutine[];
+  repeatingTasks?: SeedRepeatingTask[];
   schedule: SeedSchedule[];
   scheduleChanges: SeedScheduleChange[];
   dayTypes: SeedDayType[];

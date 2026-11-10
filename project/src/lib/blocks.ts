@@ -12,6 +12,8 @@ export type PlacedBlock = {
   deepWork?: boolean;
 };
 
+export const BLOCK_DRAG_MIME = "application/x-work-planner-block";
+
 const STORAGE_KEY = "work-planner.placed-blocks";
 
 export function readPlacedBlocks(): PlacedBlock[] {

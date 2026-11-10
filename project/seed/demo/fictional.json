@@ -79,6 +79,34 @@
       "deepWork": false
     }
   ],
+  "repeatingTasks": [
+    {
+      "id": "rep-standup-notes",
+      "title": "Standup notes",
+      "areaId": "work",
+      "durationMin": 20
+    },
+    {
+      "id": "rep-deep-focus",
+      "title": "Deep focus block",
+      "areaId": "work",
+      "durationMin": 90,
+      "deepWork": true
+    },
+    {
+      "id": "rep-guitar",
+      "title": "Guitar practice",
+      "areaId": "passion",
+      "durationMin": 30
+    },
+    {
+      "id": "rep-chapter",
+      "title": "Study chapter",
+      "areaId": "study",
+      "durationMin": 45,
+      "deepWork": true
+    }
+  ],
   "routines": [
     {
       "id": "r-lunch",

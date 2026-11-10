@@ -169,14 +169,16 @@ export function AuthShell() {
                 onPlacedBlocksChange={onBlocksChange}
               />
             </div>
-            <aside className="planner-side">
-              <TaskBacklog
-                isDemo={isDemo}
-                areas={areas}
-                tasks={tasks}
-                onTasksChange={onTasksChange}
-              />
-            </aside>
+          <aside className="planner-side">
+            <TaskBacklog
+              isDemo={isDemo}
+              areas={areas}
+              tasks={tasks}
+              onTasksChange={onTasksChange}
+              placedBlocks={blocks}
+              onPlacedBlocksChange={onBlocksChange}
+            />
+          </aside>
           </div>
         )}
 
