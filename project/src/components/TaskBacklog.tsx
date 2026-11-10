@@ -199,51 +199,63 @@ export function TaskBacklog({
       {openTasks.length === 0 ? (
         <p className="muted">No open backlog tasks — drag created blocks on the grid.</p>
       ) : (
-        <ul className="task-list">
-          {openTasks.map((task) => (
-            <li
-              key={task.id}
-              className="task-row is-draggable"
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
-                e.dataTransfer.setData("text/plain", task.id);
-                e.dataTransfer.effectAllowed = "copyMove";
-              }}
-            >
-              <span
-                className="swatch"
-                style={{ background: areaColour(listAreas, task.areaId) }}
-                aria-hidden
-              />
-              <div className="task-main">
-                <strong>{task.title}</strong>
-                <span className="muted">
-                  {areaName(listAreas, task.areaId)} · {task.durationMin}m ·{" "}
-                  {task.priority}
-                  {task.due ? ` · due ${task.due}` : ""}
-                  {task.deepWork ? " · deep work" : ""} · drag to grid
-                </span>
+        <div className="backlog-by-area">
+          {listAreas.map((area) => {
+            const columnTasks = openTasks.filter((t) => t.areaId === area.id);
+            if (!columnTasks.length) return null;
+            return (
+              <div key={area.id} className="backlog-area-col">
+                <h3>
+                  <span
+                    className="swatch"
+                    style={{ background: area.colour }}
+                    aria-hidden
+                  />
+                  {area.name}
+                </h3>
+                <ul className="task-list">
+                  {columnTasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="task-row is-draggable"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
+                        e.dataTransfer.setData("text/plain", task.id);
+                        e.dataTransfer.effectAllowed = "copyMove";
+                      }}
+                    >
+                      <div className="task-main">
+                        <strong>{task.title}</strong>
+                        <span className="muted">
+                          {task.durationMin}m · {task.priority}
+                          {task.due ? ` · due ${task.due}` : ""}
+                          {task.deepWork ? " · deep" : ""}
+                        </span>
+                      </div>
+                      <div className="task-actions">
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => startEdit(task)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => remove(task.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className="task-actions">
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => startEdit(task)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => remove(task.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       )}
     </section>
   );

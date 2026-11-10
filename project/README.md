@@ -101,8 +101,8 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 ### Verify week grid UX
 
 1. `npm start` → **Try demo**.
-2. Seven columns **today−3 … today … today+3**; past three greyed; today centered/highlighted.
-3. Rich seed: fixed schedule + blocks across the week; energy strip still works.
+2. Five columns **today−2 … today … today+2**; past two greyed; today centered.
+3. Grid left / backlog right; backlog grouped **by area columns**.
 4. Hover the grid → 15-minute time marker (05:00–22:00).
 
 ### Verify US-B4 (Issue #28)
@@ -129,7 +129,7 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 ### Verify US-C2 (Issue #31)
 
 1. `npm start` → **Try demo**.
-2. Layout: **week grid left**, **backlog right** (stacks grid-then-backlog on narrow screens).
+2. Layout: **week grid left**, **backlog right** (area columns); stacks grid-then-backlog on narrow screens.
 3. Drag a backlog task **left onto** a day column → block appears; task leaves open backlog.
 4. Drag the block to move; drag bottom handle to resize.
 5. Overlap → **Shorten this** / **Shorten other** / Cancel.

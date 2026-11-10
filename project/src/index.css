@@ -43,7 +43,7 @@ body {
 
 .planner-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
@@ -210,13 +210,13 @@ code {
   grid-template-columns: 3.25rem 0.85rem repeat(3, minmax(0, 1fr));
 }
 
-.day-grid-board.has-energy.week-7 {
-  grid-template-columns: 3.25rem 0.75rem repeat(7, minmax(5.5rem, 1fr));
+.day-grid-board.has-energy.week-5 {
+  grid-template-columns: 3.25rem 0.75rem repeat(5, minmax(5.5rem, 1fr));
 }
 
 .day-grid-body {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   column-gap: 0.4rem;
   position: relative;
   min-height: 100%;
@@ -429,6 +429,44 @@ code {
   gap: 0.45rem;
 }
 
+.backlog-by-area {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.backlog-area-col {
+  min-width: 0;
+  padding: 0.55rem 0.6rem 0.7rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+}
+
+.backlog-area-col h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.9rem;
+}
+
+.backlog-area-col .task-list {
+  gap: 0.35rem;
+}
+
+.backlog-area-col .task-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  padding: 0.5rem 0.55rem;
+}
+
+.backlog-area-col .task-actions {
+  justify-content: flex-end;
+}
+
 .task-row {
   display: flex;
   align-items: center;
@@ -578,7 +616,7 @@ code {
 }
 
 @media (max-width: 900px) {
-  .day-grid-board.has-energy.week-7 {
-    grid-template-columns: 2.75rem 0.65rem repeat(7, minmax(5rem, 1fr));
+  .day-grid-board.has-energy.week-5 {
+    grid-template-columns: 2.75rem 0.65rem repeat(5, minmax(5rem, 1fr));
   }
 }

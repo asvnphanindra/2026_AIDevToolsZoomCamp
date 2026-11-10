@@ -485,7 +485,7 @@ export function DayGrid({
   }
 
   return (
-    <section className="day-grid" aria-label="Seven-day hourly grid">
+    <section className="day-grid" aria-label="Five-day hourly grid">
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
@@ -612,7 +612,7 @@ export function DayGrid({
       </form>
 
       <div
-        className="day-grid-board has-energy week-7"
+        className="day-grid-board has-energy week-5"
         style={{
           gridTemplateRows: `auto repeat(${slots.length}, minmax(${ROW_PX}rem, auto))`,
         }}
