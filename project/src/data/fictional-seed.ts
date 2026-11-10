@@ -63,10 +63,17 @@ export type DayTypeKind =
   | "online"
   | "exam";
 
+export type OnlineSlot = {
+  title: string;
+  start: string;
+  end: string;
+};
+
 export type SeedDayType = {
   dayOffset: number;
   type: DayTypeKind;
   label: string;
+  onlineSlots?: OnlineSlot[];
 };
 
 export type SeedBlock = {
@@ -97,4 +104,12 @@ export const BAND_COLOURS: Record<EnergyLevel, string> = {
   high: "#7BC47F",
   medium: "#E0C36A",
   low: "#C98B8B",
+};
+
+export const DAY_TYPE_LABELS: Record<DayTypeKind, string> = {
+  normal: "Normal",
+  holiday: "Holiday",
+  "no-fixed-schedule": "No fixed schedule",
+  online: "Online",
+  exam: "Exam",
 };

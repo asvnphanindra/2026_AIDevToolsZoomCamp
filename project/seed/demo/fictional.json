@@ -187,9 +187,36 @@
   ],
   "dayTypes": [
     {
+      "dayOffset": -1,
+      "type": "no-fixed-schedule",
+      "label": "No fixed schedule"
+    },
+    {
       "dayOffset": 1,
       "type": "holiday",
       "label": "Demo holiday"
+    },
+    {
+      "dayOffset": 2,
+      "type": "online",
+      "label": "Online day",
+      "onlineSlots": [
+        {
+          "title": "Remote lecture",
+          "start": "11:00",
+          "end": "12:00"
+        },
+        {
+          "title": "Office hours (Zoom)",
+          "start": "16:00",
+          "end": "16:45"
+        }
+      ]
+    },
+    {
+      "dayOffset": 3,
+      "type": "exam",
+      "label": "Exam day"
     }
   ],
   "blocks": [

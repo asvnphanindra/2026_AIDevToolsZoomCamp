@@ -11,7 +11,7 @@ import {
 import {
   dayTypeForOffset,
   expandFixedSchedule,
-  hidesFixedSchedule,
+  hidesCommute,
   SCHEDULE_COLOUR,
 } from "@/lib/schedule";
 import {
@@ -62,7 +62,7 @@ export type DayGridModel = {
   updatedAt: Date;
 };
 
-/** Build today−3…today+3 grid. Fixed schedule always from seed (US-B3). */
+/** Build today−3…today+3 grid. Fixed schedule always from seed (US-B3/B4). */
 export function buildDayGrid(opts: {
   isDemo: boolean;
   areas: SeedArea[];
@@ -70,6 +70,8 @@ export function buildDayGrid(opts: {
   startHour?: number;
   endHour?: number;
   now?: Date;
+  /** Effective day types (seed + user overrides). */
+  dayTypes?: SeedDayType[];
 }): DayGridModel {
   const timezone = opts.timezone || DEFAULT_TZ;
   const startHour =
@@ -80,10 +82,16 @@ export function buildDayGrid(opts: {
   const todayKey = dayKeys[todayIndex]!;
   const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
   const bands = fictionalSeed.bands;
-  const dayTypes = fictionalSeed.dayTypes;
+  const dayTypes = opts.dayTypes ?? fictionalSeed.dayTypes;
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
-  const scheduleItems = expandFixedSchedule(dayKeys, timezone, todayIndex);
+  const scheduleItems = expandFixedSchedule(
+    dayKeys,
+    timezone,
+    todayIndex,
+    fictionalSeed.schedule,
+    dayTypes,
+  );
   const demoItems = opts.isDemo
     ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)
     : [];
@@ -119,7 +127,7 @@ function expandDemoExtras(
   for (const [index, dayKey] of dayKeys.entries()) {
     const relative = index - todayIndex;
     const wd = weekdaySun0(dayKey, timezone);
-    const hideCommute = hidesFixedSchedule(
+    const hideCommute = hidesCommute(
       dayTypeForOffset(relative, dayTypes)?.type,
     );
     for (const routine of fictionalSeed.routines as SeedRoutine[]) {

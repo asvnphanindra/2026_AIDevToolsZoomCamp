@@ -62,6 +62,7 @@ project/
 | US-B1 3-day grid (Issue #25) | ☑ |
 | US-B2 energy bands (Issue #26) | ☑ |
 | US-B3 fixed schedule from seed (Issue #27) | ☑ |
+| US-B4 special day types (Issue #28) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -100,6 +101,14 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 2. Seven columns **today−3 … today … today+3**; past three greyed; today centered/highlighted.
 3. Rich seed: fixed schedule + blocks across the week; energy strip still works.
 4. Hover the grid → 15-minute time marker (05:00–22:00).
+
+### Verify US-B4 (Issue #28)
+
+1. `npm start` → **Try demo**.
+2. Seeded headers: No-fixed (−1), Holiday (+1), Online (+2), Exam (+3).
+3. Holiday / No-fixed: no orange fixed items + no commute.
+4. Online: grey fixed items + blue online slots; no commute.
+5. Change a day’s dropdown → header label + grid behaviour update.
 
 ### Verify US-B2 (Issue #26)
 

@@ -1,4 +1,5 @@
 import {
+  DAY_TYPE_LABELS,
   fictionalSeed,
   type DayTypeKind,
   type SeedDayType,
@@ -7,6 +8,9 @@ import {
 import { weekdaySun0 } from "@/lib/time";
 
 export const SCHEDULE_COLOUR = "#C45C26";
+/** Fixed items on Online days are greyed (US-B4 AC2). */
+export const GREYED_SCHEDULE_COLOUR = "#9B9B9B";
+export const ONLINE_SLOT_COLOUR = "#5B7C99";
 
 export type ScheduleGridItem = {
   id: string;
@@ -16,11 +20,24 @@ export type ScheduleGridItem = {
   end: string;
   kind: "schedule";
   colour: string;
+  greyed?: boolean;
+  onlineSlot?: boolean;
 };
 
-/** Day types that hide weekly fixed schedule (US-B3/B4). */
 export function hidesFixedSchedule(type: DayTypeKind | undefined): boolean {
   return type === "holiday" || type === "no-fixed-schedule";
+}
+
+export function hidesCommute(type: DayTypeKind | undefined): boolean {
+  return (
+    type === "holiday" ||
+    type === "no-fixed-schedule" ||
+    type === "online"
+  );
+}
+
+export function isOnlineDay(type: DayTypeKind | undefined): boolean {
+  return type === "online";
 }
 
 /** `relativeOffset` is days from today (−3…+3 on the week grid). */
@@ -32,8 +49,8 @@ export function dayTypeForOffset(
 }
 
 /**
- * US-B3 — expand seeded weekly schedule onto concrete dates.
- * `todayIndex` marks which dayKeys entry is today (3 on the 7-day grid).
+ * Expand seeded weekly schedule + online slots for US-B3/B4.
+ * Holiday / No-fixed: hide. Online: grey fixed + show onlineSlots.
  */
 export function expandFixedSchedule(
   dayKeys: string[],
@@ -46,7 +63,11 @@ export function expandFixedSchedule(
   dayKeys.forEach((dayKey, index) => {
     const relative = index - todayIndex;
     const dayType = dayTypeForOffset(relative, dayTypes);
-    if (hidesFixedSchedule(dayType?.type)) return;
+    const kind = dayType?.type;
+
+    if (hidesFixedSchedule(kind)) return;
+
+    const online = isOnlineDay(kind);
     const wd = weekdaySun0(dayKey, timezone);
     for (const fixed of schedule) {
       if (fixed.weekday !== wd) continue;
@@ -57,7 +78,23 @@ export function expandFixedSchedule(
         start: fixed.start,
         end: fixed.end,
         kind: "schedule",
-        colour: SCHEDULE_COLOUR,
+        colour: online ? GREYED_SCHEDULE_COLOUR : SCHEDULE_COLOUR,
+        greyed: online,
+      });
+    }
+
+    if (online && dayType?.onlineSlots?.length) {
+      dayType.onlineSlots.forEach((slot, i) => {
+        items.push({
+          id: `online-${dayKey}-${i}`,
+          date: dayKey,
+          title: slot.title,
+          start: slot.start,
+          end: slot.end,
+          kind: "schedule",
+          colour: ONLINE_SLOT_COLOUR,
+          onlineSlot: true,
+        });
       });
     }
   });
@@ -66,4 +103,21 @@ export function expandFixedSchedule(
 
 export function seededScheduleCount(): number {
   return fictionalSeed.schedule.length;
+}
+
+export function mergeDayTypes(
+  base: SeedDayType[],
+  overrides: SeedDayType[],
+): SeedDayType[] {
+  const map = new Map<number, SeedDayType>();
+  for (const d of base) map.set(d.dayOffset, d);
+  for (const d of overrides) {
+    if (d.type === "normal") map.delete(d.dayOffset);
+    else map.set(d.dayOffset, d);
+  }
+  return [...map.values()].sort((a, b) => a.dayOffset - b.dayOffset);
+}
+
+export function defaultLabelFor(type: DayTypeKind): string {
+  return DAY_TYPE_LABELS[type];
 }

@@ -1,12 +1,22 @@
 import { useMemo, useRef, useState, type MouseEvent } from "react";
-import type { SeedArea } from "@/data/fictional-seed";
+import {
+  DAY_TYPE_LABELS,
+  fictionalSeed,
+  type DayTypeKind,
+  type SeedArea,
+  type SeedDayType,
+} from "@/data/fictional-seed";
 import {
   bandColour,
   buildDayGrid,
   itemPlacement,
   slotBandLevel,
 } from "@/lib/day-grid";
-import { dayTypeForOffset } from "@/lib/schedule";
+import {
+  dayTypeForOffset,
+  defaultLabelFor,
+  mergeDayTypes,
+} from "@/lib/schedule";
 import {
   buildHalfHourSlots,
   formatDayLabel,
@@ -24,13 +34,41 @@ type Props = {
 
 const HOVER_MARK_START = "05:00";
 const HOVER_MARK_END = "22:00";
-const ROW_PX = 1.35; // rem — keep in sync with CSS
+const ROW_PX = 1.35;
+const STORAGE_KEY = "work-planner.day-type-overrides";
 
-/** Week grid (today−3…today+3) + energy strip + 15-min hover markers. */
+const DAY_TYPE_OPTIONS: DayTypeKind[] = [
+  "normal",
+  "holiday",
+  "no-fixed-schedule",
+  "online",
+  "exam",
+];
+
+function readOverrides(): SeedDayType[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as SeedDayType[];
+  } catch {
+    return [];
+  }
+}
+
+/** Week grid + US-B4 day-type marking. */
 export function DayGrid({ isDemo, areas, timezone }: Props) {
+  const [overrides, setOverrides] = useState<SeedDayType[]>(() =>
+    typeof localStorage === "undefined" ? [] : readOverrides(),
+  );
+
+  const dayTypes = useMemo(
+    () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
+    [overrides],
+  );
+
   const model = useMemo(
-    () => buildDayGrid({ isDemo, areas, timezone }),
-    [isDemo, areas, timezone],
+    () => buildDayGrid({ isDemo, areas, timezone, dayTypes }),
+    [isDemo, areas, timezone, dayTypes],
   );
   const slots = useMemo(
     () => buildHalfHourSlots(model.startHour, model.endHour),
@@ -45,6 +83,26 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
   const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
     null,
   );
+
+  function applyDayType(relativeOffset: number, type: DayTypeKind) {
+    const seedHit = fictionalSeed.dayTypes.find(
+      (d) => d.dayOffset === relativeOffset,
+    );
+    setOverrides((prev) => {
+      const without = prev.filter((d) => d.dayOffset !== relativeOffset);
+      const entry: SeedDayType = {
+        dayOffset: relativeOffset,
+        type,
+        label: defaultLabelFor(type),
+        ...(type === "online"
+          ? { onlineSlots: seedHit?.onlineSlots ?? [] }
+          : {}),
+      };
+      const nextList = [...without, entry];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextList));
+      return nextList;
+    });
+  }
 
   function onBodyMove(event: MouseEvent<HTMLDivElement>) {
     const el = bodyRef.current;
@@ -64,7 +122,8 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
     mins = Math.round(mins / 15) * 15;
     mins = Math.min(Math.max(mins, markStart), markEnd);
     mins = Math.min(Math.max(mins, windowStart), windowEnd);
-    const topPx = ((mins - windowStart) / (windowEnd - windowStart)) * rect.height;
+    const topPx =
+      ((mins - windowStart) / (windowEnd - windowStart)) * rect.height;
     setHover({ topPx, label: formatHhmm(mins) });
   }
 
@@ -77,8 +136,8 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           <time dateTime={model.updatedAt.toISOString()}>
             {formatLastUpdated(model.updatedAt, model.timezone)}
           </time>{" "}
-          ({model.timezone}) · {model.scheduleFromSeed} fixed seed items ·
-          hover for 15-min marks ({HOVER_MARK_START}–{HOVER_MARK_END})
+          ({model.timezone}) · mark day types in each header · hover for
+          15-min marks ({HOVER_MARK_START}–{HOVER_MARK_END})
         </p>
       </div>
 
@@ -106,6 +165,8 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           const relative = dayIdx - model.todayIndex;
           const isPast = relative < 0;
           const isToday = relative === 0;
+          const dt = dayTypeForOffset(relative, model.dayTypes);
+          const currentType: DayTypeKind = dt?.type ?? "normal";
           return (
             <div
               key={key}
@@ -118,14 +179,29 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
               }
               style={{ gridColumn: dayIdx + 3, gridRow: 1 }}
             >
-              {isToday ? "Today · " : null}
-              {formatDayLabel(key, model.timezone)}
-              {(() => {
-                const dt = dayTypeForOffset(relative, model.dayTypes);
-                return dt ? (
-                  <span className="day-type-tag"> · {dt.label}</span>
-                ) : null;
-              })()}
+              <div className="day-grid-head-title">
+                {isToday ? "Today · " : null}
+                {formatDayLabel(key, model.timezone)}
+              </div>
+              <label className="day-type-picker">
+                <span className="sr-only">Day type</span>
+                <select
+                  value={currentType}
+                  onChange={(e) =>
+                    applyDayType(relative, e.target.value as DayTypeKind)
+                  }
+                  aria-label={`Day type for ${formatDayLabel(key, model.timezone)}`}
+                >
+                  {DAY_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {DAY_TYPE_LABELS[opt]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {dt && dt.type !== "normal" ? (
+                <span className="day-type-tag">{dt.label}</span>
+              ) : null}
             </div>
           );
         })}
@@ -254,7 +330,14 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         </li>
         <li>
           <span className="swatch" style={{ background: "#C45C26" }} /> Fixed
-          schedule
+        </li>
+        <li>
+          <span className="swatch" style={{ background: "#9B9B9B" }} /> Fixed
+          (online grey)
+        </li>
+        <li>
+          <span className="swatch" style={{ background: "#5B7C99" }} /> Online
+          slot
         </li>
       </ul>
     </section>
