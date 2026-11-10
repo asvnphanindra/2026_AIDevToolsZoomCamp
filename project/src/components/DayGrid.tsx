@@ -10,6 +10,7 @@ import {
   BlockContextMenu,
   type BlockMenuAction,
 } from "@/components/BlockContextMenu";
+import { CheckInPrompt } from "@/components/CheckInPrompt";
 import {
   DAY_TYPE_LABELS,
   fictionalSeed,
@@ -27,6 +28,14 @@ import {
   type PlacedBlock,
   type TimedItem,
 } from "@/lib/blocks";
+import {
+  isBlockEnded,
+  loadCheckIns,
+  outcomeLabel,
+  upsertCheckIn,
+  type BlockCheckIn,
+  type CheckInOutcome,
+} from "@/lib/checkin";
 import {
   evaluateDayRules,
   shortfallBadgeText,
@@ -141,6 +150,12 @@ export function DayGrid({
   );
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
+  const [checkIns, setCheckIns] = useState<Record<string, BlockCheckIn>>(() =>
+    typeof localStorage === "undefined" ? {} : loadCheckIns(),
+  );
+  const [checkInTarget, setCheckInTarget] = useState<GridItem | null>(null);
+  const [snoozedIds, setSnoozedIds] = useState<Set<string>>(() => new Set());
+  const [clock, setClock] = useState(() => Date.now());
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
@@ -201,6 +216,52 @@ export function DayGrid({
       window.removeEventListener("keydown", onKey);
     };
   }, [ctx]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const dueCheckIns = useMemo(() => {
+    const now = new Date(clock);
+    return model.items
+      .filter(
+        (item) =>
+          item.kind === "block" &&
+          !checkIns[item.id] &&
+          !snoozedIds.has(item.id) &&
+          isBlockEnded(item.date, item.end, model.timezone, now),
+      )
+      .sort((a, b) =>
+        a.date === b.date
+          ? minutesOf(a.end) - minutesOf(b.end)
+          : a.date.localeCompare(b.date),
+      );
+  }, [model.items, model.timezone, checkIns, snoozedIds, clock]);
+
+  useEffect(() => {
+    if (checkInTarget || overlap || ctx) return;
+    if (dueCheckIns[0]) setCheckInTarget(dueCheckIns[0]);
+  }, [dueCheckIns, checkInTarget, overlap, ctx]);
+
+  function submitCheckIn(outcome: CheckInOutcome, remainingMin?: number) {
+    if (!checkInTarget) return;
+    const entry: BlockCheckIn = {
+      blockId: checkInTarget.id,
+      outcome,
+      remainingMin: outcome === "partly" ? remainingMin : undefined,
+      checkedAt: new Date().toISOString(),
+    };
+    setCheckIns((prev) => upsertCheckIn(prev, entry));
+    setCheckInTarget(null);
+  }
+
+  function snoozeCheckIn() {
+    if (!checkInTarget) return;
+    const id = checkInTarget.id;
+    setSnoozedIds((prev) => new Set(prev).add(id));
+    setCheckInTarget(null);
+  }
 
   function timedUniverse(excludeId?: string): TimedItem[] {
     return model.items
@@ -501,6 +562,10 @@ export function DayGrid({
           ),
         );
       }
+      return;
+    }
+    if (action === "check-in") {
+      setCheckInTarget(item);
     }
   }
 
@@ -599,8 +664,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Drag tasks from the right · move/resize placed blocks · right-click a
-          card for one-off / unschedule · click a min-short badge to suggest
+          Drag tasks from the right · right-click cards · after a block ends,
+          check in (Done / Partly / Not done — never auto-done)
         </p>
       </div>
 
@@ -643,6 +708,16 @@ export function DayGrid({
             .join("; ")}
           .
         </div>
+      ) : null}
+
+      {checkInTarget ? (
+        <CheckInPrompt
+          title={checkInTarget.title}
+          start={checkInTarget.start}
+          end={checkInTarget.end}
+          onSubmit={submitCheckIn}
+          onLater={snoozeCheckIn}
+        />
       ) : null}
 
       <div
@@ -784,16 +859,17 @@ export function DayGrid({
                     );
                     if (!place) return null;
                     const warned = warnIds.has(item.id);
+                    const checkIn = checkIns[item.id];
                     return (
                       <article
                         key={item.id}
-                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}${item.placed ? " is-placed" : ""}`}
+                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}${item.placed ? " is-placed" : ""}${checkIn ? ` checkin-${checkIn.outcome}` : ""}`}
                         style={{
                           top: `calc(${(place.rowStart - 2) * ROW_PX}rem)`,
                           height: `calc(${place.rowSpan * ROW_PX}rem - 2px)`,
                           background: item.colour,
                         }}
-                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""} · right-click for actions`}
+                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}${checkIn ? ` · ${outcomeLabel(checkIn.outcome)}${checkIn.remainingMin != null ? ` (${checkIn.remainingMin}m left)` : ""}` : ""} · right-click for actions`}
                         draggable={Boolean(item.placed)}
                         onDragStart={(e) => {
                           if (!item.placed) return;
@@ -808,6 +884,9 @@ export function DayGrid({
                         </span>
                         <span className="day-grid-item-time">
                           {item.start}–{item.end}
+                          {checkIn
+                            ? ` · ${outcomeLabel(checkIn.outcome)}`
+                            : ""}
                         </span>
                         {item.placed ? (
                           <button

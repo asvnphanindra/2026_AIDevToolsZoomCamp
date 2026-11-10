@@ -29,7 +29,7 @@
 | US-C1 | [#30](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/30) | Capture tasks | CRUD → backlog |
 | US-C2 | [#31](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/31) | Drag / move / resize + conflicts | Overlap warn + shorten/move |
 | US-C3 | [#32](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/32) | Daily minimum rules | Badge; suggest; never auto-place |
-| US-D1 | [#33](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/33) | Block check-in | Done / Partly / Not done after end |
+| US-D1 | [#33](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/33) | Block check-in | Done / Partly / Not done after end (prompt; never auto) |
 | US-D2 | [#34](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/34) | Replan unfinished | Back to backlog + remaining |
 | US-E1 | [#35](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/35) | Focus panel | Column per life area |
 | US-E2 | [#36](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/36) | Weekly goals + carry-over | ISO week; one-click carry |

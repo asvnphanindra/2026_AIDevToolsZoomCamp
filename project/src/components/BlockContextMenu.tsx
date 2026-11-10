@@ -6,7 +6,8 @@ export type BlockMenuAction =
   | "extra-session"
   | "remove-one-off"
   | "edit-placed"
-  | "unschedule-placed";
+  | "unschedule-placed"
+  | "check-in";
 
 type Props = {
   x: number;
@@ -35,6 +36,10 @@ export function BlockContextMenu({ x, y, item, onAction, onClose }: Props) {
       { id: "edit-placed", label: "Edit title…" },
       { id: "unschedule-placed", label: "Unschedule" },
     );
+  }
+
+  if (item.kind === "block") {
+    items.push({ id: "check-in", label: "Check in…" });
   }
 
   if (!items.length) {

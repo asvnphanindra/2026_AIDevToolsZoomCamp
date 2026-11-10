@@ -470,6 +470,55 @@ button.nav-active {
   color: var(--muted);
 }
 
+.checkin-banner {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  background: #e8f3ec;
+  border: 1px solid #9fc9b0;
+  border-radius: 0.75rem;
+}
+
+.checkin-banner p {
+  margin: 0 0 0.65rem;
+}
+
+.checkin-partly {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: flex-end;
+}
+
+.checkin-partly label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.checkin-partly input {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  width: 6rem;
+}
+
+.day-grid-item.checkin-done {
+  outline: 2px solid #2f6f4e;
+}
+
+.day-grid-item.checkin-partly {
+  outline: 2px solid #a15c07;
+}
+
+.day-grid-item.checkin-not-done {
+  outline: 2px solid #8b3a3a;
+  opacity: 0.85;
+}
+
 .day-grid-head-title {
   font-size: 0.8rem;
   font-weight: 650;
