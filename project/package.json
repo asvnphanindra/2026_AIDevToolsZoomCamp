@@ -1,0 +1,31 @@
+{
+  "name": "work-planner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --only auth,firestore --project work-planner-demo",
+    "start": "concurrently -k -n emu,web -c cyan,magenta \"npm run emulators\" \"npm run dev\"",
+    "local": "npm start"
+  },
+  "dependencies": {
+    "firebase": "^11.10.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "firebase-tools": "^14.11.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.0"
+  }
+}

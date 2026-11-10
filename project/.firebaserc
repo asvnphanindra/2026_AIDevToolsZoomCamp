@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "work-planner-demo",
+    "demo": "work-planner-demo",
+    "personal": "work-planner-personal"
+  }
+}

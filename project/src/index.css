@@ -1,0 +1,112 @@
+:root {
+  color-scheme: light;
+  --bg: #f3efe6;
+  --ink: #1c2420;
+  --muted: #5c6b63;
+  --accent: #0f6b4c;
+  --accent-ink: #f7fff9;
+  --panel: #fffaf2;
+  --line: #d5cdc0;
+  --danger: #9b2c2c;
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #d9efe4 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #efe3c8 0%, transparent 50%),
+    var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.shell {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+.brand h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 0 0 1.75rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0.7rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+button.secondary {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.placeholder {
+  margin: 0 0 1.5rem;
+  padding: 1.25rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.placeholder h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.hint {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.error {
+  color: var(--danger);
+  margin-top: 1rem;
+}
+
+code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.9em;
+}

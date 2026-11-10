@@ -1,0 +1,24 @@
+# Dependencies / build
+node_modules
+dist
+dist-ssr
+*.local
+
+# Env — keep secrets out of git (demo public keys go in .env.example only)
+.env
+.env.*.local
+seed/personal
+
+# Logs / caches
+npm-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+.firebase
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

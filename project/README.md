@@ -3,7 +3,7 @@
 Single-user personal planner: 3-day time grid, energy bands, drag tasks onto blocks, daily minimums, Done / Partly / Not done check-ins, and weekly → longer horizons. Demo uses fictional seed only.
 
 **Course:** AI Dev Tools Zoomcamp 2026 — final project  
-**Stack:** React + TypeScript · **Firebase Auth (Google)** · **Cloud Firestore** · Emulators for local/CI  
+**Stack:** React + TypeScript (Vite) · **Firebase Auth (Google)** · **Cloud Firestore** · Emulators for local/CI  
 **Deploy:** local-first; **Firebase Hosting only after course submission** ([`_docs/plan.md`](_docs/plan.md))
 
 ## Problem
@@ -14,7 +14,7 @@ Static calendars show *what* is planned, not whether it got done, whether the sl
 
 Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)** · map in [`_docs/task-tracker.md`](_docs/task-tracker.md)
 
-- Sign-in + demo mode (US-A1, A2)
+- Sign-in + demo mode (US-A1, A2) — scaffold stubs in this branch
 - 3-day grid, energy bands, seeded fixed schedule, day types, one-offs (US-B1–B5)
 - Tasks, drag/move/resize, daily minimums (US-C1–C3)
 - Check-in + replan (US-D1, D2)
@@ -40,10 +40,14 @@ Phase 2 US-* (break-down/roll-up, digests, push, PNG export, schedule import UI)
 project/
 ├── README.md          ← you are here
 ├── AGENTS.md          → _docs/AGENTS.md
+├── package.json       ← Vite app + emulator scripts
+├── firebase.json      ← Auth + Firestore emulators (no Hosting deploy yet)
+├── firestore.rules    ← owner + demo stubs
+├── src/               ← React UI shell (US-A1/A2 placeholders)
 └── _docs/
-    ├── FUNCTIONAL_SPEC_grok_bot.md   ← user stories + full AC
+    ├── FUNCTIONAL_SPEC_grok_bot.md
     ├── product-spec.md
-    ├── task-tracker.md               ← Issues #23–#39
+    ├── task-tracker.md
     ├── plan.md · agent-team.md · process.md · architecture.md
     └── AGENTS.md
 ```
@@ -53,19 +57,31 @@ project/
 | Problem / features / behavior | ☑ |
 | Spec + public tracker (#23–#39) | ☑ |
 | Agent team + `AGENTS.md` | ☑ |
-| App / tests / Docker / CI / obs | ☐ local-first next |
+| App scaffold + local emulators | ☑ Section B scaffold |
+| Full US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
-## Quick start
+## Quick start (one command)
 
-Docs only until Section B:
+**Prerequisite:** Node ≥ 20. Firestore emulator also needs a local **JDK 21+** (`java` on PATH).
 
 ```powershell
 cd project
-# Spec: _docs/FUNCTIONAL_SPEC_grok_bot.md · Tracker: _docs/task-tracker.md
+copy .env.example .env   # first time only
+npm install
+npm start                # Auth+Firestore emulators + Vite (alias: npm run local)
 ```
 
-Later: `docker compose up --build` → Firebase Emulators + demo seed.
+- App: http://127.0.0.1:5173  
+- Emulator UI: http://127.0.0.1:4000  
+- Auth emulator: `:9099` · Firestore emulator: `:8080`
+
+UI-only (no emulators): `npm run dev`  
+Emulators only: `npm run emulators`
+
+Placeholder project id: `work-planner-demo` (`.firebaserc`). Swap to a real Firebase web app config in `.env` when available; keep personal seeds out of git.
+
+Sign-in buttons are **stubs** for US-A1/A2: Google popup needs Auth emulator test users or real credentials; **Try demo** uses anonymous auth against the emulator.
 
 ## Links
 
