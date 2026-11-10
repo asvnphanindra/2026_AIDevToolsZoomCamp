@@ -5,6 +5,7 @@ import {
   areaName,
   emptyTask,
   loadBacklog,
+  TASK_DRAG_MIME,
   writeBacklog,
   type BacklogTask,
 } from "@/lib/tasks";
@@ -12,22 +13,35 @@ import {
 type Props = {
   isDemo: boolean;
   areas: SeedArea[];
+  tasks: BacklogTask[];
+  onTasksChange: (tasks: BacklogTask[]) => void;
 };
 
 const PRIORITIES = ["low", "med", "high"] as const;
 
-/** US-C1 — capture / edit / delete backlog tasks. */
-export function TaskBacklog({ isDemo, areas }: Props) {
+/** US-C1 backlog + US-C2 drag source. */
+export function TaskBacklog({
+  isDemo,
+  areas,
+  tasks,
+  onTasksChange,
+}: Props) {
   const defaultArea = areas[0]?.id ?? "work";
-  const [tasks, setTasks] = useState<BacklogTask[]>([]);
   const [draft, setDraft] = useState<BacklogTask>(() => emptyTask(defaultArea));
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [booted, setBooted] = useState(false);
 
   useEffect(() => {
-    const loaded = loadBacklog(isDemo);
-    setTasks(loaded);
-    if (loaded.length) writeBacklog(loaded);
-  }, [isDemo]);
+    if (booted) return;
+    if (tasks.length === 0) {
+      const loaded = loadBacklog(isDemo);
+      if (loaded.length) {
+        onTasksChange(loaded);
+        writeBacklog(loaded);
+      }
+    }
+    setBooted(true);
+  }, [booted, isDemo, onTasksChange, tasks.length]);
 
   useEffect(() => {
     setDraft((d) =>
@@ -38,7 +52,7 @@ export function TaskBacklog({ isDemo, areas }: Props) {
   }, [areas, defaultArea]);
 
   function persist(next: BacklogTask[]) {
-    setTasks(next);
+    onTasksChange(next);
     writeBacklog(next);
   }
 
@@ -67,7 +81,9 @@ export function TaskBacklog({ isDemo, areas }: Props) {
     };
 
     if (editingId) {
-      persist(tasks.map((t) => (t.id === editingId ? { ...payload, id: editingId } : t)));
+      persist(
+        tasks.map((t) => (t.id === editingId ? { ...payload, id: editingId } : t)),
+      );
     } else {
       const id = `task-${Date.now()}`;
       persist([{ ...payload, id }, ...tasks]);
@@ -81,6 +97,7 @@ export function TaskBacklog({ isDemo, areas }: Props) {
     if (editingId === id) resetForm();
   }
 
+  const openTasks = tasks.filter((t) => t.status === "backlog");
   const listAreas = areas.length ? areas : [];
 
   return (
@@ -88,7 +105,7 @@ export function TaskBacklog({ isDemo, areas }: Props) {
       <div className="day-grid-meta">
         <h2>Backlog</h2>
         <p className="muted">
-          Capture tasks (US-C1). Drag onto the grid comes later (US-C2).
+          Capture tasks, then drag onto the week grid (US-C2).
         </p>
       </div>
 
@@ -179,12 +196,21 @@ export function TaskBacklog({ isDemo, areas }: Props) {
         </div>
       </form>
 
-      {tasks.length === 0 ? (
-        <p className="muted">No backlog tasks yet.</p>
+      {openTasks.length === 0 ? (
+        <p className="muted">No open backlog tasks — drag created blocks on the grid.</p>
       ) : (
         <ul className="task-list">
-          {tasks.map((task) => (
-            <li key={task.id} className="task-row">
+          {openTasks.map((task) => (
+            <li
+              key={task.id}
+              className="task-row is-draggable"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
+                e.dataTransfer.setData("text/plain", task.id);
+                e.dataTransfer.effectAllowed = "copyMove";
+              }}
+            >
               <span
                 className="swatch"
                 style={{ background: areaColour(listAreas, task.areaId) }}
@@ -196,7 +222,7 @@ export function TaskBacklog({ isDemo, areas }: Props) {
                   {areaName(listAreas, task.areaId)} · {task.durationMin}m ·{" "}
                   {task.priority}
                   {task.due ? ` · due ${task.due}` : ""}
-                  {task.deepWork ? " · deep work" : ""}
+                  {task.deepWork ? " · deep work" : ""} · drag to grid
                 </span>
               </div>
               <div className="task-actions">
@@ -207,7 +233,11 @@ export function TaskBacklog({ isDemo, areas }: Props) {
                 >
                   Edit
                 </button>
-                <button type="button" className="secondary" onClick={() => remove(task.id)}>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => remove(task.id)}
+                >
                   Delete
                 </button>
               </div>

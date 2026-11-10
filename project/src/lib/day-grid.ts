@@ -9,6 +9,7 @@ import {
   type SeedRoutine,
 } from "@/data/fictional-seed";
 import type { SeedScheduleChange } from "@/data/fictional-seed";
+import type { PlacedBlock } from "@/lib/blocks";
 import {
   applyScheduleChanges,
   dayTypeForOffset,
@@ -35,6 +36,9 @@ export type GridItem = {
   colour: string;
   areaId?: string;
   deepWork?: boolean;
+  /** User-placed from backlog (US-C2); movable/resizable. */
+  placed?: boolean;
+  taskId?: string;
 };
 
 export type DeepWorkWarning = {
@@ -76,6 +80,8 @@ export function buildDayGrid(opts: {
   dayTypes?: SeedDayType[];
   /** Seed + user one-off schedule changes (US-B5). */
   scheduleChanges?: SeedScheduleChange[];
+  /** User-placed blocks from backlog drag (US-C2). */
+  placedBlocks?: PlacedBlock[];
 }): DayGridModel {
   const timezone = opts.timezone || DEFAULT_TZ;
   const startHour =
@@ -107,7 +113,20 @@ export function buildDayGrid(opts: {
   const demoItems = opts.isDemo
     ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)
     : [];
-  const items = [...scheduleItems, ...demoItems];
+  const placedItems: GridItem[] = (opts.placedBlocks ?? []).map((b) => ({
+    id: b.id,
+    date: b.date,
+    title: b.title,
+    start: b.start,
+    end: b.end,
+    kind: "block" as const,
+    colour: b.colour,
+    areaId: b.areaId,
+    deepWork: b.deepWork,
+    placed: true,
+    taskId: b.taskId,
+  }));
+  const items = [...scheduleItems, ...demoItems, ...placedItems];
 
   return {
     timezone,

@@ -2,6 +2,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent,
   type FormEvent,
   type MouseEvent,
 } from "react";
@@ -15,10 +16,20 @@ import {
   type SeedScheduleChange,
 } from "@/data/fictional-seed";
 import {
+  addMinutes,
+  durationMinutes,
+  findConflicts,
+  snapMinutes,
+  type PlacedBlock,
+  type TimedItem,
+} from "@/lib/blocks";
+import { TASK_DRAG_MIME, type BacklogTask } from "@/lib/tasks";
+import {
   bandColour,
   buildDayGrid,
   itemPlacement,
   slotBandLevel,
+  type GridItem,
 } from "@/lib/day-grid";
 import {
   dayTypeForOffset,
@@ -31,7 +42,6 @@ import {
   buildHalfHourSlots,
   formatDayLabel,
   formatHhmm,
-  formatLastUpdated,
   minutesOf,
   weekdaySun0,
 } from "@/lib/time";
@@ -40,6 +50,16 @@ type Props = {
   isDemo: boolean;
   areas: SeedArea[];
   timezone?: string;
+  tasks: BacklogTask[];
+  onTasksChange: (tasks: BacklogTask[]) => void;
+  placedBlocks: PlacedBlock[];
+  onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
+};
+
+type OverlapPrompt = {
+  candidate: PlacedBlock;
+  conflicts: TimedItem[];
+  mode: "create" | "update";
 };
 
 const HOVER_MARK_START = "05:00";
@@ -47,6 +67,7 @@ const HOVER_MARK_END = "22:00";
 const ROW_PX = 1.35;
 const STORAGE_KEY = "work-planner.day-type-overrides";
 const CHANGES_KEY = "work-planner.schedule-changes";
+const BLOCK_DRAG_MIME = "application/x-work-planner-block";
 
 const DAY_TYPE_OPTIONS: DayTypeKind[] = [
   "normal",
@@ -66,8 +87,34 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
-/** Week grid + US-B4 day types + US-B5 one-off schedule changes. */
-export function DayGrid({ isDemo, areas, timezone }: Props) {
+function yToStart(
+  clientY: number,
+  el: HTMLElement,
+  startHour: number,
+  endHour: number,
+): string {
+  const rect = el.getBoundingClientRect();
+  const ratio = (clientY - rect.top) / rect.height;
+  const windowStart = startHour * 60;
+  const windowEnd = endHour * 60;
+  const mins = snapMinutes(
+    windowStart + ratio * (windowEnd - windowStart),
+    startHour,
+    endHour,
+  );
+  return formatHhmm(mins);
+}
+
+/** Week grid + day types + one-offs + US-C2 drag/drop. */
+export function DayGrid({
+  isDemo,
+  areas,
+  timezone,
+  tasks,
+  onTasksChange,
+  placedBlocks,
+  onPlacedBlocksChange,
+}: Props) {
   const [overrides, setOverrides] = useState<SeedDayType[]>(() =>
     typeof localStorage === "undefined"
       ? []
@@ -85,6 +132,7 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
     start: "10:00",
     end: "10:30",
   });
+  const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
@@ -107,8 +155,9 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         timezone,
         dayTypes,
         scheduleChanges,
+        placedBlocks,
       }),
-    [isDemo, areas, timezone, dayTypes, scheduleChanges],
+    [isDemo, areas, timezone, dayTypes, scheduleChanges, placedBlocks],
   );
   const slots = useMemo(
     () => buildHalfHourSlots(model.startHour, model.endHour),
@@ -123,6 +172,164 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
   const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
     null,
   );
+
+  function timedUniverse(excludeId?: string): TimedItem[] {
+    return model.items
+      .filter((i) => i.id !== excludeId)
+      .map((i) => ({
+        id: i.id,
+        date: i.date,
+        start: i.start,
+        end: i.end,
+        title: i.title,
+        kind: i.kind,
+      }));
+  }
+
+  function commitBlock(candidate: PlacedBlock, mode: "create" | "update") {
+    const conflicts = findConflicts(candidate, timedUniverse(candidate.id));
+    if (conflicts.length) {
+      setOverlap({ candidate, conflicts, mode });
+      return;
+    }
+    applyBlock(candidate, mode);
+  }
+
+  function applyBlock(candidate: PlacedBlock, mode: "create" | "update") {
+    if (mode === "create") {
+      onPlacedBlocksChange([...placedBlocks, candidate]);
+      onTasksChange(
+        tasks.map((t) =>
+          t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+        ),
+      );
+    } else {
+      onPlacedBlocksChange(
+        placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+      );
+    }
+    setOverlap(null);
+  }
+
+  function resolveOverlap(action: "shorten-mine" | "shorten-other" | "cancel") {
+    if (!overlap) return;
+    if (action === "cancel") {
+      setOverlap(null);
+      return;
+    }
+    let candidate = { ...overlap.candidate };
+    let nextBlocks = [...placedBlocks];
+    const first = overlap.conflicts[0]!;
+    if (action === "shorten-mine") {
+      if (minutesOf(first.start) <= minutesOf(candidate.start)) {
+        setOverlap(null);
+        return;
+      }
+      candidate = { ...candidate, end: first.start };
+      if (durationMinutes(candidate.start, candidate.end) < 15) {
+        setOverlap(null);
+        return;
+      }
+    } else if (action === "shorten-other") {
+      const otherPlaced = nextBlocks.find((b) => b.id === first.id);
+      if (!otherPlaced) {
+        // Can't shorten seed/routine/fixed — fall back to shorten mine.
+        if (minutesOf(first.start) > minutesOf(candidate.start)) {
+          candidate = { ...candidate, end: first.start };
+        } else {
+          setOverlap(null);
+          return;
+        }
+      } else {
+        nextBlocks = nextBlocks.map((b) =>
+          b.id === first.id ? { ...b, end: candidate.start } : b,
+        );
+        if (durationMinutes(otherPlaced.start, candidate.start) < 15) {
+          setOverlap(null);
+          return;
+        }
+        onPlacedBlocksChange(
+          overlap.mode === "create"
+            ? [...nextBlocks, candidate]
+            : nextBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+        );
+        if (overlap.mode === "create") {
+          onTasksChange(
+            tasks.map((t) =>
+              t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+            ),
+          );
+        }
+        setOverlap(null);
+        return;
+      }
+    }
+    if (overlap.mode === "create") {
+      onPlacedBlocksChange([...nextBlocks, candidate]);
+      onTasksChange(
+        tasks.map((t) =>
+          t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+        ),
+      );
+    } else {
+      onPlacedBlocksChange(
+        nextBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+      );
+    }
+    setOverlap(null);
+  }
+
+  function dropTaskOnDay(
+    dayKey: string,
+    clientY: number,
+    colEl: HTMLElement,
+    taskId: string,
+  ) {
+    const task = tasks.find((t) => t.id === taskId && t.status === "backlog");
+    if (!task) return;
+    const start = yToStart(
+      clientY,
+      colEl,
+      model.startHour,
+      model.endHour,
+    );
+    let end = addMinutes(start, task.durationMin);
+    const windowEnd = model.endHour * 60;
+    if (minutesOf(end) > windowEnd) end = formatHhmm(windowEnd);
+    if (durationMinutes(start, end) < 15) return;
+    const area = areas.find((a) => a.id === task.areaId);
+    const candidate: PlacedBlock = {
+      id: `placed-${Date.now()}`,
+      taskId: task.id,
+      title: task.title,
+      areaId: task.areaId,
+      colour: area?.colour ?? "#0F6B4C",
+      date: dayKey,
+      start,
+      end,
+      deepWork: task.deepWork,
+    };
+    commitBlock(candidate, "create");
+  }
+
+  function dropMoveBlock(
+    dayKey: string,
+    clientY: number,
+    colEl: HTMLElement,
+    blockId: string,
+  ) {
+    const existing = placedBlocks.find((b) => b.id === blockId);
+    if (!existing) return;
+    const dur = durationMinutes(existing.start, existing.end);
+    const start = yToStart(clientY, colEl, model.startHour, model.endHour);
+    let end = addMinutes(start, dur);
+    const windowEnd = model.endHour * 60;
+    if (minutesOf(end) > windowEnd) {
+      end = formatHhmm(windowEnd);
+    }
+    if (durationMinutes(start, end) < 15) return;
+    commitBlock({ ...existing, date: dayKey, start, end }, "update");
+  }
 
   function applyDayType(relativeOffset: number, type: DayTypeKind) {
     const seedHit = fictionalSeed.dayTypes.find(
@@ -160,7 +367,9 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         form.end,
       );
       if (overlaps.length) {
-        const names = overlaps.map((o) => `${o.title} ${o.start}–${o.end}`).join("; ");
+        const names = overlaps
+          .map((o) => `${o.title} ${o.start}–${o.end}`)
+          .join("; ");
         const replace = window.confirm(
           `Overlaps: ${names}\n\nOK = replace (substitute)\nCancel = add as extra`,
         );
@@ -207,19 +416,114 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
     setHover({ topPx, label: formatHhmm(mins) });
   }
 
+  function onColDrop(dayKey: string, e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const col = e.currentTarget;
+    const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
+    const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
+    if (taskId) dropTaskOnDay(dayKey, e.clientY, col, taskId);
+    else if (blockId) dropMoveBlock(dayKey, e.clientY, col, blockId);
+  }
+
+  function startResize(item: GridItem, e: MouseEvent) {
+    if (!item.placed) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const startY = e.clientY;
+    const origEnd = minutesOf(item.end);
+    const onMove = (ev: globalThis.MouseEvent) => {
+      const deltaRows = Math.round((ev.clientY - startY) / (ROW_PX * 16));
+      let endMins = snapMinutes(
+        origEnd + deltaRows * 15,
+        model.startHour,
+        model.endHour + 1,
+      );
+      endMins = Math.max(endMins, minutesOf(item.start) + 15);
+      endMins = Math.min(endMins, model.endHour * 60);
+      const candidate: PlacedBlock = {
+        id: item.id,
+        taskId: item.taskId ?? "",
+        title: item.title,
+        areaId: item.areaId ?? "work",
+        colour: item.colour,
+        date: item.date,
+        start: item.start,
+        end: formatHhmm(endMins),
+        deepWork: item.deepWork,
+      };
+      // live preview without conflict until mouseup
+      onPlacedBlocksChange(
+        placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+      );
+    };
+    const onUp = (ev: globalThis.MouseEvent) => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      const deltaRows = Math.round((ev.clientY - startY) / (ROW_PX * 16));
+      let endMins = snapMinutes(
+        origEnd + deltaRows * 15,
+        model.startHour,
+        model.endHour + 1,
+      );
+      endMins = Math.max(endMins, minutesOf(item.start) + 15);
+      endMins = Math.min(endMins, model.endHour * 60);
+      const candidate: PlacedBlock = {
+        id: item.id,
+        taskId: item.taskId ?? "",
+        title: item.title,
+        areaId: item.areaId ?? "work",
+        colour: item.colour,
+        date: item.date,
+        start: item.start,
+        end: formatHhmm(endMins),
+        deepWork: item.deepWork,
+      };
+      commitBlock(candidate, "update");
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   return (
     <section className="day-grid" aria-label="Seven-day hourly grid">
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Last updated{" "}
-          <time dateTime={model.updatedAt.toISOString()}>
-            {formatLastUpdated(model.updatedAt, model.timezone)}
-          </time>{" "}
-          ({model.timezone}) · mark day types in each header · hover for
-          15-min marks ({HOVER_MARK_START}–{HOVER_MARK_END})
+          Drop backlog tasks on a day column · drag placed blocks to move ·
+          bottom edge to resize · hover for 15-min marks
         </p>
       </div>
+
+      {overlap ? (
+        <div className="overlap-banner" role="alertdialog">
+          <p>
+            Overlap with{" "}
+            {overlap.conflicts
+              .map((c) => `${c.title} (${c.start}–${c.end})`)
+              .join("; ")}
+            .
+          </p>
+          <div className="actions">
+            <button type="button" onClick={() => resolveOverlap("shorten-mine")}>
+              Shorten this
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => resolveOverlap("shorten-other")}
+            >
+              Shorten other
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => resolveOverlap("cancel")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {model.warnings.length > 0 ? (
         <div className="energy-warn" role="status">
@@ -305,11 +609,6 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           </label>
           <button type="submit">Apply</button>
         </div>
-        <p className="muted hint-inline">
-          Overlap prompts replace vs extra. Cancel removes overlapping fixed
-          items that day only. Seed demos: doctor (extra), cancel −2, cover
-          (sub).
-        </p>
       </form>
 
       <div
@@ -416,11 +715,16 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                 key={`col-${dayKey}`}
                 className={
                   isToday
-                    ? "day-grid-col is-today"
+                    ? "day-grid-col is-today drop-target"
                     : isPast
-                      ? "day-grid-col is-past"
-                      : "day-grid-col is-future"
+                      ? "day-grid-col is-past drop-target"
+                      : "day-grid-col is-future drop-target"
                 }
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "copy";
+                }}
+                onDrop={(e) => onColDrop(dayKey, e)}
               >
                 {slots.map((slot) => (
                   <div key={`${dayKey}-${slot}`} className="day-grid-slot" />
@@ -438,13 +742,19 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                     return (
                       <article
                         key={item.id}
-                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}`}
+                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}${item.placed ? " is-placed" : ""}`}
                         style={{
                           top: `calc(${(place.rowStart - 2) * ROW_PX}rem)`,
                           height: `calc(${place.rowSpan * ROW_PX}rem - 2px)`,
                           background: item.colour,
                         }}
                         title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}`}
+                        draggable={Boolean(item.placed)}
+                        onDragStart={(e) => {
+                          if (!item.placed) return;
+                          e.dataTransfer.setData(BLOCK_DRAG_MIME, item.id);
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
                       >
                         <span className="day-grid-item-title">
                           {warned ? "! " : ""}
@@ -453,6 +763,14 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                         <span className="day-grid-item-time">
                           {item.start}–{item.end}
                         </span>
+                        {item.placed ? (
+                          <button
+                            type="button"
+                            className="resize-handle"
+                            aria-label="Resize block"
+                            onMouseDown={(e) => startResize(item, e)}
+                          />
+                        ) : null}
                       </article>
                     );
                   })}
@@ -474,15 +792,6 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
 
       <ul className="day-grid-legend muted">
         <li>
-          <span className="swatch" style={{ background: "#7BC47F" }} /> High
-        </li>
-        <li>
-          <span className="swatch" style={{ background: "#E0C36A" }} /> Medium
-        </li>
-        <li>
-          <span className="swatch" style={{ background: "#C98B8B" }} /> Low
-        </li>
-        <li>
           <span className="swatch" style={{ background: "#0F6B4C" }} /> Area
           block
         </li>
@@ -491,14 +800,6 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         </li>
         <li>
           <span className="swatch" style={{ background: "#C45C26" }} /> Fixed
-        </li>
-        <li>
-          <span className="swatch" style={{ background: "#9B9B9B" }} /> Fixed
-          (online grey)
-        </li>
-        <li>
-          <span className="swatch" style={{ background: "#5B7C99" }} /> Online
-          slot
         </li>
         <li>
           <span className="swatch" style={{ background: "#8B4513" }} /> One-off

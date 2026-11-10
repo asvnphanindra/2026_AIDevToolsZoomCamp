@@ -1,9 +1,16 @@
+import { useCallback, useState } from "react";
 import { DayGrid } from "@/components/DayGrid";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
 import { fictionalSeed } from "@/data/fictional-seed";
+import {
+  readPlacedBlocks,
+  writePlacedBlocks,
+  type PlacedBlock,
+} from "@/lib/blocks";
+import { writeBacklog, type BacklogTask } from "@/lib/tasks";
 
-/** US-A1/A2 auth shell + US-B1 day grid when signed in. */
+/** Auth shell + backlog + week grid (US-C1/C2). */
 export function AuthShell() {
   const {
     user,
@@ -16,6 +23,23 @@ export function AuthShell() {
     signInDemo,
     signOut,
   } = useAuth();
+
+  const [tasks, setTasks] = useState<BacklogTask[]>([]);
+  const [blocks, setBlocks] = useState<PlacedBlock[]>(() =>
+    typeof localStorage === "undefined" ? [] : readPlacedBlocks(),
+  );
+
+  const onTasksChange = useCallback((next: BacklogTask[]) => {
+    setTasks(next);
+    writeBacklog(next);
+  }, []);
+
+  const onBlocksChange = useCallback((next: PlacedBlock[]) => {
+    setBlocks(next);
+    writePlacedBlocks(next);
+  }, []);
+
+  const areas = view?.areas?.length ? view.areas : fictionalSeed.areas;
 
   if (!ready) {
     return (
@@ -80,13 +104,19 @@ export function AuthShell() {
 
       <TaskBacklog
         isDemo={isDemo}
-        areas={view?.areas?.length ? view.areas : fictionalSeed.areas}
+        areas={areas}
+        tasks={tasks}
+        onTasksChange={onTasksChange}
       />
 
       <DayGrid
         isDemo={isDemo}
-        areas={view?.areas?.length ? view.areas : fictionalSeed.areas}
+        areas={areas}
         timezone="Asia/Kolkata"
+        tasks={tasks}
+        onTasksChange={onTasksChange}
+        placedBlocks={blocks}
+        onPlacedBlocksChange={onBlocksChange}
       />
 
       {error ? <p className="error">{error}</p> : null}

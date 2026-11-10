@@ -420,6 +420,44 @@ code {
   font-size: 0.8rem;
 }
 
+.task-row.is-draggable {
+  cursor: grab;
+}
+
+.task-row.is-draggable:active {
+  cursor: grabbing;
+}
+
+.overlap-banner {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.55rem;
+  background: #fff4e5;
+  border: 1px solid #e0b878;
+}
+
+.overlap-banner p {
+  margin: 0 0 0.55rem;
+}
+
+.day-grid-item.is-placed {
+  cursor: grab;
+  z-index: 2;
+}
+
+.resize-handle {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 0;
+  height: 0.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.15rem;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: ns-resize;
+}
+
 .day-grid-time {
   grid-column: 1;
   font-size: 0.7rem;

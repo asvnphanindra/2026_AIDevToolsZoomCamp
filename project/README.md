@@ -65,6 +65,7 @@ project/
 | US-B4 special day types (Issue #28) | ☑ |
 | US-B5 one-off schedule changes (Issue #29) | ☑ |
 | US-C1 capture tasks (Issue #30) | ☑ |
+| US-C2 drag tasks onto grid (Issue #31) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -124,6 +125,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 1. `npm start` → **Try demo**.
 2. Backlog shows seed tasks; **Add** title/area/duration/priority/due.
 3. **Edit** / **Delete** a backlog row; list updates (localStorage).
+
+### Verify US-C2 (Issue #31)
+
+1. `npm start` → **Try demo**.
+2. Drag a backlog task onto a day column → block appears; task leaves open backlog.
+3. Drag the block to move; drag bottom handle to resize.
+4. Overlap → **Shorten this** / **Shorten other** / Cancel.
 
 ### Verify US-B2 (Issue #26)
 

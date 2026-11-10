@@ -4,6 +4,8 @@ export type BacklogTask = SeedTask & {
   due?: string;
 };
 
+export const TASK_DRAG_MIME = "application/x-work-planner-task";
+
 const STORAGE_KEY = "work-planner.backlog-tasks";
 
 export function seedBacklogTasks(): BacklogTask[] {
