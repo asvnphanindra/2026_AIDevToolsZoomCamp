@@ -60,6 +60,7 @@ project/
 | App scaffold + local emulators | ☑ |
 | US-A1 / US-A2 (Issues #23 / #24) | ☑ local emulator |
 | US-B1 3-day grid (Issue #25) | ☑ |
+| US-B2 energy bands (Issue #26) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -98,6 +99,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 2. See **today + next 2 days**, 30-min rows 06:00–23:00; today highlighted; later days dimmed.
 3. Area-coloured blocks, grey routines, distinct fixed-schedule colour; **Last updated** in `Asia/Kolkata`.
 4. **Sign in with Google** → empty grid skeleton (no demo items).
+
+### Verify US-B2 (Issue #26)
+
+1. `npm start` → **Try demo**.
+2. Energy strip (E) beside times: green high / amber medium / rose low.
+3. Warning for **Deep focus write-up** in the evening low band; block outlined.
+4. Google sign-in still shows the energy strip (default bands) with an empty day grid.
 
 ## Links
 

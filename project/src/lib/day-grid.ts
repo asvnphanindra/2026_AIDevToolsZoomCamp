@@ -1,6 +1,9 @@
 import {
+  BAND_COLOURS,
   fictionalSeed,
+  type EnergyLevel,
   type SeedArea,
+  type SeedBand,
   type SeedBlock,
   type SeedRoutine,
   type SeedSchedule,
@@ -23,6 +26,15 @@ export type GridItem = {
   kind: GridItemKind;
   colour: string;
   areaId?: string;
+  deepWork?: boolean;
+};
+
+export type DeepWorkWarning = {
+  blockId: string;
+  title: string;
+  date: string;
+  start: string;
+  end: string;
 };
 
 export const SCHEDULE_COLOUR = "#C45C26";
@@ -36,6 +48,8 @@ export type DayGridModel = {
   todayKey: string;
   items: GridItem[];
   areas: SeedArea[];
+  bands: SeedBand[];
+  warnings: DeepWorkWarning[];
   updatedAt: Date;
 };
 
@@ -56,6 +70,7 @@ export function buildDayGrid(opts: {
   const dayKeys = nextDayKeys(3, timezone, now);
   const todayKey = dayKeys[0]!;
   const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
+  const bands = fictionalSeed.bands;
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
   const items: GridItem[] = opts.isDemo
@@ -70,6 +85,8 @@ export function buildDayGrid(opts: {
     todayKey,
     items,
     areas,
+    bands,
+    warnings: findDeepWorkInLowBand(items, bands, timezone),
     updatedAt: now,
   };
 }
@@ -121,10 +138,71 @@ function expandSeedItems(
       kind: "block",
       colour: areaColour.get(block.areaId) || "#0F6B4C",
       areaId: block.areaId,
+      deepWork: Boolean(block.deepWork),
     });
   }
 
   return items;
+}
+
+export function bandColour(level: EnergyLevel): string {
+  return BAND_COLOURS[level];
+}
+
+/** Per half-hour slot colour from configured bands (first matching band). */
+export function slotBandLevel(
+  slotHhmm: string,
+  bands: SeedBand[],
+  weekday: number,
+): EnergyLevel | null {
+  const start = minutesOf(slotHhmm);
+  const end = start + 30;
+  for (const band of bands) {
+    if (band.weekdays.length && !band.weekdays.includes(weekday)) continue;
+    const bStart = minutesOf(band.start);
+    const bEnd = minutesOf(band.end);
+    if (start < bEnd && end > bStart) return band.level;
+  }
+  return null;
+}
+
+export function findDeepWorkInLowBand(
+  items: GridItem[],
+  bands: SeedBand[],
+  timezone: string,
+): DeepWorkWarning[] {
+  const warnings: DeepWorkWarning[] = [];
+  for (const item of items) {
+    if (item.kind !== "block" || !item.deepWork) continue;
+    const wd = weekdaySun0(item.date, timezone);
+    const lowBands = bands.filter(
+      (b) =>
+        b.level === "low" &&
+        (!b.weekdays.length || b.weekdays.includes(wd)),
+    );
+    for (const band of lowBands) {
+      if (rangesOverlap(item.start, item.end, band.start, band.end)) {
+        warnings.push({
+          blockId: item.id,
+          title: item.title,
+          date: item.date,
+          start: item.start,
+          end: item.end,
+        });
+        break;
+      }
+    }
+  }
+  return warnings;
+}
+
+function rangesOverlap(
+  aStart: string,
+  aEnd: string,
+  bStart: string,
+  bEnd: string,
+): boolean {
+  return minutesOf(aStart) < minutesOf(bEnd) && minutesOf(aEnd) > minutesOf(bStart);
 }
 
 /** Row span for a grid item within the visible window. */
@@ -138,7 +216,7 @@ export function itemPlacement(
   const start = Math.max(minutesOf(item.start), windowStart);
   const end = Math.min(minutesOf(item.end), windowEnd);
   if (end <= start) return null;
-  const rowStart = Math.floor((start - windowStart) / 30) + 2; // +1 header, 1-based
+  const rowStart = Math.floor((start - windowStart) / 30) + 2;
   const rowSpan = Math.max(1, Math.ceil((end - start) / 30));
   return { rowStart, rowSpan };
 }

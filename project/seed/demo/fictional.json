@@ -14,6 +14,29 @@
     { "id": "family", "name": "Family", "colour": "#A15C07", "order": 3 },
     { "id": "passion", "name": "Passion", "colour": "#7A3E9D", "order": 4 }
   ],
+  "bands": [
+    {
+      "id": "band-high",
+      "level": "high",
+      "start": "06:00",
+      "end": "12:00",
+      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "band-med",
+      "level": "medium",
+      "start": "12:00",
+      "end": "17:00",
+      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "band-low",
+      "level": "low",
+      "start": "17:00",
+      "end": "23:00",
+      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+    }
+  ],
   "tasks": [
     {
       "id": "t1",
@@ -22,7 +45,8 @@
       "durationMin": 45,
       "priority": "med",
       "status": "backlog",
-      "horizon": "day"
+      "horizon": "day",
+      "deepWork": true
     },
     {
       "id": "t2",
@@ -31,7 +55,8 @@
       "durationMin": 30,
       "priority": "high",
       "status": "backlog",
-      "horizon": "day"
+      "horizon": "day",
+      "deepWork": false
     },
     {
       "id": "t3",
@@ -40,7 +65,8 @@
       "durationMin": 40,
       "priority": "low",
       "status": "backlog",
-      "horizon": "day"
+      "horizon": "day",
+      "deepWork": false
     }
   ],
   "routines": [
@@ -84,7 +110,8 @@
       "areaId": "work",
       "dayOffset": 0,
       "start": "09:00",
-      "end": "09:45"
+      "end": "09:45",
+      "deepWork": true
     },
     {
       "id": "b2",
@@ -92,7 +119,8 @@
       "areaId": "study",
       "dayOffset": 0,
       "start": "16:30",
-      "end": "17:00"
+      "end": "17:00",
+      "deepWork": false
     },
     {
       "id": "b3",
@@ -100,15 +128,26 @@
       "areaId": "family",
       "dayOffset": 1,
       "start": "18:00",
-      "end": "18:40"
+      "end": "18:40",
+      "deepWork": false
     },
     {
       "id": "b4",
+      "title": "Deep focus write-up",
+      "areaId": "work",
+      "dayOffset": 0,
+      "start": "20:00",
+      "end": "21:00",
+      "deepWork": true
+    },
+    {
+      "id": "b5",
       "title": "Sketch side project",
       "areaId": "passion",
       "dayOffset": 2,
       "start": "20:00",
-      "end": "21:00"
+      "end": "21:00",
+      "deepWork": false
     }
   ]
 }

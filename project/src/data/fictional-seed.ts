@@ -7,6 +7,16 @@ export type SeedArea = {
   order: number;
 };
 
+export type EnergyLevel = "high" | "medium" | "low";
+
+export type SeedBand = {
+  id: string;
+  level: EnergyLevel;
+  start: string;
+  end: string;
+  weekdays: number[];
+};
+
 export type SeedTask = {
   id: string;
   title: string;
@@ -15,6 +25,7 @@ export type SeedTask = {
   priority: string;
   status: string;
   horizon: string;
+  deepWork?: boolean;
 };
 
 export type SeedProfile = {
@@ -51,11 +62,13 @@ export type SeedBlock = {
   dayOffset: number;
   start: string;
   end: string;
+  deepWork?: boolean;
 };
 
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
+  bands: SeedBand[];
   tasks: SeedTask[];
   routines: SeedRoutine[];
   schedule: SeedSchedule[];
@@ -64,3 +77,9 @@ export type FictionalSeed = {
 
 /** Fictional demo payload only — never commit personal seeds. */
 export const fictionalSeed = raw as FictionalSeed;
+
+export const BAND_COLOURS: Record<EnergyLevel, string> = {
+  high: "#7BC47F",
+  medium: "#E0C36A",
+  low: "#C98B8B",
+};

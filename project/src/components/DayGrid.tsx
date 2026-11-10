@@ -1,10 +1,16 @@
 import { useMemo } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
-import { buildDayGrid, itemPlacement } from "@/lib/day-grid";
+import {
+  bandColour,
+  buildDayGrid,
+  itemPlacement,
+  slotBandLevel,
+} from "@/lib/day-grid";
 import {
   buildHalfHourSlots,
   formatDayLabel,
   formatLastUpdated,
+  weekdaySun0,
 } from "@/lib/time";
 
 type Props = {
@@ -13,7 +19,7 @@ type Props = {
   timezone?: string;
 };
 
-/** US-B1 — today + next 2 days, 30-min rows, coloured items. */
+/** US-B1 grid + US-B2 energy strip and deep-work warnings. */
 export function DayGrid({ isDemo, areas, timezone }: Props) {
   const model = useMemo(
     () => buildDayGrid({ isDemo, areas, timezone }),
@@ -23,6 +29,12 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
     () => buildHalfHourSlots(model.startHour, model.endHour),
     [model.startHour, model.endHour],
   );
+  const warnIds = useMemo(
+    () => new Set(model.warnings.map((w) => w.blockId)),
+    [model.warnings],
+  );
+  // Strip uses today's weekday pattern (bands are time-of-day).
+  const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
 
   return (
     <section className="day-grid" aria-label="Three-day hourly grid">
@@ -37,14 +49,27 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
         </p>
       </div>
 
+      {model.warnings.length > 0 ? (
+        <div className="energy-warn" role="status">
+          Deep work in a low-energy band:{" "}
+          {model.warnings
+            .map((w) => `${w.title} (${w.start}–${w.end})`)
+            .join("; ")}
+          .
+        </div>
+      ) : null}
+
       <div
-        className="day-grid-board"
+        className="day-grid-board has-energy"
         style={{
           gridTemplateRows: `auto repeat(${slots.length}, minmax(1.35rem, auto))`,
         }}
       >
         <div className="day-grid-corner" aria-hidden />
-        {model.dayKeys.map((key) => (
+        <div className="day-grid-energy-head" title="Energy">
+          E
+        </div>
+        {model.dayKeys.map((key, dayIdx) => (
           <div
             key={key}
             className={
@@ -52,6 +77,7 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                 ? "day-grid-head is-today"
                 : "day-grid-head is-later"
             }
+            style={{ gridColumn: dayIdx + 3, gridRow: 1 }}
           >
             {key === model.todayKey ? "Today · " : null}
             {formatDayLabel(key, model.timezone)}
@@ -62,11 +88,31 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
           <div
             key={slot}
             className="day-grid-time"
-            style={{ gridRow: idx + 2 }}
+            style={{ gridColumn: 1, gridRow: idx + 2 }}
           >
             {slot.endsWith(":00") ? slot : ""}
           </div>
         ))}
+
+        <div
+          className="day-grid-energy"
+          style={{ gridRow: `2 / span ${slots.length}` }}
+          aria-label="Energy bands"
+        >
+          {slots.map((slot) => {
+            const level = slotBandLevel(slot, model.bands, stripWeekday);
+            return (
+              <div
+                key={`e-${slot}`}
+                className="day-grid-energy-slot"
+                style={{
+                  background: level ? bandColour(level) : "transparent",
+                }}
+                title={level ? `${slot} · ${level}` : slot}
+              />
+            );
+          })}
+        </div>
 
         {model.dayKeys.map((dayKey, dayIdx) => (
           <div
@@ -77,7 +123,7 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                 : "day-grid-col is-later"
             }
             style={{
-              gridColumn: dayIdx + 2,
+              gridColumn: dayIdx + 3,
               gridRow: `2 / span ${slots.length}`,
             }}
           >
@@ -93,18 +139,22 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
                   model.endHour,
                 );
                 if (!place) return null;
+                const warned = warnIds.has(item.id);
                 return (
                   <article
                     key={item.id}
-                    className={`day-grid-item kind-${item.kind}`}
+                    className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}`}
                     style={{
                       top: `calc(${(place.rowStart - 2) * 1.35}rem)`,
                       height: `calc(${place.rowSpan * 1.35}rem - 2px)`,
                       background: item.colour,
                     }}
-                    title={`${item.title} ${item.start}–${item.end}`}
+                    title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}`}
                   >
-                    <span className="day-grid-item-title">{item.title}</span>
+                    <span className="day-grid-item-title">
+                      {warned ? "! " : ""}
+                      {item.title}
+                    </span>
                     <span className="day-grid-item-time">
                       {item.start}–{item.end}
                     </span>
@@ -116,6 +166,15 @@ export function DayGrid({ isDemo, areas, timezone }: Props) {
       </div>
 
       <ul className="day-grid-legend muted">
+        <li>
+          <span className="swatch" style={{ background: "#7BC47F" }} /> High
+        </li>
+        <li>
+          <span className="swatch" style={{ background: "#E0C36A" }} /> Medium
+        </li>
+        <li>
+          <span className="swatch" style={{ background: "#C98B8B" }} /> Low
+        </li>
         <li>
           <span className="swatch" style={{ background: "#0F6B4C" }} /> Area
           block
