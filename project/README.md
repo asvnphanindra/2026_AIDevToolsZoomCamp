@@ -40,17 +40,16 @@ The current planner is a script that renders an image each morning. Changes (sub
 ```text
 project/
 ├── README.md                 ← you are here
-├── product-spec.md           ← refined product + acceptance criteria
-├── AGENTS.md                 ← agent entrypoint + links
-├── docs/
-│   ├── plan.md               ← local-first build order
-│   ├── agent-team.md         ← roles + collaboration
-│   ├── process.md            ← how work flows
-│   ├── architecture.md       ← stack + data boundaries
-│   └── task-tracker.md       ← public GitHub Issues setup + evidence
-├── _docs/                    ← working drafts (source functional spec)
-├── frontend/                 ← TBD (Section B)
-└── …                         ← Docker, CI, tests (later)
+├── AGENTS.md                 ← short pointer → _docs/AGENTS.md
+└── _docs/                    ← all other markdown (spec, plan, agents, tracker)
+    ├── AGENTS.md
+    ├── product-spec.md
+    ├── plan.md
+    ├── agent-team.md
+    ├── process.md
+    ├── architecture.md
+    ├── task-tracker.md
+    └── FUNCTIONAL_SPEC_grok_bot.md
 ```
 
 ## Criteria checklist
@@ -70,13 +69,13 @@ App code lands in Section B. Until then, docs and tracker only:
 
 ```powershell
 cd project
-# See product-spec.md and docs/task-tracker.md
+# See _docs/product-spec.md and _docs/task-tracker.md
 ```
 
-Planned local run (Section B+): `docker compose up --build` → Firebase Emulator Suite + demo seed. Hosting deploy is post-submission — see [docs/plan.md](docs/plan.md).
+Planned local run (Section B+): `docker compose up --build` → Firebase Emulator Suite + demo seed. Hosting deploy is post-submission — see [_docs/plan.md](_docs/plan.md).
 
 ## Links
 
-- [Product spec](product-spec.md) · [Plan](docs/plan.md) · [AGENTS.md](AGENTS.md) · [Task tracker](docs/task-tracker.md) · [Agent team](docs/agent-team.md)
+- [Product spec](_docs/product-spec.md) · [Plan](_docs/plan.md) · [AGENTS.md](_docs/AGENTS.md) · [Task tracker](_docs/task-tracker.md) · [Agent team](_docs/agent-team.md)
 - Source draft: [`_docs/FUNCTIONAL_SPEC_grok_bot.md`](_docs/FUNCTIONAL_SPEC_grok_bot.md)
 - Course project: https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project

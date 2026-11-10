@@ -18,7 +18,7 @@ One human owner (Phani) is the product authority. Agents propose; they do not ex
 ## Collaboration
 
 1. **Single source of truth for work:** public GitHub Issues labeled `work-planner` (see [task-tracker.md](task-tracker.md)). Every PR references an Issue.
-2. **Context entry:** read [AGENTS.md](../AGENTS.md) first, then the linked modular doc for your role.
+2. **Context entry:** read [AGENTS.md](AGENTS.md) first (root pointer: [`../AGENTS.md`](../AGENTS.md)), then the linked modular doc for your role.
 3. **Spec before code:** behavior changes update `product-spec.md` (and Issue AC) in the same PR as code, or earlier.
 4. **Small PRs:** one Issue (or tightly related slice) per PR; commit and push regularly.
 5. **No secrets:** never commit `.env`, service accounts, or `seed/personal/`.

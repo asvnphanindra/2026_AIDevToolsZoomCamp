@@ -2,7 +2,7 @@
 
 **Tracker:** GitHub Issues in [asvnphanindra/2026_AIDevToolsZoomCamp](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)  
 **Labels:** `work-planner` · `mvp` · `section-a`  
-**Product AC summary:** [product-spec.md](../product-spec.md) · **Build order:** [plan.md](plan.md)
+**Product AC summary:** [product-spec.md](product-spec.md) · **Build order:** [plan.md](plan.md)
 
 ## Setup notes (agents)
 

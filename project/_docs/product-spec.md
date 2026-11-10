@@ -1,9 +1,9 @@
 # Work Planner — Product Specification
 
 **Status:** Section A (spec + tracker); app build is Section B+  
-**Source draft:** [`_docs/FUNCTIONAL_SPEC_grok_bot.md`](_docs/FUNCTIONAL_SPEC_grok_bot.md)  
-**Public tracker:** [docs/task-tracker.md](docs/task-tracker.md)  
-**Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** remains the intended production host, but deploy is **after course submission** (local run/test first — see [docs/plan.md](docs/plan.md)).
+**Source draft:** [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md)  
+**Public tracker:** [task-tracker.md](task-tracker.md)  
+**Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** remains the intended production host, but deploy is **after course submission** (local run/test first — see [plan.md](plan.md)).
 
 ## 1. Problem
 
@@ -66,4 +66,4 @@ Collections (see draft §5a for fields): `areas`, `bands`, `routines`, `timetabl
 3. Single user.
 4. Horizons: 3-day + 3-week MVP; month/quarter Phase 2.
 5. Firebase Auth + Firestore (not Supabase); Hosting only after course submission.
-6. Local run/test first (see [docs/plan.md](docs/plan.md)).
+6. Local run/test first (see [plan.md](plan.md)).

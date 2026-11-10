@@ -2,7 +2,7 @@
 
 ## Working agreements
 
-1. Prefer the simplest option that matches [product-spec.md](../product-spec.md).
+1. Prefer the simplest option that matches [product-spec.md](product-spec.md).
 2. Section A = docs + tracker only. No app scaffold until Section B is assigned.
 3. Local run/test first; Firebase Hosting only after course submission ([plan.md](plan.md)).
 4. Copy/adapt useful ideas from `module_2` (Weekslot); **never overwrite** `module_2`. All Work Planner files stay under `project/`.
