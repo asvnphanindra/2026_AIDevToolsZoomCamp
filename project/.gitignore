@@ -2,6 +2,7 @@
 node_modules
 dist
 dist-ssr
+.vite
 *.local
 
 # Env — keep secrets out of git (demo public keys go in .env.example only)
