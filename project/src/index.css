@@ -8,6 +8,17 @@
   --panel: #fffaf2;
   --line: #d5cdc0;
   --danger: #9b2c2c;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.75rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --control-pad-y: 0.45rem;
+  --control-pad-x: 0.85rem;
+  --focus: 0 0 0 3px rgba(15, 107, 76, 0.28);
   font-family: "Segoe UI", "Helvetica Neue", sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -34,17 +45,18 @@ body {
 .shell {
   max-width: 40rem;
   margin: 0 auto;
-  padding: 3rem 1.25rem 4rem;
+  padding: 2.5rem 1.25rem 3.5rem;
 }
 
 .shell-wide {
   max-width: 110rem;
+  padding-inline: clamp(1rem, 2vw, 1.75rem);
 }
 
 .planner-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.9fr);
+  gap: var(--space-5);
   align-items: start;
 }
 
@@ -54,9 +66,10 @@ body {
 
 .planner-side {
   position: sticky;
-  top: 0.75rem;
+  top: var(--space-3);
   max-height: calc(100vh - 1.5rem);
   overflow: auto;
+  padding-bottom: var(--space-2);
 }
 
 .planner-side .task-backlog {
@@ -66,6 +79,7 @@ body {
 @media (max-width: 960px) {
   .planner-layout {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
 
   .planner-side {
@@ -83,20 +97,34 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand-row > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .brand h1 {
-  margin: 0 0 0.5rem;
-  font-size: clamp(2rem, 5vw, 2.75rem);
+  margin: 0 0 var(--space-2);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .lede {
-  margin: 0 0 1.75rem;
+  margin: 0 0 var(--space-6);
   color: var(--muted);
   font-size: 1.05rem;
+}
+
+.brand-row .lede {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
 }
 
 .actions {
@@ -108,13 +136,23 @@ body {
 button {
   appearance: none;
   border: 1px solid transparent;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   background: var(--accent);
   color: var(--accent-ink);
-  padding: 0.7rem 1.1rem;
+  padding: var(--control-pad-y) var(--control-pad-x);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  line-height: 1.25;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
 }
 
 button:disabled {
@@ -126,6 +164,18 @@ button.secondary {
   background: var(--panel);
   color: var(--ink);
   border-color: var(--line);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: #f3eee4;
+  filter: none;
+}
+
+select:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-color: var(--accent);
 }
 
 .placeholder {
@@ -183,16 +233,23 @@ code {
 }
 
 .day-grid {
-  margin-top: 0.5rem;
+  margin-top: 0;
 }
 
 .day-grid-meta h2 {
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--space-1);
   font-size: 1.2rem;
+  line-height: 1.25;
 }
 
 .day-grid-meta {
-  margin-bottom: 0.85rem;
+  margin-bottom: var(--space-3);
+}
+
+.day-grid-meta .muted {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .day-grid-board {
@@ -248,13 +305,13 @@ code {
 }
 
 .energy-warn {
-  margin: 0 0 0.75rem;
-  padding: 0.65rem 0.8rem;
-  border-radius: 0.5rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
   background: #f8e4e4;
   color: var(--danger);
   border: 1px solid #e2b4b4;
   font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .day-grid-energy-head {
@@ -294,8 +351,13 @@ code {
   grid-row: 1;
   font-size: 0.85rem;
   font-weight: 650;
-  padding: 0.35rem 0.4rem;
+  padding: 0.4rem 0.45rem;
   border-radius: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  align-self: stretch;
 }
 
 .day-grid-head.is-today {
@@ -315,25 +377,39 @@ code {
 .day-type-tag {
   display: block;
   font-weight: 600;
-  font-size: 0.72rem;
-  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  margin: 0;
+  color: var(--muted);
 }
 
 .rule-shortfall-badge {
   display: block;
   width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.15rem 0.3rem;
+  margin: 0;
+  padding: 0.2rem 0.35rem;
   font: inherit;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 650;
-  line-height: 1.25;
+  line-height: 1.3;
   text-align: left;
   color: #7a2e12;
   background: #f3d9c8;
   border: 1px solid #d4a07a;
   border-radius: 0.3rem;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-shortfall-badge:hover {
+  filter: brightness(0.98);
+}
+
+.rule-shortfall-badge:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
 }
 
 .rule-list {
@@ -347,24 +423,34 @@ code {
 
 .rule-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.55rem;
+  gap: var(--space-2);
+  padding: 0.5rem 0.6rem;
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   background: #fff;
 }
 
 .header-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
-  align-items: center;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .app-nav {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.app-nav button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  min-height: 2.25rem;
 }
 
 button.nav-active {
@@ -373,8 +459,60 @@ button.nav-active {
   border-color: var(--accent);
 }
 
+.header-session {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  min-width: 7.5rem;
+}
+
+.header-session > button {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.live-clock {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-align: right;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .brand-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .header-session {
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  .live-clock {
+    text-align: left;
+  }
+}
+
 .areas-config {
   max-width: 48rem;
+}
+
+.areas-config .day-grid-meta {
+  margin-bottom: var(--space-4);
 }
 
 .area-config-list {
@@ -387,17 +525,27 @@ button.nav-active {
 }
 
 .area-config-card {
-  padding: 0.85rem 1rem;
+  padding: var(--space-4);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
 }
 
 .area-config-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: var(--space-2);
   align-items: center;
+}
+
+.area-config-head input[type="color"] {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: #fff;
+  flex-shrink: 0;
 }
 
 .area-name-input {
@@ -405,81 +553,132 @@ button.nav-active {
   min-width: 8rem;
   font: inherit;
   font-weight: 650;
-  padding: 0.35rem 0.45rem;
+  padding: 0.45rem 0.55rem;
   border: 1px solid var(--line);
   border-radius: 0.35rem;
   background: #fff;
   color: var(--ink);
+  min-height: 2.25rem;
+}
+
+.area-config-head > button {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
 }
 
 .area-rules {
-  margin-top: 0.75rem;
-  padding-top: 0.65rem;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--line);
 }
 
 .area-rules-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
+}
+
+.area-rules-head button {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  min-height: 2rem;
+}
+
+.rule-row .task-main {
+  min-width: 10rem;
+}
+
+.rule-row button {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  min-height: 1.9rem;
 }
 
 .block-ctx-menu {
   position: fixed;
   z-index: 40;
-  min-width: 12rem;
-  max-width: 18rem;
-  padding: 0.45rem;
+  min-width: 12.5rem;
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: var(--space-2);
   background: #fffaf2;
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(28, 36, 32, 0.14);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .block-ctx-title {
-  margin: 0 0 0.25rem;
-  padding: 0.2rem 0.35rem;
-  font-size: 0.75rem;
+  margin: 0 0 var(--space-1);
+  padding: 0.25rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
   color: var(--muted);
+  border-bottom: 1px solid var(--line);
 }
 
 .block-ctx-menu button {
   text-align: left;
   font: inherit;
   font-size: 0.85rem;
-  padding: 0.4rem 0.55rem;
+  font-weight: 550;
+  padding: 0.45rem 0.55rem;
   border: 1px solid transparent;
   border-radius: 0.35rem;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+  min-height: 2rem;
 }
 
 .block-ctx-menu button:hover {
   background: #e8f3ec;
+  filter: none;
+}
+
+.block-ctx-menu button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
 }
 
 .block-ctx-menu button.secondary {
-  margin-top: 0.15rem;
+  margin-top: var(--space-1);
   border-color: var(--line);
   color: var(--muted);
 }
 
+.checkin-banner,
+.overlap-banner,
+.energy-warn {
+  margin: 0 0 var(--space-3);
+}
+
 .checkin-banner {
-  margin: 0 0 1rem;
-  padding: 0.85rem 1rem;
+  padding: var(--space-3) var(--space-4);
   background: #e8f3ec;
   border: 1px solid #9fc9b0;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
 }
 
 .checkin-banner p {
-  margin: 0 0 0.65rem;
+  margin: 0 0 var(--space-3);
+  line-height: 1.4;
+}
+
+.checkin-banner .actions,
+.overlap-banner .actions {
+  gap: var(--space-2);
+}
+
+.checkin-banner .actions button,
+.overlap-banner .actions button {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  min-height: 2.1rem;
 }
 
 .checkin-partly {
@@ -520,14 +719,20 @@ button.nav-active {
 }
 
 .day-grid-head-title {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.25;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .day-type-picker {
   display: block;
-  margin-top: 0.25rem;
+  margin: 0;
+  min-width: 0;
 }
 
 .day-type-picker select {
@@ -535,11 +740,13 @@ button.nav-active {
   max-width: 100%;
   font: inherit;
   font-size: 0.68rem;
-  padding: 0.15rem 0.2rem;
+  padding: 0.25rem 0.3rem;
   border: 1px solid var(--line);
   border-radius: 0.3rem;
   background: #fff;
   color: var(--ink);
+  min-height: 1.7rem;
+  line-height: 1.2;
 }
 
 .sr-only {
@@ -607,11 +814,15 @@ button.nav-active {
 }
 
 .task-form {
-  margin: 0 0 0.85rem;
-  padding: 0.85rem 1rem;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
+}
+
+.task-backlog .day-grid-meta {
+  margin-bottom: var(--space-3);
 }
 
 .task-check {
@@ -705,15 +916,15 @@ button.nav-active {
 }
 
 .overlap-banner {
-  margin: 0 0 0.85rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.55rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
   background: #fff4e5;
   border: 1px solid #e0b878;
 }
 
 .overlap-banner p {
-  margin: 0 0 0.55rem;
+  margin: 0 0 var(--space-3);
+  line-height: 1.4;
 }
 
 .day-grid-item.is-placed {
@@ -789,22 +1000,6 @@ button.nav-active {
   background: #c0392b;
   border-radius: 0.25rem;
   white-space: nowrap;
-}
-
-.header-session {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
-}
-
-.live-clock {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-  font-weight: 650;
-  color: var(--ink);
-  letter-spacing: 0.02em;
 }
 
 .day-grid-col.is-past {
