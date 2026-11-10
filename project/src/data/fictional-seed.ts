@@ -27,10 +27,39 @@ export type SeedProfile = {
   };
 };
 
+export type SeedRoutine = {
+  id: string;
+  label: string;
+  start: string;
+  end: string;
+  weekdays: number[];
+};
+
+export type SeedSchedule = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  weekday: number;
+  kind: string;
+};
+
+export type SeedBlock = {
+  id: string;
+  title: string;
+  areaId: string;
+  dayOffset: number;
+  start: string;
+  end: string;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
   tasks: SeedTask[];
+  routines: SeedRoutine[];
+  schedule: SeedSchedule[];
+  blocks: SeedBlock[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

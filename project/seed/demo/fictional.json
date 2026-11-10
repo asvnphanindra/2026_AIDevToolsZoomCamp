@@ -42,5 +42,73 @@
       "status": "backlog",
       "horizon": "day"
     }
+  ],
+  "routines": [
+    {
+      "id": "r-lunch",
+      "label": "Lunch",
+      "start": "13:00",
+      "end": "13:30",
+      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "r-commute",
+      "label": "Commute",
+      "start": "08:30",
+      "end": "09:00",
+      "weekdays": [1, 2, 3, 4, 5]
+    }
+  ],
+  "schedule": [
+    {
+      "id": "s-standup",
+      "title": "Team standup",
+      "start": "10:00",
+      "end": "10:30",
+      "weekday": 1,
+      "kind": "meeting"
+    },
+    {
+      "id": "s-lab",
+      "title": "Study lab",
+      "start": "15:00",
+      "end": "16:30",
+      "weekday": 3,
+      "kind": "class"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "title": "Draft sprint notes",
+      "areaId": "work",
+      "dayOffset": 0,
+      "start": "09:00",
+      "end": "09:45"
+    },
+    {
+      "id": "b2",
+      "title": "Read chapter 4",
+      "areaId": "study",
+      "dayOffset": 0,
+      "start": "16:30",
+      "end": "17:00"
+    },
+    {
+      "id": "b3",
+      "title": "Family walk",
+      "areaId": "family",
+      "dayOffset": 1,
+      "start": "18:00",
+      "end": "18:40"
+    },
+    {
+      "id": "b4",
+      "title": "Sketch side project",
+      "areaId": "passion",
+      "dayOffset": 2,
+      "start": "20:00",
+      "end": "21:00"
+    }
   ]
 }

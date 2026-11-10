@@ -59,6 +59,7 @@ project/
 | Agent team + `AGENTS.md` | ☑ |
 | App scaffold + local emulators | ☑ |
 | US-A1 / US-A2 (Issues #23 / #24) | ☑ local emulator |
+| US-B1 3-day grid (Issue #25) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -89,6 +90,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Swap to a real Fire
 3. **Try demo** → anonymous auth; life areas + sample tasks from `seed/demo/fictional.json` appear.
 4. Emulator UI :4000 → confirm Auth users and Firestore `users/{uid}/areas`.
 5. Repo check: only fictional seed committed; `.env` / `seed/personal` git-ignored.
+
+### Verify US-B1 (Issue #25)
+
+1. `npm start` → **Try demo**.
+2. See **today + next 2 days**, 30-min rows 06:00–23:00; today highlighted; later days dimmed.
+3. Area-coloured blocks, grey routines, distinct fixed-schedule colour; **Last updated** in `Asia/Kolkata`.
+4. **Sign in with Google** → empty grid skeleton (no demo items).
 
 ## Links
 
