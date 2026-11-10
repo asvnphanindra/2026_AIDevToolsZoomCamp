@@ -6,6 +6,7 @@ import {
   type FormEvent,
   type MouseEvent,
 } from "react";
+import { DailyRulesPanel } from "@/components/DailyRulesPanel";
 import {
   DAY_TYPE_LABELS,
   fictionalSeed,
@@ -23,6 +24,15 @@ import {
   type PlacedBlock,
   type TimedItem,
 } from "@/lib/blocks";
+import {
+  evaluateDayRules,
+  loadRules,
+  shortfallBadgeText,
+  suggestFreeSlot,
+  writeRules,
+  type DailyRule,
+  type RuleShortfall,
+} from "@/lib/rules";
 import { TASK_DRAG_MIME, type BacklogTask } from "@/lib/tasks";
 import {
   bandColour,
@@ -133,6 +143,9 @@ export function DayGrid({
     end: "10:30",
   });
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
+  const [rules, setRules] = useState<DailyRule[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadRules(),
+  );
 
   const dayTypes = useMemo(
     () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
@@ -167,6 +180,14 @@ export function DayGrid({
     () => new Set(model.warnings.map((w) => w.blockId)),
     [model.warnings],
   );
+  const ruleStatusByDate = useMemo(() => {
+    const map = new Map<string, RuleShortfall[]>();
+    for (const key of model.dayKeys) {
+      map.set(key, evaluateDayRules(key, rules, model.items));
+    }
+    return map;
+  }, [model.dayKeys, model.items, rules]);
+  const todayShortfalls = ruleStatusByDate.get(model.todayKey) ?? [];
   const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
@@ -349,6 +370,46 @@ export function DayGrid({
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextList));
       return nextList;
     });
+  }
+
+  function onRulesChange(next: DailyRule[]) {
+    setRules(next);
+    writeRules(next);
+  }
+
+  /** Suggest a free slot for a shortfall — place only after confirm (US-C3). */
+  function onSuggestShortfall(shortfall: RuleShortfall) {
+    const date = model.todayKey;
+    const slot = suggestFreeSlot(
+      date,
+      shortfall.missing,
+      model.startHour,
+      model.endHour,
+      timedUniverse(),
+    );
+    if (!slot) {
+      window.alert(
+        `No free ${shortfall.missing}m slot on ${formatDayLabel(date, model.timezone)}.`,
+      );
+      return;
+    }
+    const area = areas.find((a) => a.id === shortfall.areaId);
+    const ok = window.confirm(
+      `Suggest ${shortfall.label}: ${slot.start}–${slot.end} on ${formatDayLabel(date, model.timezone)}.\n\nPlace this block?`,
+    );
+    if (!ok) return;
+    const candidate: PlacedBlock = {
+      id: `placed-suggest-${Date.now()}`,
+      taskId: "",
+      title: shortfall.label,
+      areaId: shortfall.areaId,
+      colour: area?.colour ?? "#0F6B4C",
+      date,
+      start: slot.start,
+      end: slot.end,
+      deepWork: false,
+    };
+    commitBlock(candidate, "create");
   }
 
   function submitOneOff(event: FormEvent) {
@@ -535,6 +596,14 @@ export function DayGrid({
         </div>
       ) : null}
 
+      <DailyRulesPanel
+        areas={areas}
+        rules={rules}
+        onRulesChange={onRulesChange}
+        todayShortfalls={todayShortfalls}
+        onSuggest={onSuggestShortfall}
+      />
+
       <form className="one-off-form" onSubmit={submitOneOff}>
         <h3>One-off schedule change</h3>
         <div className="one-off-row">
@@ -661,6 +730,14 @@ export function DayGrid({
               </label>
               {dt && dt.type !== "normal" ? (
                 <span className="day-type-tag">{dt.label}</span>
+              ) : null}
+              {(ruleStatusByDate.get(key) ?? []).length > 0 ? (
+                <span
+                  className="rule-shortfall-badge"
+                  title={shortfallBadgeText(ruleStatusByDate.get(key) ?? [])}
+                >
+                  Min short · {shortfallBadgeText(ruleStatusByDate.get(key) ?? [])}
+                </span>
               ) : null}
             </div>
           );

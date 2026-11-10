@@ -98,6 +98,14 @@ export type SeedBlock = {
   deepWork?: boolean;
 };
 
+/** Daily minimum (US-C3). */
+export type SeedRule = {
+  id: string;
+  areaId: string;
+  minMinutesPerDay: number;
+  label?: string;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -108,6 +116,7 @@ export type FictionalSeed = {
   scheduleChanges: SeedScheduleChange[];
   dayTypes: SeedDayType[];
   blocks: SeedBlock[];
+  rules: SeedRule[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

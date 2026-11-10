@@ -345,5 +345,19 @@
       "end": "09:30",
       "deepWork": false
     }
+  ],
+  "rules": [
+    {
+      "id": "rule-work-deep",
+      "areaId": "work",
+      "minMinutesPerDay": 90,
+      "label": "Work deep focus"
+    },
+    {
+      "id": "rule-study",
+      "areaId": "study",
+      "minMinutesPerDay": 45,
+      "label": "Study minimum"
+    }
   ]
 }
