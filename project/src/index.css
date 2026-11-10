@@ -829,9 +829,12 @@ button.nav-active {
   border-radius: var(--radius-lg);
 }
 
-.repeating-panel h3 {
-  margin: 0 0 var(--space-1);
-  font-size: 0.95rem;
+.repeating-panel .day-grid-meta {
+  margin-bottom: var(--space-2);
+}
+
+.repeating-panel .day-grid-meta h2 {
+  font-size: 1.05rem;
 }
 
 .repeating-list {

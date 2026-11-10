@@ -466,8 +466,9 @@ export function DayGrid({
     colEl: HTMLElement,
     template: RepeatingTask,
   ) {
+    // Place-only: no backlog task until the user moves it back to backlog.
     placeNewBlock(dayKey, clientY, colEl, {
-      taskId: `task-rep-${Date.now()}`,
+      taskId: "",
       title: template.title,
       areaId: template.areaId,
       durationMin: template.durationMin,

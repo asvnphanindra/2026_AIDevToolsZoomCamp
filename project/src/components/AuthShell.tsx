@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { AreasConfig } from "@/components/AreasConfig";
 import { DayGrid } from "@/components/DayGrid";
 import { LiveClock } from "@/components/LiveClock";
+import { RepeatingPanel } from "@/components/RepeatingPanel";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
@@ -170,6 +171,7 @@ export function AuthShell() {
               />
             </div>
           <aside className="planner-side">
+            <RepeatingPanel areas={areas} />
             <TaskBacklog
               isDemo={isDemo}
               areas={areas}

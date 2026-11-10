@@ -2,11 +2,6 @@ import { useEffect, useState, type DragEvent, type FormEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
 import { BLOCK_DRAG_MIME, type PlacedBlock } from "@/lib/blocks";
 import {
-  seedRepeatingTasks,
-  REPEAT_DRAG_MIME,
-  type RepeatingTask,
-} from "@/lib/repeating";
-import {
   emptyTask,
   loadBacklog,
   TASK_DRAG_MIME,
@@ -25,7 +20,7 @@ type Props = {
 
 const PRIORITIES = ["low", "med", "high"] as const;
 
-/** US-C1 backlog + repeating templates + accept blocks from grid. */
+/** US-C1 backlog + accept placed blocks from grid. Repeating is separate. */
 export function TaskBacklog({
   isDemo,
   areas,
@@ -39,7 +34,6 @@ export function TaskBacklog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [booted, setBooted] = useState(false);
   const [dropReady, setDropReady] = useState(false);
-  const repeating = seedRepeatingTasks();
 
   useEffect(() => {
     if (booted) return;
@@ -161,12 +155,6 @@ export function TaskBacklog({
     if (blockId) acceptBlockFromGrid(blockId);
   }
 
-  function startRepeatDrag(template: RepeatingTask, e: DragEvent) {
-    e.dataTransfer.setData(REPEAT_DRAG_MIME, JSON.stringify(template));
-    e.dataTransfer.setData("text/plain", template.title);
-    e.dataTransfer.effectAllowed = "copy";
-  }
-
   const openTasks = tasks.filter((t) => t.status === "backlog");
   const listAreas = areas.length ? areas : [];
 
@@ -181,8 +169,8 @@ export function TaskBacklog({
       <div className="day-grid-meta">
         <h2>Backlog</h2>
         <p className="muted">
-          Drag onto the grid · drop a placed block here to return it · repeating
-          templates stay after placing
+          Capture one-off tasks and drag onto the grid · drop a placed block
+          here to return it
         </p>
       </div>
 
@@ -266,42 +254,9 @@ export function TaskBacklog({
         </div>
       </form>
 
-      <div className="repeating-panel">
-        <h3>Repeating</h3>
-        <p className="muted hint-inline">
-          Drag a template onto the grid (keeps the template).
-        </p>
-        <ul className="task-list repeating-list">
-          {repeating.map((item) => {
-            const area = listAreas.find((a) => a.id === item.areaId);
-            return (
-              <li
-                key={item.id}
-                className="task-row is-draggable repeating-row"
-                draggable
-                onDragStart={(e) => startRepeatDrag(item, e)}
-              >
-                <span
-                  className="swatch"
-                  style={{ background: area?.colour ?? "#666" }}
-                  aria-hidden
-                />
-                <div className="task-main">
-                  <strong>{item.title}</strong>
-                  <span className="muted">
-                    {area?.name ?? item.areaId} · {item.durationMin}m
-                    {item.deepWork ? " · deep" : ""}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
       {openTasks.length === 0 ? (
         <p className="muted">
-          No open backlog tasks — double-click the grid or drag repeating.
+          No open backlog tasks — double-click the grid or use Repeating above.
         </p>
       ) : (
         <div className="backlog-by-area">
