@@ -12,7 +12,7 @@
 
 ## Definition of done (feature)
 
-- Linked GitHub Issue AC checked
+- Linked US-* backlog AC checked (`_docs/task-tracker.md`)
 - Tests added/updated when code exists
 - No personal data in the change
 - `AGENTS.md` / modular docs updated if process or architecture changed
