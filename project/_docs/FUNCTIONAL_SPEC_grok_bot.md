@@ -1,237 +1,238 @@
-# Daily Planner Web App: Functional Specification
+# Planner Web App: Functional Specification (User Stories)
 
-**Project:** AI Dev Tools Zoomcamp, Project 2 (Attempt 2), due Tue 17 Nov 2026, 4:30 AM IST
-**Owner:** A S V N Phanindra (Phani)
-**Status:** Draft v0.4, 10 Nov 2026 (adds 3-3-3-3 planning horizons)
-**Goal:** Replace today's static PNG planner with an interactive web app where tasks can be planned, moved, tracked, and reviewed.
+**Project:** AI Dev Tools Zoomcamp, Project 2
+**Version:** v1.0 (10 Nov 2026)
+**Stack:** Firebase (Hosting, Cloud Firestore, Authentication), Docker for local run and review
 
 ---
 
-## 1. Problem
+## 1. Problem statement
 
-Today the planner is a Python script that renders an image each morning. It works as a view, but:
+People who juggle several roles (work, study, family, side projects) often plan with static to-do lists or calendars that show *what* is scheduled but not *whether it got done*, *whether the time suits the task*, or *how today's work connects to longer-term goals*. Changes such as a cancelled meeting, a holiday, or a surprise appointment mean re-planning by hand.
 
-- Any change (a substitute class, a holiday, an appointment) has to be requested and then the whole image is regenerated.
-- Tasks cannot be dragged, resized, or marked done directly.
-- There is no history of what got done, which makes the every-3-weeks PhD status update harder to write.
-- Productivity bands, life areas, and recurring rules live in code instead of in data the user can edit.
+This app is a personal planner that:
 
-## 2. Users and usage
+- shows a time grid of the coming days, coloured by life area,
+- matches tasks to the user's energy levels during the day,
+- enforces a few personal daily rules (e.g. "at least 90 minutes of deep work"),
+- checks in after each block to record whether it was done,
+- links daily tasks to weekly, monthly, and quarterly goals.
 
-- **Primary user:** one person (Phani), an associate professor and PhD student.
-- **Devices:** laptop (main planning), phone (quick check and marking done on the bus or on campus).
-- **Time zone:** all times are shown and stored in IST (Asia/Kolkata).
+## 2. Personas
 
-## 3. Core concepts (data model)
-
-| Concept | Description |
+| Persona | Description |
 |---|---|
-| **Life area** | One of four categories, each with a colour: Job (blue), PhD (purple), Family (green), Passion (orange). |
-| **Task** | Something to do. Has title, life area, optional notes, estimated duration, priority, optional due date/time, status. |
-| **Time block** | A task (or routine) placed on a specific date with start and end time. |
-| **Routine block** | Fixed daily items shown as plain grey blocks: bus, breakfast, lunch, dinner, sleep, etc. Meals are labelled. |
-| **Class** | Teaching slot from the timetable: section (Sec 19, 20, 21...), period, room/lab, weekday. |
-| **Day type** | Normal, Holiday, No classes (e.g. Freshers Day), Online (e.g. elections), Exam day. Controls whether campus classes and bus blocks appear. |
-| **Productivity band** | Energy level for a time range: High, Medium, Medium-low, Low. Shown as a colour strip beside the time column. |
-| **Goal** | A weekly goal (e.g. "Review 5 PhD sections") linked to one life area and optionally to tasks. |
-| **Event / deadline** | A dated item for the calendar: project deadlines, exams, family events, academic dates, recurring series (bike service, PhD status). |
+| **Multi-role planner** (primary) | A working professional who is also studying (e.g. a teacher doing a PhD, an engineer doing a course). Has a fixed weekly schedule (classes, meetings), daily routines, and several long-running goals. |
+| **Reviewer / demo user** | Opens the demo to evaluate the app; sees only sample data. |
 
-## 4. Functional requirements
+The app is **single user**: each account sees only its own data.
 
-### 4.1 Day and week view (replaces the PNG)
+## 3. Key concepts
 
-- FR-1: Show a rolling 7-day grid (3 past days + today + 3 upcoming), 6 AM to 11 PM, in 30-minute rows (zoom to 15 minutes optional).
-- FR-2: Today's column is highlighted; past days are dimmed.
-- FR-3: Blocks are coloured by life area; routine blocks are grey; class blocks are coloured by section.
-- FR-4: A productivity band strip runs beside the time column:
-  - High (green): 7:00–7:45 AM, 8:15–8:30 AM (first 15 min of morning bus), 9:00 AM–12:00 PM
-  - Medium (amber): 12:30–4:30 PM, 8:00–9:30 PM
-  - Medium-low: evening bus 4:40–5:45 PM
-  - Low (grey): everything else (meals, bus, after 9:30 PM)
-- FR-5: Show a "Last updated" timestamp in IST.
-- FR-6: Switch between Day, Rolling week, and Month views.
+| Concept | Meaning |
+|---|---|
+| Life area | A user-defined category with a colour (default four: Work, Study, Family, Passion). |
+| Task | Something to do: title, area, estimated duration, priority, optional due date, status. |
+| Time block | A task placed on a date with a start and end time. |
+| Routine | A repeating fixed block (meals, commute, sleep) shown in neutral grey. |
+| Fixed schedule | A recurring weekly commitment (class, meeting, lab) entered once by an admin/seed. |
+| Day type | Normal, Holiday, No-fixed-schedule, Online, Exam. Controls whether fixed schedule and commute appear. |
+| Energy band | High / Medium / Low energy for a time range of the day. |
+| Goal | An outcome for a week, month, or quarter, linked to an area and optionally to a parent goal. |
+| Event | A dated item (deadline, exam, appointment, recurring series). |
 
-### 4.2 Planning tasks
+## 4. User stories
 
-- FR-7: Create, edit, and delete tasks quickly (title, area, duration, due date, notes).
-- FR-8: Drag a task from the backlog onto the grid to create a time block; drag to move; resize to change duration.
-- FR-9: Warn on conflicts (overlap with a class, meal, appointment, or another block) and offer to shorten or move the other item (e.g. shorten dinner on an appointment evening).
-- FR-10: Warn when a task's depth does not match the band (e.g. writing work placed on the bus). Bus slots accept only listening or quick-review tasks.
-- FR-11: Campus PhD slots (9:20 AM–4:30 PM) are marked "optional"; main PhD slots are suggested at 7:00–7:45 AM or 8:00–9:30 PM.
+Format: *As a … I want … so that …*, followed by acceptance criteria (AC). Priority: **MVP** or **Phase 2**.
 
-### 4.3 Daily rules
+### Epic A: Account and privacy
 
-- FR-12: Every day must contain a **1.5 h PhD deep-focus block** (clock time flexible). The app shows a warning badge on any day missing it.
-- FR-13: Every day has a **1.5 h flexible block** (trainings, passion, family, class prep). Project work goes after the PhD block.
-- FR-14: The app never auto-places these blocks without confirmation. It may *suggest* slots ("Place PhD at 8:00–9:30 PM?") that the user accepts with one click.
+**US-A1 (MVP): Sign in**
+As a user, I want to sign in with my Google account so that my plan is private and available on any device.
+- AC1: Sign-in uses Firebase Authentication.
+- AC2: Firestore security rules allow reads and writes only to documents under the signed-in user's id.
+- AC3: Signing out clears the view.
 
-### 4.4 Status tracking
+**US-A2 (MVP): Demo mode**
+As a reviewer, I want to try the app with sample data so that I can evaluate it without seeing anyone's personal information.
+- AC1: A "Try demo" button signs in anonymously and loads fictional seed data.
+- AC2: The repository contains only fictional seed data; real data files and keys are git-ignored.
 
-- FR-15: After a block's end time passes, it asks: **Done / Partly done / Not done**. Nothing is assumed complete.
-- FR-16: "Partly done" and "Not done" tasks go back to the backlog with a "replan" flag and remaining-time estimate.
-- FR-17: Optional evening energy tag per day (high / medium / low) to refine bands later.
-- FR-18: End-of-day summary at about 9:20 PM: planned vs done, per life area.
+### Epic B: Daily time grid (3-day view)
 
-### 4.5 Focus tasks and weekly goals
+**US-B1 (MVP): See my next days at a glance**
+As a user, I want an hourly grid for today and the next two days so that I can see what is planned and where I have free time.
+- AC1: Grid runs from a configurable start to end hour (default 6 AM to 11 PM) in 30-minute rows.
+- AC2: Today is highlighted; earlier days (if shown) are dimmed.
+- AC3: Blocks are coloured by life area; routines are grey; fixed schedule items have their own colour.
+- AC4: A "last updated" time is shown in the user's time zone.
 
-- FR-19: A Focus Tasks panel with four columns (Job, PhD, Family, Passion), each holding current standing tasks (e.g. "Deep focus · 1.5 h daily", "Status update · every 3 weeks", "Exercise · 2 x 20 min daily").
-- FR-20: Weekly goals (Mon–Sun) are starred and show progress. Example for 9–15 Nov 2026:
-  - Passion: Finish AI Dev Tools Project 2 (due 17 Nov, 4:30 AM)
-  - PhD: Complete reviewing 5 sections
-  - Family: SH-9 document sign (Wed 11 Nov, 7:00 PM)
-- FR-21: Unfinished goals can be carried over to next week in one click.
+**US-B2 (MVP): See my energy bands**
+As a user, I want a colour strip beside the time column showing my high, medium, and low energy times so that I place hard work when I am sharpest.
+- AC1: Bands are configurable per user (start, end, level).
+- AC2: When a task marked "deep work" is placed in a low band, the app shows a warning.
 
-### 4.6 Timetable and day types
+**US-B3 (MVP): Fixed schedule appears automatically**
+As a user, I want my weekly fixed commitments to appear on the grid automatically so that I don't re-enter them each week.
+- AC1: Fixed schedule items are stored once (seeded in the database for the MVP; no edit screen).
+- AC2: They appear on the matching weekdays unless the day type removes them.
 
-- FR-22: Store the weekly teaching timetable (periods, sections, labs) once; classes appear automatically on the grid. **MVP: no import or edit screen; the timetable is seeded directly in Firestore (console or `seed` script).**
-- FR-23: One-off changes: substitute class (e.g. Sec 20, 3:25–4:25 PM), cancelled class, extra class. If a change is ambiguous (extra vs replacement), the app asks.
-- FR-24: Mark a date as Holiday, No classes, Online, or Exam day. Holiday and No classes remove campus and bus blocks; Online keeps listed online slots, greys usual classes, and removes the bus.
-- FR-25: Tutorial hours available for use are highlighted (e.g. Sec 21 Mon P2, Sec 19 Tue P4, Sec 20 Tue P6).
+**US-B4 (MVP): Mark special days**
+As a user, I want to mark a date as Holiday, No-fixed-schedule, Online, or Exam so that the grid reflects what is really happening.
+- AC1: Holiday and No-fixed-schedule hide fixed items and the commute.
+- AC2: Online greys the usual fixed items, shows any online slots entered for that day, and hides the commute.
+- AC3: The day header shows the day type label.
 
-### 4.7 Calendar (next 3 months)
+**US-B5 (MVP): One-off changes**
+As a user, I want to add a substitute, extra, or cancelled session for a single date so that one-time changes don't alter my weekly schedule.
+- AC1: A one-off change applies only to its date.
+- AC2: If it overlaps an existing item, the app asks whether it replaces it or is extra.
 
-- FR-26: A 3-month mini calendar with coloured markers by type: PhD Status, Bike service, Exam, Project, Family, Academic; current week highlighted.
-- FR-27: Recurring series: PhD status every 3 weeks; bike servicing every 4 months on the 24th.
-- FR-28: A list of upcoming dated items under the calendar.
-- FR-29: Items can be paused (e.g. a paused course), which hides its tasks without deleting them.
+### Epic C: Planning tasks
 
-### 4.8 Reminders
+**US-C1 (MVP): Capture tasks quickly**
+As a user, I want to add a task with title, area, duration, priority, and optional due date so that nothing is forgotten.
+- AC1: New tasks go to a backlog list.
+- AC2: Tasks can be edited and deleted.
 
-- FR-30: Reminder before a timed event (default 1 h, configurable), shown as an in-app / browser notification **while the app is open** (free Spark plan). Push to a closed phone needs scheduled Cloud Functions (Blaze plan) and is out of scope.
-- FR-31: Morning digest (6:00 AM): today's blocks, classes, and deadlines.
+**US-C2 (MVP): Drag tasks onto the grid**
+As a user, I want to drag a task from the backlog onto the grid, then move or resize it, so that planning feels direct.
+- AC1: Dropping creates a time block; moving or resizing updates it.
+- AC2: Overlaps with other blocks, routines, or fixed items show a warning with options to shorten or move the other item.
 
-### 4.9 PhD status report helper
+**US-C3 (MVP): Daily minimums**
+As a user, I want to set rules like "at least 90 minutes of deep work in area X every day" so that my most important work is never skipped.
+- AC1: Rules are configurable (area, minutes per day).
+- AC2: Days that don't meet a rule show a warning badge.
+- AC3: The app may *suggest* a free slot for the missing block but never places it without the user's confirmation.
 
-- FR-32: Log a short note when a PhD block is marked done.
-- FR-33: "Generate status update" builds a summary of all PhD notes since the last status date, ready to copy.
+**US-C4 (Phase 2): Commute-friendly tasks**
+As a user, I want commute or low-energy slots to accept only light tasks (listening, quick review) so that I don't plan focused work where I can't do it.
 
-### 4.10 Planning horizons (3 days, 3 weeks, 3 months, 3 quarters)
+### Epic D: Tracking what got done
 
-Plan at four zoom levels, each looking three units ahead. Bigger items break down into smaller ones.
+**US-D1 (MVP): Check in after each block**
+As a user, I want the app to ask "Done / Partly done / Not done" after a block's end time so that my plan reflects reality.
+- AC1: Nothing is marked done automatically.
+- AC2: Partly done asks for the remaining time.
 
-| Horizon | View | What you plan | Unit |
-|---|---|---|---|
-| **3 days** | Hourly grid (today + next 2 days) | Time blocks | Day |
-| **3 weeks** | Week columns with day rows, no clock times | Tasks assigned to a day or "sometime this week", weekly goals | Week (Mon–Sun, ISO week) |
-| **3 months** | Month columns with week rows | Monthly goals and milestones (e.g. "PhD Status #4", "Project 2 submitted") | Month |
-| **3 quarters** | Quarter columns | Quarterly objectives per life area (e.g. "Finish survey paper draft") | Quarter (Q1 = Jan–Mar) |
+**US-D2 (MVP): Replan unfinished work**
+As a user, I want partly done and not done tasks to return to the backlog flagged "replan" so that they aren't lost.
 
-- FR-34: Switch horizons with tabs; each shows the current unit plus the next two. The 3-month calendar (FR-26) stays as a side panel.
-- FR-35: Every plan item has a `horizon` (day / week / month / quarter) and a `period` key (`2026-11-10`, `2026-W46`, `2026-11`, `2026-Q4`).
-- FR-36: **Break down:** from a quarter objective create monthly goals; from a monthly goal create weekly goals; from a weekly goal create tasks; from a task create time blocks. Children link to their parent (`parentId`).
-- FR-37: **Roll up:** a parent shows progress from its children (e.g. 3 of 5 weekly goals done).
-- FR-38: Drag an item to a later period to postpone it; unfinished items at period end are offered "carry over" (same as FR-21).
-- FR-39: Each item belongs to one life area; each horizon view can be filtered by area.
+**US-D3 (Phase 2): End-of-day summary and energy tag**
+As a user, I want an evening summary of planned versus done per area, and to tag my energy for the day, so that I can improve my energy bands over time.
 
-**Phasing:** the MVP has only the **3-day** view (the hourly grid) and the **3-week** view (weekly goals and tasks by day). The 3-month and 3-quarter planning views, break-down, and roll-up come in **Phase 2**. The data model includes `horizon`, `period`, and `parentId` from the start, so Phase 2 needs no migration.
+**US-D4 (Phase 2): Progress log for periodic reports**
+As a user, I want to add a short note when I finish a block in an area and later generate a summary of notes since a date so that writing periodic status reports (e.g. to a supervisor or manager) is easy.
+
+### Epic E: Goals and planning horizons (3-3-3-3)
+
+**US-E1 (MVP): Focus panel**
+As a user, I want a panel with one column per life area listing my standing focus items so that I always see what matters.
+
+**US-E2 (MVP): Weekly goals**
+As a user, I want to set a few starred goals for the week so that daily tasks serve a bigger aim.
+- AC1: Goals belong to an area and an ISO week.
+- AC2: Unfinished goals can be carried over to next week in one click.
+
+**US-E3 (MVP): 3-week view**
+As a user, I want to see the current week and the next two weeks as columns, with tasks assigned to a day or "sometime this week", so that I can plan beyond the next few days without fixing clock times.
+
+**US-E4 (Phase 2): 3-month view**
+As a user, I want monthly goals and milestones for the current month and the next two so that I can plan medium-term work.
+
+**US-E5 (Phase 2): 3-quarter view**
+As a user, I want quarterly objectives per area for the current and next two quarters so that I can keep long-term direction.
+
+**US-E6 (Phase 2): Break down and roll up**
+As a user, I want to break a quarter objective into monthly goals, a monthly goal into weekly goals, and a weekly goal into tasks, and see progress roll up, so that daily work connects to long-term goals.
+
+### Epic F: Calendar and deadlines
+
+**US-F1 (MVP): 3-month calendar**
+As a user, I want a 3-month mini calendar with coloured markers for deadlines, exams, appointments, and recurring series so that I see what is coming.
+- AC1: Marker colours by event type; the current week is highlighted.
+- AC2: A list of upcoming events is shown below the calendar.
+
+**US-F2 (MVP): Recurring series**
+As a user, I want events that repeat on a rule (e.g. every 3 weeks, every 4 months on the 24th) so that I don't add each one by hand.
+- AC1: Series are expanded when read, not stored as many copies.
+
+**US-F3 (Phase 2): Pause a stream of work**
+As a user, I want to pause a course or project so that its tasks and deadlines are hidden without being deleted.
+
+### Epic G: Reminders
+
+**US-G1 (Phase 2): Reminders before events**
+As a user, I want a reminder before a timed event (default 1 hour) so that I don't miss it.
+- AC1: Shown as an in-app or browser notification while the app is open (works on the Firebase free plan).
+- AC2: Push to a closed device needs scheduled Cloud Functions (paid plan) and is optional.
 
 ## 5. Non-functional requirements
 
-- NFR-1: Responsive; usable on a phone for viewing and marking done.
-- NFR-2: All times in IST; dates stored as ISO.
-- NFR-3: Data persists in **Cloud Firestore** (document database), hosted on Firebase. Use the Firestore Emulator for local dev and tests.
-- NFR-4: Fast: a drag or edit reflects in under 200 ms.
-- NFR-5: **Single user only** (no sharing), signed in with **Firebase Authentication** (Google sign-in). Firestore security rules allow reads and writes only for the owner's uid.
-- NFR-7: Must run on the **Firebase free (Spark) plan**. Anything needing Blaze (scheduled functions, outbound network calls) is optional.
-- NFR-6: Export/import JSON; export the week view as PNG for sharing.
+| ID | Requirement |
+|---|---|
+| NFR-1 | Responsive: usable on a phone for viewing and check-ins. |
+| NFR-2 | Time zone per user; dates stored as `YYYY-MM-DD`, times as `HH:mm` in that zone. |
+| NFR-3 | Data in Cloud Firestore; runs on the Firebase free (Spark) plan. |
+| NFR-4 | Edits and drags reflect in under 200 ms (optimistic UI). |
+| NFR-5 | Single user per account; security rules enforce it. |
+| NFR-6 | No personal data in the repository, screenshots, or demo. |
+| NFR-7 | Works offline for viewing (Firestore offline persistence). |
+| NFR-8 | Automated tests run against the Firebase Emulator Suite in CI. |
 
-## 5a. Firestore data model
+## 6. Data model (Firestore)
 
-Everything lives under the signed-in user, so security rules stay simple: `users/{uid}/...`. Documents are small and read by date range.
+All user data lives under `users/{uid}/...`.
 
-| Collection | Doc id | Key fields |
-|---|---|---|
-| `users/{uid}` | uid | name, timezone (`Asia/Kolkata`), settings (default reminder minutes) |
-| `areas` | `job`, `phd`, `family`, `passion` | name, colour, order |
-| `bands` | auto | level (high/medium/medlow/low), start `HH:mm`, end `HH:mm`, weekdays |
-| `routines` | auto | label, start, end, weekdays, showLabel (meals true) |
-| `timetable` | auto | section, period, start, end, weekday, kind (lecture/lab/tutorial), room |
-| `dayTypes` | `YYYY-MM-DD` | type (normal/holiday/noClasses/online/exam), label, onlineSlots[] |
-| `classChanges` | auto | date, kind (substitute/cancel/extra), section, start, end, note |
-| `tasks` | auto | horizon `day`/`week`, period (`2026-11-10` or `2026-W46`), parentId (goal)?, title, areaId, durationMin, priority, due (timestamp), status (backlog/planned/done/partly/notDone), remainingMin, notes, goalId?, paused |
-| `blocks` | auto | taskId?, date `YYYY-MM-DD`, start, end, areaId, status, statusAskedAt, note |
-| `goals` | auto | horizon (week/month/quarter), period (`2026-W46` / `2026-11` / `2026-Q4`), areaId, title, starred, progress, parentId?, carriedFrom? |
-| `focusTasks` | auto | areaId, title, subtitle, order |
-| `events` | auto | date, endDate?, kind (exam/project/family/academic/series), label, time?, seriesId? |
-| `series` | auto | label, kind, rule (every 3 weeks / every 4 months on 24th), startDate, paused |
-| `phdLogs` | auto | date, blockId, note |
-| `dailyLogs` | `YYYY-MM-DD` | energy (high/medium/low), summary {area: plannedMin, doneMin} |
+| Collection | Key fields |
+|---|---|
+| `users/{uid}` | displayName, timezone, settings (grid hours, reminder minutes) |
+| `areas` | name, colour, order |
+| `bands` | level, start, end, weekdays |
+| `routines` | label, start, end, weekdays, showLabel |
+| `schedule` | title, start, end, weekday, kind, location |
+| `dayTypes` (id = date) | type, label, onlineSlots[] |
+| `scheduleChanges` | date, kind (substitute/extra/cancel), title, start, end |
+| `tasks` | title, areaId, durationMin, priority, due, status, remainingMin, horizon (day/week), period, parentId?, deepWork |
+| `blocks` | taskId?, date, start, end, areaId, title, status |
+| `goals` | horizon (week/month/quarter), period (`2026-W46` / `2026-11` / `2026-Q4`), areaId, title, starred, progress, parentId? |
+| `focusItems` | areaId, title, subtitle, order |
+| `rules` | areaId, minMinutesPerDay |
+| `events` | date, endDate?, kind, label, time?, seriesId? |
+| `series` | label, kind, rule, startDate, paused |
+| `logs` | date, blockId, areaId, note |
 
-Design notes:
-- Store dates as `YYYY-MM-DD` strings and times as `HH:mm` strings in IST, so range queries by `date` are simple and no time-zone shifting happens.
-- Query the week view with `blocks where date >= from and date <= to` (one composite index on `date`, `start`).
-- Denormalise `areaId` and title onto `blocks` so the grid renders from one query.
-- Recurring series are expanded on read (client or function), not stored as many copies.
-- Composite indexes go in `firestore.indexes.json`; rules in `firestore.rules`, both in the repo.
+Indexes and rules live in `firestore.indexes.json` and `firestore.rules`.
 
-## 5b. Privacy: reviewers never see personal data
-
-The project is submitted for peer review, so the repo and the demo must not contain any real personal data.
-
-- **Two Firebase projects:** `planner-demo` (public demo, sample data only) and `planner-personal` (real use, never shared). The repo's `.firebaserc` points to the demo project by default.
-- **No personal data in git:** real timetable, names, family events, PhD notes are never committed. `.env*`, `seed/personal/`, and service-account keys are in `.gitignore`.
-- **Sample seed data:** `seed/demo/*.json` holds fictional data (e.g. "Teacher A", sections "Sec A/B/C", generic events like "Project deadline", "Doctor appointment"). The `seed` script loads it into the emulator or the demo project.
-- **Personal seed** is loaded only by the owner, locally, with `npm run seed:personal` from an ignored folder.
-- **Demo login:** the demo deploy uses Firebase Anonymous Auth (or a demo Google account) so reviewers can try it without seeing anyone's data; security rules still scope data per uid.
-- **README screenshots** are taken from the demo data only.
-
-## 5c. How Docker fits with Firebase hosting
-
-Firebase Hosting serves the built static files, so production does not run a container. Docker is used for **reproducible local runs and review**:
-
-- `Dockerfile` builds the frontend and installs `firebase-tools` (Node + Java for the emulators).
-- `docker-compose.yml` starts one service that runs the **Firebase Emulator Suite** (Hosting, Firestore, Auth, Functions) and loads `seed/demo` on start.
-- Reviewers run `docker compose up` and open `http://localhost:5000` (app) and `http://localhost:4000` (Emulator UI). No Firebase account or cloud access needed, and only demo data exists.
-- The same image runs tests in CI (GitHub Actions) against the emulators.
-- Production: `firebase deploy` from CI (or locally) to Hosting + Firestore on the Spark plan.
+## 7. Architecture and deployment
 
 ```mermaid
 flowchart LR
-  Dev[Developer / Reviewer] -->|docker compose up| C[Container: app build + Firebase Emulators + demo seed]
+  U[User / Reviewer] -->|browser| H[Firebase Hosting: SPA]
+  H --> A[Firebase Auth]
+  H --> F[(Cloud Firestore)]
+  Dev[Developer / Reviewer] -->|docker compose up| C[Container: app + Firebase Emulator Suite + demo seed]
   CI[GitHub Actions] -->|tests on emulators| C
-  CI -->|firebase deploy| FB[Firebase Hosting + Firestore demo project]
-  Owner[Phani only] -->|private| P[Firebase personal project]
+  CI -->|firebase deploy| H
 ```
 
-## 6. Suggested tech (fits the Zoomcamp project requirements)
+- **Frontend:** single-page app (e.g. React + TypeScript) with a drag-and-drop calendar grid.
+- **Backend:** Firestore accessed directly from the client with security rules; optional Cloud Functions for logic that shouldn't run in the browser.
+- **Docker:** production is static hosting, so Docker is used for **local run and review**. `docker compose up` starts the Firebase Emulator Suite (Hosting, Auth, Firestore) with demo seed data. No Firebase account needed.
+- **Environments:** a public demo project with sample data, and private user projects; the repo defaults to the demo.
+- **CI/CD:** GitHub Actions runs unit, rules, and integration tests on the emulators, then deploys to the demo project on merge to `main`.
 
-- Frontend: React + TypeScript (or similar), a calendar/grid component with drag and drop.
-- Hosting: **Firebase Hosting** for the frontend.
-- Database: **Cloud Firestore** (document database), with offline persistence so the phone view works on the bus.
-- Backend logic: **Cloud Functions for Firebase** for rules that should not live in the browser (daily PhD-block check, end-of-day summary, recurring series expansion, reminders via scheduled functions). Expose them as HTTPS endpoints with an OpenAPI spec if the course needs a documented API.
-- Auth: Firebase Authentication.
-- Docker: see section 5c (local run and review via the Emulator Suite).
-- Tests: unit tests for rules (daily PhD block, conflicts, day types); integration tests against the Firebase Emulator Suite (Firestore, Auth, Functions); security-rules tests.
-- CI with GitHub Actions running tests on the emulators (inside the Docker image), then `firebase deploy` to the demo project on merge to main.
-- Document AI-assisted development (prompts, tools, MCP) in the README as the course expects.
+## 8. Scope
 
-## 7. MVP scope (for the 17 Nov deadline)
+**MVP:** US-A1, A2, B1 to B5, C1 to C3, D1, D2, E1 to E3, F1, F2.
 
-Must have: FR-1 to FR-3, FR-5, FR-7, FR-8, FR-9, FR-12, FR-14, FR-15, FR-16, FR-19, FR-20, FR-22, FR-24, FR-26, NFR-2, NFR-3.
+**Phase 2:** US-C4, D3, D4, E4 to E6, F3, G1, plus PNG export of the week view and timetable import/edit screens.
 
-Also in MVP: the 3-day view (FR-1 grid limited to today + 2) and the 3-week view (FR-34, FR-35 for week and day only).
+## 9. Assumptions and decisions
 
-**Phase 2:** 3-month and 3-quarter planning views, break-down and roll-up (FR-36 to FR-39), bands auto-refinement, reminders and digest, PhD status generator, PNG export, mobile polish.
-
-## 8. Example API (draft, Cloud Functions or direct Firestore access)
-
-| Method | Path | Purpose |
-|---|---|---|
-| GET | /api/days?from=&to= | Day types, classes, blocks for a range |
-| POST | /api/tasks | Create task |
-| PATCH | /api/tasks/{id} | Edit task |
-| POST | /api/blocks | Place a task on the grid |
-| PATCH | /api/blocks/{id} | Move / resize / set status |
-| GET | /api/goals?week= | Weekly goals with progress |
-| PUT | /api/day-types/{date} | Mark Holiday / No classes / Online / Exam |
-| GET | /api/events?months=3 | Calendar markers and upcoming list |
-
-## 9. Decisions (9 Nov 2026)
-
-1. Timetable: seeded manually in Firestore (console or seed script); no import screen in MVP.
-2. Reminders: only if free on Spark, so in-app reminders while the app is open; no scheduled push.
-3. Users: single user only.
-4. MVP scope (section 7): confirmed.
-5. Privacy: demo project + fictional seed data for reviewers; personal data stays in a separate project and out of git.
-6. Docker: used to run the app with the Firebase Emulator Suite for review and CI; Firebase Hosting remains the intended production host but is deployed **only after course submission** (local run/test first).
-7. Planning horizons: 3 days and 3 weeks in MVP; 3 months and 3 quarters in Phase 2 (data model ready now).
+1. Fixed schedules change rarely, so they are seeded in the database for the MVP (no import screen).
+2. Reminders are in-app only on the free plan; device push is optional.
+3. Single user per account; no sharing in the MVP.
+4. The data model includes `horizon`, `period`, and `parentId` from the start, so the 3-month and 3-quarter views need no migration.
+5. Reviewers only ever see fictional demo data.
