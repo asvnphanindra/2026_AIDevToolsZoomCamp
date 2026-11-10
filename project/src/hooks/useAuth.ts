@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { User } from "firebase/auth";
 import {
   signInDemo,
   signInWithGoogle,
@@ -7,10 +6,11 @@ import {
   subscribeAuth,
   type AuthSession,
 } from "@/lib/auth";
+import type { AppUser } from "@/lib/session";
 import type { PlannerView } from "@/lib/seed";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [view, setView] = useState<PlannerView | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [ready, setReady] = useState(false);
@@ -22,9 +22,10 @@ export function useAuth() {
       subscribeAuth((next) => {
         setUser(next);
         if (!next) {
-          // US-A1 AC3 — sign-out clears the planner view.
           setView(null);
           setIsDemo(false);
+        } else {
+          setIsDemo(next.isAnonymous);
         }
         setReady(true);
       }),

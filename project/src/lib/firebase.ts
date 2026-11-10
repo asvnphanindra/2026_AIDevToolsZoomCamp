@@ -25,6 +25,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:000000000000:web:demo",
 };
 
+export const AUTH_EMULATOR_URL = "http://127.0.0.1:9099";
+export const FIRESTORE_EMULATOR_HOST = "127.0.0.1";
+export const FIRESTORE_EMULATOR_PORT = 8080;
+
 export const app: FirebaseApp = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
@@ -35,12 +39,24 @@ export const useEmulators =
 
 let emulatorsConnected = false;
 
-/** Connect Auth + Firestore emulators once (local-first). */
+/** Connect Auth (+ Firestore when available) emulators once. */
 export function connectFirebaseEmulators(): void {
   if (emulatorsConnected || !useEmulators) return;
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
-    disableWarnings: true,
-  });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectAuthEmulator(auth, AUTH_EMULATOR_URL, { disableWarnings: true });
+  connectFirestoreEmulator(db, FIRESTORE_EMULATOR_HOST, FIRESTORE_EMULATOR_PORT);
   emulatorsConnected = true;
+}
+
+/** True when Auth emulator accepts TCP (no Java required). */
+export async function isAuthEmulatorReachable(): Promise<boolean> {
+  if (!useEmulators) return false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 500);
+    await fetch(`${AUTH_EMULATOR_URL}/`, { signal: ctrl.signal });
+    clearTimeout(timer);
+    return true;
+  } catch {
+    return false;
+  }
 }

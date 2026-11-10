@@ -71,17 +71,17 @@ project/
 cd project
 copy .env.example .env   # first time only
 npm install
-npm start                # Auth+Firestore emulators + Vite (alias: npm run local)
+npm start                # Auth emulator (:9099) + Vite — no JDK required
 ```
 
 - App: http://127.0.0.1:5173  
-- Emulator UI: http://127.0.0.1:4000  
-- Auth emulator: `:9099` · Firestore emulator: `:8080`
+- Auth emulator: `:9099`  
+- Full suite (Auth+Firestore, needs JDK 21+): `npm run start:full` · UI `:4000` · Firestore `:8080`
 
-UI-only (no emulators): `npm run dev`  
-Emulators only: `npm run emulators`
+UI-only: `npm run dev` — **Try demo** still works via offline local session + fictional seed.  
+Auth emulator only: `npm run emulators:auth`
 
-Placeholder project id: `work-planner-demo` (`.firebaserc`). Swap to a real Firebase web app config in `.env` when available; keep personal seeds out of git.
+Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
 ### Verify US-A1 / US-A2 (Issues #23 / #24)
 

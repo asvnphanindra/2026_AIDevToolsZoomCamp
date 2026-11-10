@@ -47,9 +47,10 @@ export function AuthShell() {
         </div>
         {error ? <p className="error">{error}</p> : null}
         <p className="hint">
-          Local (`work-planner-demo`): Auth :9099 · Firestore :8080. Emulator
-          Google uses a fake credential; demo loads{" "}
-          <code>seed/demo/fictional.json</code>.
+          Local (`work-planner-demo`): <code>npm start</code> runs Auth
+          emulator (:9099) + Vite. <strong>Try demo</strong> also works
+          offline if the emulator is down (local session + fictional seed).
+          Firestore (:8080) needs JDK 21+ via <code>npm run start:full</code>.
         </p>
       </main>
     );
