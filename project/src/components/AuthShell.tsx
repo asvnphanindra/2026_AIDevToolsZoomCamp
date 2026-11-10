@@ -102,22 +102,27 @@ export function AuthShell() {
         </button>
       </header>
 
-      <TaskBacklog
-        isDemo={isDemo}
-        areas={areas}
-        tasks={tasks}
-        onTasksChange={onTasksChange}
-      />
-
-      <DayGrid
-        isDemo={isDemo}
-        areas={areas}
-        timezone="Asia/Kolkata"
-        tasks={tasks}
-        onTasksChange={onTasksChange}
-        placedBlocks={blocks}
-        onPlacedBlocksChange={onBlocksChange}
-      />
+      <div className="planner-layout">
+        <div className="planner-main">
+          <DayGrid
+            isDemo={isDemo}
+            areas={areas}
+            timezone="Asia/Kolkata"
+            tasks={tasks}
+            onTasksChange={onTasksChange}
+            placedBlocks={blocks}
+            onPlacedBlocksChange={onBlocksChange}
+          />
+        </div>
+        <aside className="planner-side">
+          <TaskBacklog
+            isDemo={isDemo}
+            areas={areas}
+            tasks={tasks}
+            onTasksChange={onTasksChange}
+          />
+        </aside>
+      </div>
 
       {error ? <p className="error">{error}</p> : null}
     </main>

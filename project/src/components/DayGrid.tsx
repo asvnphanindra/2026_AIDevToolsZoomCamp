@@ -489,8 +489,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Drop backlog tasks on a day column · drag placed blocks to move ·
-          bottom edge to resize · hover for 15-min marks
+          Drag tasks from the right backlog onto a day column · move/resize
+          placed blocks · hover for 15-min marks
         </p>
       </div>
 

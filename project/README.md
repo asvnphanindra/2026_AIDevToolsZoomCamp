@@ -129,9 +129,10 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 ### Verify US-C2 (Issue #31)
 
 1. `npm start` → **Try demo**.
-2. Drag a backlog task onto a day column → block appears; task leaves open backlog.
-3. Drag the block to move; drag bottom handle to resize.
-4. Overlap → **Shorten this** / **Shorten other** / Cancel.
+2. Layout: **week grid left**, **backlog right** (stacks grid-then-backlog on narrow screens).
+3. Drag a backlog task **left onto** a day column → block appears; task leaves open backlog.
+4. Drag the block to move; drag bottom handle to resize.
+5. Overlap → **Shorten this** / **Shorten other** / Cancel.
 
 ### Verify US-B2 (Issue #26)
 

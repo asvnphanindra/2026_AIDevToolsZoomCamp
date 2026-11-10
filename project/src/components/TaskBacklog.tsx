@@ -105,7 +105,7 @@ export function TaskBacklog({
       <div className="day-grid-meta">
         <h2>Backlog</h2>
         <p className="muted">
-          Capture tasks, then drag onto the week grid (US-C2).
+          Capture tasks, then drag left onto the week grid (US-C2).
         </p>
       </div>
 
