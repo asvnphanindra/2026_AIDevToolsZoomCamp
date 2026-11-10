@@ -30,12 +30,12 @@ export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-const useEmulators =
+export const useEmulators =
   (import.meta.env.VITE_USE_EMULATORS ?? "true").toLowerCase() !== "false";
 
 let emulatorsConnected = false;
 
-/** Connect Auth + Firestore emulators once (local-first scaffold). */
+/** Connect Auth + Firestore emulators once (local-first). */
 export function connectFirebaseEmulators(): void {
   if (emulatorsConnected || !useEmulators) return;
   connectAuthEmulator(auth, "http://127.0.0.1:9099", {

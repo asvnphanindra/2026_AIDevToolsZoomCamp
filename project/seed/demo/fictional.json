@@ -1,0 +1,46 @@
+{
+  "profile": {
+    "displayName": "Alex Rivera (demo)",
+    "timezone": "Asia/Kolkata",
+    "settings": {
+      "gridStartHour": 6,
+      "gridEndHour": 23,
+      "reminderMinutes": 10
+    }
+  },
+  "areas": [
+    { "id": "work", "name": "Work", "colour": "#0F6B4C", "order": 1 },
+    { "id": "study", "name": "Study", "colour": "#1D4E89", "order": 2 },
+    { "id": "family", "name": "Family", "colour": "#A15C07", "order": 3 },
+    { "id": "passion", "name": "Passion", "colour": "#7A3E9D", "order": 4 }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "Draft sprint notes",
+      "areaId": "work",
+      "durationMin": 45,
+      "priority": "med",
+      "status": "backlog",
+      "horizon": "day"
+    },
+    {
+      "id": "t2",
+      "title": "Read chapter 4",
+      "areaId": "study",
+      "durationMin": 30,
+      "priority": "high",
+      "status": "backlog",
+      "horizon": "day"
+    },
+    {
+      "id": "t3",
+      "title": "Evening walk with family",
+      "areaId": "family",
+      "durationMin": 40,
+      "priority": "low",
+      "status": "backlog",
+      "horizon": "day"
+    }
+  ]
+}

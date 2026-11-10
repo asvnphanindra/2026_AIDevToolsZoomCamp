@@ -1,9 +1,10 @@
 import { useAuth } from "@/hooks/useAuth";
 
-/** Minimal sign-in / demo shell for US-A1 + US-A2 placeholders. */
+/** US-A1 Google sign-in + US-A2 Try demo (anonymous + fictional seed). */
 export function AuthShell() {
   const {
     user,
+    view,
     ready,
     error,
     busy,
@@ -27,13 +28,12 @@ export function AuthShell() {
         <header className="brand">
           <h1>Work Planner</h1>
           <p className="lede">
-            Plan days with energy, check-ins, and horizons. Scaffold only —
-            day grid comes next.
+            Sign in to keep your plan private, or try the fictional demo.
           </p>
         </header>
         <div className="actions">
           <button type="button" disabled={busy} onClick={signInWithGoogle}>
-            Sign in with Google (US-A1)
+            Sign in with Google
           </button>
           <button
             type="button"
@@ -41,13 +41,14 @@ export function AuthShell() {
             disabled={busy}
             onClick={signInDemo}
           >
-            Try demo (US-A2)
+            Try demo
           </button>
         </div>
         {error ? <p className="error">{error}</p> : null}
         <p className="hint">
-          Local: Auth emulator at :9099. Google popup needs emulator test
-          accounts or real project credentials later.
+          Local (`work-planner-demo`): Auth :9099 · Firestore :8080. Emulator
+          Google uses a fake credential; demo loads{" "}
+          <code>seed/demo/fictional.json</code>.
         </p>
       </main>
     );
@@ -58,24 +59,45 @@ export function AuthShell() {
       <header className="brand">
         <h1>Work Planner</h1>
         <p className="lede">
-          Signed in as {isDemo ? "demo (anonymous)" : user.email || user.uid}
+          {isDemo ? "Demo mode · " : ""}
+          {view?.displayName || user.email || user.uid}
         </p>
       </header>
+
       <section className="placeholder">
-        <h2>Day view (stub)</h2>
+        <h2>{isDemo ? "Fictional seed loaded" : "Your planner"}</h2>
         <p className="muted">
-          US-B1 3-day grid placeholder. Owner path:{" "}
-          <code>users/{user.uid}/…</code>
-          {isDemo ? (
-            <>
-              {" "}
-              · demo seed path: <code>demo/…</code>
-            </>
-          ) : null}
+          Path <code>users/{user.uid}/…</code>
+          {view ? ` · source ${view.source}` : null}
         </p>
+        {view?.areas?.length ? (
+          <ul className="area-list">
+            {view.areas.map((area) => (
+              <li key={area.id}>
+                <span
+                  className="swatch"
+                  style={{ background: area.colour }}
+                  aria-hidden
+                />
+                {area.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No life areas yet (owner starts empty).</p>
+        )}
+        {isDemo ? (
+          <p className="muted">{view?.taskCount ?? 0} sample backlog tasks.</p>
+        ) : null}
       </section>
+
       <div className="actions">
-        <button type="button" className="secondary" disabled={busy} onClick={signOut}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy}
+          onClick={signOut}
+        >
           Sign out
         </button>
       </div>

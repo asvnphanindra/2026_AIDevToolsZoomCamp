@@ -1,20 +1,30 @@
 rules_version = '2';
 
-// Scaffold stubs — tighten when US-A1/A2 land for real.
+// US-A1 / US-A2 — owner-only user data; fictional demo template is read-only.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Owner: only signed-in user may touch their subtree.
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // Demo: anonymous/demo sessions may use the shared fictional seed path.
-    // Seed data must stay fictional; never put personal data here.
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Profile + all planner data live under users/{uid}/…
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Shared fictional template metadata (no personal data).
     match /demo/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && (request.auth.token.firebase.sign_in_provider == 'anonymous'
-            || request.auth.token.email_verified == true);
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
   }
 }

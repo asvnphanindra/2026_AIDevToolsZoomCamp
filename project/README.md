@@ -14,7 +14,7 @@ Static calendars show *what* is planned, not whether it got done, whether the sl
 
 Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)** · map in [`_docs/task-tracker.md`](_docs/task-tracker.md)
 
-- Sign-in + demo mode (US-A1, A2) — scaffold stubs in this branch
+- Sign-in + demo mode (US-A1, A2)
 - 3-day grid, energy bands, seeded fixed schedule, day types, one-offs (US-B1–B5)
 - Tasks, drag/move/resize, daily minimums (US-C1–C3)
 - Check-in + replan (US-D1, D2)
@@ -57,8 +57,9 @@ project/
 | Problem / features / behavior | ☑ |
 | Spec + public tracker (#23–#39) | ☑ |
 | Agent team + `AGENTS.md` | ☑ |
-| App scaffold + local emulators | ☑ Section B scaffold |
-| Full US stories / tests / Docker / CI / obs | ☐ next |
+| App scaffold + local emulators | ☑ |
+| US-A1 / US-A2 (Issues #23 / #24) | ☑ local emulator |
+| Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
 ## Quick start (one command)
@@ -81,7 +82,13 @@ Emulators only: `npm run emulators`
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Swap to a real Firebase web app config in `.env` when available; keep personal seeds out of git.
 
-Sign-in buttons are **stubs** for US-A1/A2: Google popup needs Auth emulator test users or real credentials; **Try demo** uses anonymous auth against the emulator.
+### Verify US-A1 / US-A2 (Issues #23 / #24)
+
+1. `npm start` (JDK 21+ required for Firestore emulator).
+2. **Sign in with Google** → emulator fake Google user; empty owner planner under `users/{uid}`; **Sign out** returns to the login screen (view cleared).
+3. **Try demo** → anonymous auth; life areas + sample tasks from `seed/demo/fictional.json` appear.
+4. Emulator UI :4000 → confirm Auth users and Firestore `users/{uid}/areas`.
+5. Repo check: only fictional seed committed; `.env` / `seed/personal` git-ignored.
 
 ## Links
 

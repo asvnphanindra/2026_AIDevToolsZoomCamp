@@ -1,22 +1,54 @@
 import {
+  GoogleAuthProvider,
   onAuthStateChanged,
   signInAnonymously,
+  signInWithCredential,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
+import { auth, googleProvider, useEmulators } from "@/lib/firebase";
+import {
+  ensureOwnerProfile,
+  loadDemoSeed,
+  type PlannerView,
+} from "@/lib/seed";
 
-/** US-A1 stub — Google sign-in (works against Auth emulator with test users). */
-export async function signInWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider);
-  return result.user;
+export type AuthSession = {
+  user: User;
+  view: PlannerView;
+  isDemo: boolean;
+};
+
+/** US-A1 — Google via Firebase Auth (emulator uses fake Google credential). */
+export async function signInWithGoogle(): Promise<AuthSession> {
+  let user: User;
+  if (useEmulators) {
+    const credential = GoogleAuthProvider.credential(
+      JSON.stringify({
+        sub: "emulator-google-owner",
+        email: "owner@example.com",
+        email_verified: true,
+        name: "Planner Owner",
+      }),
+    );
+    user = (await signInWithCredential(auth, credential)).user;
+  } else {
+    user = (await signInWithPopup(auth, googleProvider)).user;
+  }
+
+  const view = await ensureOwnerProfile(
+    user.uid,
+    user.displayName || user.email || "Planner Owner",
+  );
+  return { user, view, isDemo: false };
 }
 
-/** US-A2 stub — anonymous demo session (seed load comes later). */
-export async function signInDemo(): Promise<User> {
-  const result = await signInAnonymously(auth);
-  return result.user;
+/** US-A2 — anonymous auth + fictional seed under users/{uid}. */
+export async function signInDemo(): Promise<AuthSession> {
+  const user = (await signInAnonymously(auth)).user;
+  const view = await loadDemoSeed(user.uid);
+  return { user, view, isDemo: true };
 }
 
 export async function signOut(): Promise<void> {
