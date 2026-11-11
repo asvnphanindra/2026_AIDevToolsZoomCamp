@@ -92,20 +92,37 @@ project/
 cd project
 copy .env.example .env   # first time only
 npm install
-npm start                # Auth emulator + Vite (reuses/frees busy ports; Vite survives emu fail)
+npm start                # Auth + Firestore emulators + Vite (needs JDK 21+ for Firestore)
+```
+
+**Windows — emulators only (no Vite):**
+
+```powershell
+cd project
+npm run emulators
+```
+
+Or explicitly:
+
+```powershell
+cd project
+npx firebase emulators:start --only auth,firestore --project work-planner-demo
 ```
 
 - App: http://127.0.0.1:5173  
+- Emulator UI: http://127.0.0.1:4000 (or `:4001+` if busy)  
 - Auth emulator: `:9099` (or `:9100+` if busy; port written to `.env.local`)  
-- Full suite (Auth+Firestore, needs JDK 21+): `npm run start:full` · UI `:4000` · Firestore `:8080`
+- Firestore emulator: `:8080` (or `:8081+` if busy; port written to `.env.local`)  
+- Without JDK: `npm start` falls back to Auth-only (Firestore view will say not running)
 
 UI-only: `npm run dev` — **Try demo** still works via offline local session + fictional seed.  
 Auth emulator only: `npm run emulators:auth`  
-If an old emulator is stuck: stop the terminal that started it, or `npm start` will reuse/pick the next free port.
+`npm run start:full` is an alias of `npm start`.  
+If an old Auth-only emulator is stuck: stop that terminal (Ctrl+C), then re-run `npm start` so Auth+Firestore start together.
 
 ### Browse data (Firestore)
 
-**Firestore** is the app database. With emulators running (`npm run start:full`), open the **Emulator UI** (typically [http://127.0.0.1:4000](http://127.0.0.1:4000)) → **Firestore** to browse collections. Auth users appear under **Authentication** in the same UI. If ports differ (busy machine), check the terminal output or `.env.local` for the Auth emulator port (`:9099` default; `:9100+` when reused) and the Emulator UI / Firestore ports printed by `firebase emulators:start`.
+**Firestore** is the app database. With emulators running (`npm start`), open the **Emulator UI** at [http://127.0.0.1:4000](http://127.0.0.1:4000) → click **Firestore** in the left nav to browse collections. Auth users appear under **Authentication** in the same UI. If ports differ (busy machine), check the terminal output or `.env.local` for Auth (`VITE_FIREBASE_AUTH_EMULATOR_URL`) and Firestore (`VITE_FIRESTORE_EMULATOR_PORT`).
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
