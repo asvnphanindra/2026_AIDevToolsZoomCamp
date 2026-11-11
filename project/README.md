@@ -16,7 +16,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 
 - Sign-in + demo mode (US-A1, A2)
 - 5-day grid (left) + area-column backlog (right); availability/energy chunks, seeded schedule
-- **Scheduler** (grid + backlog) and **Planner** (area cards + config icon for daily mins, US-C3); right-click placed cards to edit / unschedule / check-in
+- **Scheduler** (grid + backlog) and **Planner** (area cards + config icon for daily mins used in weekly retrospective, US-C3); right-click placed cards to edit / unschedule / check-in
 - Planner **Goals Gantt**: area dropdown; short (~3w) / mid (~3m) / long (~3q) bars; **→ This week** sends a goal to Scheduler backlog (same area, `goalId` link); 3-week overview shows spanning goals + cross-area clash
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
@@ -29,7 +29,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
-5. **Planner** nav: short area cards in one row; gear opens daily-min config. Below cards: **Goals** Gantt (area dropdown) for short/mid/long horizons; **→ This week** creates a Scheduler backlog card (title + area from the goal, linked via `goalId`). Scheduler shows shortfall badges and can suggest a slot (confirm only). Right-click placed cards to edit / unschedule.
+5. **Planner** nav: short area cards in one row; gear opens daily-min config (soft targets for retrospective, not scheduling blockers). Below cards: **Goals** Gantt (area dropdown) for short/mid/long horizons; **→ This week** creates a Scheduler backlog card (title + area from the goal, linked via `goalId`). **Weekly goals** shows allocated vs planned min per area. Right-click placed cards to edit / unschedule.
 6. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
 7. Focus view: one column per life area with standing focus items (add/edit/remove).
 8. Weekly goals with one-click carry-over; **Planner → 3-week goals overview** for current + next two ISO weeks (shows Gantt goals spanning each week + short-goal clash across areas).

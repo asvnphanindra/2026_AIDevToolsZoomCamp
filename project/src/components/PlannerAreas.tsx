@@ -121,9 +121,9 @@ export function PlannerAreas({
       <div className="day-grid-meta">
         <h2>Planner</h2>
         <p className="muted">
-          Life areas at a glance. Open the config icon for daily minimums;
-          the scheduler shows shortfall badges and can suggest a free slot
-          (never auto-places).
+          Life areas at a glance. Open the config icon for daily minimums —
+          soft targets for weekly retrospective (allocated vs min), not
+          scheduling blockers.
         </p>
       </div>
 
@@ -250,6 +250,10 @@ export function PlannerAreas({
                 Add minimum
               </button>
             </div>
+            <p className="muted hint-inline">
+              Used in Weekly goals retrospective (allocated vs planned min).
+              May deviate — not enforced while scheduling.
+            </p>
             {configRules.length === 0 ? (
               <p className="muted hint-inline">No daily minimum.</p>
             ) : (

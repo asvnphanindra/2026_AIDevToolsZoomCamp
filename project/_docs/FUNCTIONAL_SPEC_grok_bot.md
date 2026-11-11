@@ -101,10 +101,10 @@ As a user, I want to drag a task from the backlog onto the grid, then move or re
 - AC2: Overlaps with other blocks, routines, or fixed items show a warning with options to shorten or move the other item.
 
 **US-C3 (MVP): Daily minimums**
-As a user, I want to set rules like "at least 90 minutes of deep work in area X every day" so that my most important work is never skipped.
-- AC1: Rules are configurable (area, minutes per day).
-- AC2: Days that don't meet a rule show a warning badge.
-- AC3: The app may *suggest* a free slot for the missing block but never places it without the user's confirmation.
+As a user, I want to set rules like "at least 90 minutes of deep work in area X every day" so that I can review allocation against planned mins in a weekly retrospective.
+- AC1: Rules are configurable (area, minutes per day) in Planner area config.
+- AC2: Daily minimums are soft metrics for weekly retrospective analysis (allocated vs planned min per area); they may deviate and do **not** block or warn while scheduling.
+- AC3: The scheduler does not show shortfall badges or auto-suggest placement for missing minutes.
 
 **US-C4 (Phase 2): Commute-friendly tasks**
 As a user, I want commute or low-energy slots to accept only light tasks (listening, quick review) so that I don't plan focused work where I can't do it.

@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
+import type { PlacedBlock } from "@/lib/blocks";
 import {
   carryOverUnfinished,
   goalsForWeek,
@@ -10,11 +11,17 @@ import {
   previousIsoWeekPeriod,
   type WeeklyGoal,
 } from "@/lib/goals";
+import {
+  evaluateWeekMinimums,
+  type DailyRule,
+} from "@/lib/rules";
 
 type Props = {
   areas: SeedArea[];
   goals: WeeklyGoal[];
   onGoalsChange: (goals: WeeklyGoal[]) => void;
+  rules?: DailyRule[];
+  placedBlocks?: PlacedBlock[];
   timezone?: string;
 };
 
@@ -23,6 +30,8 @@ export function WeeklyGoals({
   areas,
   goals,
   onGoalsChange,
+  rules = [],
+  placedBlocks = [],
   timezone = "Asia/Kolkata",
 }: Props) {
   const orderedAreas = [...areas].sort((a, b) => a.order - b.order);
@@ -39,6 +48,24 @@ export function WeeklyGoals({
   const weekGoals = goalsForWeek(goals, period);
   const unfinishedCount = weekGoals.filter(isUnfinished).length;
   const nextPeriod = nextIsoWeekPeriod(period);
+  const weekMinimums = useMemo(() => {
+    if (!rules.length) return [];
+    const items = placedBlocks.map((b) => ({
+      date: b.date,
+      start: b.start,
+      end: b.end,
+      areaId: b.areaId,
+      kind: "block" as const,
+    }));
+    return evaluateWeekMinimums(period, rules, items, timezone).map((row) => {
+      const area = areas.find((a) => a.id === row.areaId);
+      return {
+        ...row,
+        name: area?.name ?? row.label,
+        colour: area?.colour ?? "#6b7280",
+      };
+    });
+  }, [areas, period, placedBlocks, rules, timezone]);
 
   function resetForm(nextArea = orderedAreas[0]?.id ?? "") {
     setEditingId(null);
@@ -124,9 +151,50 @@ export function WeeklyGoals({
         <h2>Weekly goals</h2>
         <p className="muted">
           Starred aims for an ISO week per life area. Carry unfinished goals
-          into next week in one click.
+          into next week in one click. Daily minimums appear below as a soft
+          retrospective (allocated vs planned) — not scheduling blockers.
         </p>
       </div>
+
+      {weekMinimums.length > 0 ? (
+        <div
+          className="week-min-retro"
+          role="region"
+          aria-label="Weekly minimums retrospective"
+        >
+          <div className="week-min-retro-head">
+            <strong>Minimums this week</strong>
+            <span className="muted">
+              Soft metric · allocated may deviate from planned min
+            </span>
+          </div>
+          <ul className="week-min-retro-list">
+            {weekMinimums.map((row) => (
+              <li key={row.areaId} className="week-min-retro-row">
+                <span
+                  className="swatch"
+                  style={{ background: row.colour }}
+                  aria-hidden
+                />
+                <span className="week-min-retro-name">{row.name}</span>
+                <span className="muted">
+                  {row.allocated}m allocated · {row.plannedMin}m planned min
+                  {row.allocated < row.plannedMin
+                    ? ` · ${row.plannedMin - row.allocated}m under`
+                    : row.allocated > row.plannedMin
+                      ? ` · ${row.allocated - row.plannedMin}m over`
+                      : " · on target"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : rules.length === 0 ? (
+        <p className="muted hint-inline">
+          No daily minimums configured — set them under Planner → area gear
+          for this retrospective.
+        </p>
+      ) : null}
 
       <div className="week-toolbar one-off-row">
         <button

@@ -31,13 +31,6 @@ import {
   type BlockCheckIn,
   type CheckInOutcome,
 } from "@/lib/checkin";
-import {
-  evaluateDayRules,
-  shortfallBadgeText,
-  suggestFreeSlot,
-  type DailyRule,
-  type RuleShortfall,
-} from "@/lib/rules";
 import { TASK_DRAG_MIME, type BacklogTask } from "@/lib/tasks";
 import {
   bandColour,
@@ -68,7 +61,6 @@ import {
 type Props = {
   isDemo: boolean;
   areas: SeedArea[];
-  rules: DailyRule[];
   timezone?: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
@@ -125,7 +117,6 @@ function rangesClash(
 export function DayGrid({
   isDemo,
   areas,
-  rules,
   timezone,
   tasks,
   onTasksChange,
@@ -228,13 +219,6 @@ export function DayGrid({
       return next;
     });
   }
-  const ruleStatusByDate = useMemo(() => {
-    const map = new Map<string, RuleShortfall[]>();
-    for (const key of model.dayKeys) {
-      map.set(key, evaluateDayRules(key, rules, model.items));
-    }
-    return map;
-  }, [model.dayKeys, model.items, rules]);
   const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ topPx: number; label: string } | null>(
@@ -597,40 +581,6 @@ export function DayGrid({
     commitBlock({ ...existing, date: dayKey, start, end }, "update");
   }
 
-  /** Suggest a free slot for a shortfall — place only after confirm (US-C3). */
-  function onSuggestShortfall(date: string, shortfall: RuleShortfall) {
-    const slot = suggestFreeSlot(
-      date,
-      shortfall.missing,
-      model.startHour,
-      model.endHour,
-      timedUniverse(),
-    );
-    if (!slot) {
-      window.alert(
-        `No free ${shortfall.missing}m slot on ${formatDayLabel(date, model.timezone)}.`,
-      );
-      return;
-    }
-    const area = areas.find((a) => a.id === shortfall.areaId);
-    const ok = window.confirm(
-      `Suggest ${shortfall.label}: ${slot.start}–${slot.end} on ${formatDayLabel(date, model.timezone)}.\n\nPlace this block?`,
-    );
-    if (!ok) return;
-    const candidate: PlacedBlock = {
-      id: `placed-suggest-${Date.now()}`,
-      taskId: "",
-      title: shortfall.label,
-      areaId: shortfall.areaId,
-      colour: area?.colour ?? "#0F6B4C",
-      date,
-      start: slot.start,
-      end: slot.end,
-      deepWork: false,
-    };
-    commitBlock(candidate, "create");
-  }
-
   function onBlockContext(item: GridItem, e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -888,7 +838,6 @@ export function DayGrid({
           const isPast = relative < 0;
           const isToday = relative === 0;
           const dt = dayTypeForOffset(relative, model.dayTypes);
-          const shortfalls = ruleStatusByDate.get(key) ?? [];
           const headCol = layers.availability ? dayIdx + 3 : dayIdx + 2;
           return (
             <div
@@ -908,16 +857,6 @@ export function DayGrid({
               </div>
               {dt && dt.type !== "normal" ? (
                 <span className="day-type-tag">{dt.label}</span>
-              ) : null}
-              {shortfalls.length > 0 ? (
-                <button
-                  type="button"
-                  className="rule-shortfall-badge"
-                  title={`${shortfallBadgeText(shortfalls)} · click to suggest`}
-                  onClick={() => onSuggestShortfall(key, shortfalls[0]!)}
-                >
-                  Min short · {shortfallBadgeText(shortfalls)}
-                </button>
               ) : null}
               {focusDayKeys.has(key) && orderedFocus.length > 0 ? (
                 <ul className="day-focus-strip" aria-label="Focus for this day">

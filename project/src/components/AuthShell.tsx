@@ -302,6 +302,9 @@ export function AuthShell() {
             areas={areas}
             goals={goals}
             onGoalsChange={onGoalsChange}
+            rules={rules}
+            placedBlocks={blocks}
+            timezone="Asia/Kolkata"
           />
         ) : appView === "weeks" ? (
           <ThreeWeekView
@@ -317,7 +320,6 @@ export function AuthShell() {
               <DayGrid
                 isDemo={isDemo}
                 areas={areas}
-                rules={rules}
                 timezone="Asia/Kolkata"
                 tasks={tasks}
                 onTasksChange={onTasksChange}

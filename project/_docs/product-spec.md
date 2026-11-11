@@ -37,7 +37,7 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 | US-B5 | One-off schedule changes (shipped earlier; punch-hole UI removed — availability = time chunks) |
 | US-C1 | Capture tasks to backlog |
 | US-C2 | Drag / move / resize on grid + conflict warn |
-| US-C3 | Daily minimum rules (Areas config; planner badges + suggest-on-confirm) |
+| US-C3 | Daily minimum rules (Areas config; weekly retrospective allocated vs min — soft metric) |
 | US-D1 | Done / Partly / Not done after block end |
 | US-D2 | Replan unfinished → backlog (+ remaining, replan flag) |
 | US-E1 | Focus panel by life area |

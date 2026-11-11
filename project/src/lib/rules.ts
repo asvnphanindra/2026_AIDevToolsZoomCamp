@@ -1,11 +1,7 @@
 import { fictionalSeed, type SeedRule } from "@/data/fictional-seed";
-import {
-  addMinutes,
-  durationMinutes,
-  findConflicts,
-  type TimedItem,
-} from "@/lib/blocks";
-import { formatHhmm } from "@/lib/time";
+import { durationMinutes } from "@/lib/blocks";
+import { dayKeysForIsoWeek } from "@/lib/week-horizon";
+import { DEFAULT_TZ } from "@/lib/time";
 
 const STORAGE_KEY = "work-planner.daily-rules";
 
@@ -23,6 +19,17 @@ export type RuleShortfall = {
 export type DayRuleStatus = {
   date: string;
   shortfalls: RuleShortfall[];
+};
+
+/** Soft weekly metric: allocated block minutes vs planned daily-min total. */
+export type WeekAreaMinimumRow = {
+  areaId: string;
+  label: string;
+  /** Sum of placed block minutes for this area in the week. */
+  allocated: number;
+  /** Daily min × days in the week (soft target; may deviate). */
+  plannedMin: number;
+  minMinutesPerDay: number;
 };
 
 export function seedRules(): DailyRule[] {
@@ -118,28 +125,57 @@ export function evaluateVisibleDays(
   }));
 }
 
-/** Find first free slot of `needMin` minutes on `date` within grid hours. */
-export function suggestFreeSlot(
-  date: string,
-  needMin: number,
-  startHour: number,
-  endHour: number,
-  items: TimedItem[],
-): { start: string; end: string } | null {
-  const need = Math.max(15, Math.ceil(needMin / 15) * 15);
-  const dayItems = items.filter((i) => i.date === date);
-  for (let m = startHour * 60; m + need <= endHour * 60; m += 15) {
-    const start = formatHhmm(m);
-    const end = addMinutes(start, need);
-    const conflicts = findConflicts({ date, start, end }, dayItems);
-    if (!conflicts.length) return { start, end };
-  }
-  return null;
-}
+/**
+ * Weekly retrospective: allocated vs planned daily-min total per area.
+ * Soft metric only — not a scheduler blocker.
+ */
+export function evaluateWeekMinimums(
+  period: string,
+  rules: DailyRule[],
+  items: {
+    date: string;
+    start: string;
+    end: string;
+    areaId?: string;
+    kind?: string;
+  }[],
+  timeZone = DEFAULT_TZ,
+): WeekAreaMinimumRow[] {
+  if (!rules.length) return [];
+  const dayKeys = dayKeysForIsoWeek(period, timeZone);
+  const dayCount = dayKeys.length || 7;
+  const asBlocks = items.map((i) => ({
+    ...i,
+    kind: i.kind ?? "block",
+  }));
 
-export function shortfallBadgeText(shortfalls: RuleShortfall[]): string {
-  if (!shortfalls.length) return "";
-  return shortfalls
-    .map((s) => `${s.label}: ${s.actual}/${s.required}m`)
-    .join(" · ");
+  const byArea = new Map<string, DailyRule[]>();
+  for (const rule of rules) {
+    const list = byArea.get(rule.areaId) ?? [];
+    list.push(rule);
+    byArea.set(rule.areaId, list);
+  }
+
+  const rows: WeekAreaMinimumRow[] = [];
+  for (const [areaId, areaRules] of byArea) {
+    const minMinutesPerDay = areaRules.reduce(
+      (sum, r) => sum + r.minMinutesPerDay,
+      0,
+    );
+    const plannedMin = minMinutesPerDay * dayCount;
+    const allocated = dayKeys.reduce(
+      (sum, date) => sum + minutesForAreaOnDate(date, areaId, asBlocks),
+      0,
+    );
+    const label =
+      areaRules.map((r) => r.label).find(Boolean) || areaId;
+    rows.push({
+      areaId,
+      label,
+      allocated,
+      plannedMin,
+      minMinutesPerDay,
+    });
+  }
+  return rows;
 }

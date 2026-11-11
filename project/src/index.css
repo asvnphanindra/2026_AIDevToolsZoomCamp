@@ -455,33 +455,41 @@ code {
   color: var(--muted);
 }
 
-.rule-shortfall-badge {
-  display: block;
-  width: 100%;
+.week-min-retro {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.week-min-retro-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+  margin-bottom: 0.45rem;
+}
+
+.week-min-retro-list {
+  list-style: none;
   margin: 0;
-  padding: 0.2rem 0.35rem;
-  font: inherit;
-  font-size: 0.62rem;
-  font-weight: 650;
-  line-height: 1.3;
-  text-align: left;
-  color: #7a2e12;
-  background: #f3d9c8;
-  border: 1px solid #d4a07a;
-  border-radius: 0.3rem;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
 }
 
-.rule-shortfall-badge:hover {
-  filter: brightness(0.98);
+.week-min-retro-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  font-size: 0.9rem;
 }
 
-.rule-shortfall-badge:focus-visible {
-  outline: none;
-  box-shadow: var(--focus);
+.week-min-retro-name {
+  font-weight: 600;
+  min-width: 4.5rem;
 }
 
 .rule-list {
