@@ -516,8 +516,66 @@ button.nav-active {
 }
 
 .focus-panel .day-grid-meta,
-.weekly-goals .day-grid-meta {
+.weekly-goals .day-grid-meta,
+.three-week-view .day-grid-meta {
   margin-bottom: var(--space-4);
+}
+
+.three-week-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.three-week-column {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  min-height: 12rem;
+}
+
+.three-week-column h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.week-bucket {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px dashed var(--line);
+}
+
+.week-days {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.week-day-row h4 {
+  color: var(--muted, #5c6660);
+  font-weight: 500;
+}
+
+.week-horizon-item .swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.week-move-day select {
+  font: inherit;
+  padding: 0.25rem 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .three-week-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .weekly-goals .week-toolbar {

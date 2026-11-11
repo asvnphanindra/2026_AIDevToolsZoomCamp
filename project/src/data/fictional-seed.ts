@@ -137,6 +137,19 @@ export type SeedGoal = {
   parentId?: string;
 };
 
+/** 3-week horizon item (US-E3); resolved against current ISO week at load. */
+export type SeedWeekHorizonItem = {
+  id: string;
+  title: string;
+  areaId: string;
+  /** 0 = this week, 1 = next, 2 = week after. */
+  weekOffset: number;
+  placement: "day" | "week";
+  /** Mon=0 … Sun=6 within that ISO week when placement is day. */
+  dayIndex?: number;
+  done?: boolean;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -145,12 +158,14 @@ export type FictionalSeed = {
   routines: SeedRoutine[];
   repeatingTasks?: SeedRepeatingTask[];
   schedule: SeedSchedule[];
-  scheduleChanges: SeedScheduleChange[];
+  /** Legacy seed field; one-off punch-holes no longer applied in UI. */
+  scheduleChanges?: SeedScheduleChange[];
   dayTypes: SeedDayType[];
   blocks: SeedBlock[];
   rules: SeedRule[];
   focusItems?: SeedFocusItem[];
   goals?: SeedGoal[];
+  weekHorizon?: SeedWeekHorizonItem[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

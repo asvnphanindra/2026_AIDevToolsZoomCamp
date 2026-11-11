@@ -213,32 +213,7 @@
       "location": "Lab 3"
     }
   ],
-  "scheduleChanges": [
-    {
-      "id": "sc-extra-doc",
-      "dayOffset": 0,
-      "kind": "extra",
-      "title": "Doctor visit",
-      "start": "11:00",
-      "end": "11:45"
-    },
-    {
-      "id": "sc-cancel-am",
-      "dayOffset": -2,
-      "kind": "cancel",
-      "title": "Cancel 10:00 slot",
-      "start": "10:00",
-      "end": "10:30"
-    },
-    {
-      "id": "sc-sub-pm",
-      "dayOffset": 0,
-      "kind": "substitute",
-      "title": "Cover teaching block",
-      "start": "15:00",
-      "end": "16:00"
-    }
-  ],
+  "scheduleChanges": [],
   "dayTypes": [
     {
       "dayOffset": -1,
@@ -459,6 +434,53 @@
       "title": "Practice set piece three times",
       "starred": true,
       "progress": 20
+    }
+  ],
+  "weekHorizon": [
+    {
+      "id": "wh-1",
+      "title": "Outline sprint retro",
+      "areaId": "work",
+      "weekOffset": 0,
+      "placement": "week"
+    },
+    {
+      "id": "wh-2",
+      "title": "Submit module draft",
+      "areaId": "study",
+      "weekOffset": 0,
+      "placement": "day",
+      "dayIndex": 2
+    },
+    {
+      "id": "wh-3",
+      "title": "Book family picnic",
+      "areaId": "family",
+      "weekOffset": 0,
+      "placement": "day",
+      "dayIndex": 5
+    },
+    {
+      "id": "wh-4",
+      "title": "Sketch next feature cut",
+      "areaId": "work",
+      "weekOffset": 1,
+      "placement": "week"
+    },
+    {
+      "id": "wh-5",
+      "title": "Read next chapter",
+      "areaId": "study",
+      "weekOffset": 1,
+      "placement": "day",
+      "dayIndex": 1
+    },
+    {
+      "id": "wh-6",
+      "title": "Record practice take",
+      "areaId": "passion",
+      "weekOffset": 2,
+      "placement": "week"
     }
   ]
 }

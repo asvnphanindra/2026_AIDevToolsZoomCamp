@@ -1,10 +1,6 @@
 import type { GridItem } from "@/lib/day-grid";
 
 export type BlockMenuAction =
-  | "cancel-session"
-  | "replace-session"
-  | "extra-session"
-  | "remove-one-off"
   | "edit-placed"
   | "unschedule-placed"
   | "check-in";
@@ -17,19 +13,9 @@ type Props = {
   onClose: () => void;
 };
 
-/** Right-click menu for grid cards (one-offs + placed actions). */
+/** Right-click menu for placed blocks (edit / unschedule / check-in). */
 export function BlockContextMenu({ x, y, item, onAction, onClose }: Props) {
   const items: { id: BlockMenuAction; label: string }[] = [];
-
-  if (item.kind === "schedule" && item.oneOff) {
-    items.push({ id: "remove-one-off", label: "Remove one-off" });
-  } else if (item.kind === "schedule") {
-    items.push(
-      { id: "cancel-session", label: "Cancel this session" },
-      { id: "replace-session", label: "Replace (substitute)…" },
-      { id: "extra-session", label: "Add extra at this time…" },
-    );
-  }
 
   if (item.placed) {
     items.push(

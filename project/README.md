@@ -15,8 +15,8 @@ Static calendars show *what* is planned, not whether it got done, whether the sl
 Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)** · map in [`_docs/task-tracker.md`](_docs/task-tracker.md)
 
 - Sign-in + demo mode (US-A1, A2)
-- 5-day grid (left) + area-column backlog (right); energy bands, seeded schedule, day types
-- One-offs via right-click on grid cards (US-B5); Areas config for life areas + daily mins (US-C3)
+- 5-day grid (left) + area-column backlog (right); availability/energy chunks, seeded schedule
+- Areas config for life areas + daily mins (US-C3); right-click placed cards to edit / unschedule / check-in
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
 - Focus panel, weekly goals, 3-week view (US-E1–E3)
@@ -28,10 +28,10 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
-5. Areas view: edit life areas + daily mins. Planner: shortfall badge → suggest slot (confirm only). Right-click cards for one-offs / unschedule.
+5. Areas view: edit life areas + daily mins. Planner: shortfall badge → suggest slot (confirm only). Right-click placed cards to edit / unschedule.
 6. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
 7. Focus view: one column per life area with standing focus items (add/edit/remove).
-8. Weekly goals with one-click carry-over; 3-week and calendar views for what’s ahead.
+8. Weekly goals with one-click carry-over; **3 weeks** nav for current + next two ISO weeks (day or sometime-this-week).
 
 ## Non-goals (MVP)
 
@@ -73,6 +73,7 @@ project/
 | US-D1 / US-D2 check-in + replan (#33 / #34) | ☑ |
 | US-E1 Focus panel (Issue #35) | ☑ |
 | US-E2 Weekly goals + carry-over (Issue #36) | ☑ |
+| US-E3 3-week view (Issue #37) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
@@ -112,20 +113,13 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 3. Grid left / backlog right; backlog grouped **by area columns**.
 4. Hover the grid → 15-minute time marker (05:00–22:00).
 
-### Verify US-B4 (Issue #28)
+### Verify US-B4 seed labels (Issue #28 — no dropdown)
 
 1. `npm start` → **Try demo**.
-2. Seeded headers: No-fixed (−1), Holiday (+1), Online (+2), Exam (+3).
+2. Seeded header tags: No-fixed (−1), Holiday (+1), Online (+2), Exam (+3). No day-type dropdown.
 3. Holiday / No-fixed: no orange fixed items + no commute.
 4. Online: grey fixed items + blue online slots; no commute.
-5. Change a day’s dropdown → header label + grid behaviour update.
-
-### Verify US-B5 (Issue #29)
-
-1. `npm start` → **Try demo**.
-2. Seed: brown **Doctor visit** (extra today), **Cover teaching** (sub), cancel on today−2 10:00 slot.
-3. Form: pick day/kind/times → on overlap, confirm replace vs extra.
-4. Cancel removes overlapping fixed items that date only.
+5. Availability strip (**A**) shows energy/time chunks (not one-off punch-holes).
 
 ### Verify US-C1 (Issue #30)
 
@@ -153,7 +147,14 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 1. `npm start` → **Try demo** (or Google — fixed items still load from seed).
 2. Orange fixed-schedule blocks appear on matching weekdays (standup Mon, office Tue, lab Wed, …).
 3. Tomorrow shows **Demo holiday** and **no** fixed-schedule items that day.
-4. No schedule edit UI (seed-only).
+4. No schedule edit UI (seed-only). One-off punch-holes removed from the grid UI.
+
+### Verify US-E3 (Issue #37)
+
+1. `npm start` → **Try demo** → **3 weeks** nav.
+2. Three columns: current ISO week + next two; seeded items on day and “sometime this week”.
+3. Add a task with **Sometime this week** or **Specific day**; Done / Edit / Delete; → Week / → Day… moves placement.
+4. Reload persists (`work-planner.week-horizon`). Planner has no day-type dropdown / one-off menu.
 
 ## Links
 

@@ -8,13 +8,8 @@ import {
   type SeedDayType,
   type SeedRoutine,
 } from "@/data/fictional-seed";
-import type {
-  ScheduleChangeKind,
-  SeedScheduleChange,
-} from "@/data/fictional-seed";
 import type { PlacedBlock } from "@/lib/blocks";
 import {
-  applyScheduleChanges,
   dayTypeForOffset,
   expandFixedSchedule,
   hidesCommute,
@@ -42,10 +37,6 @@ export type GridItem = {
   /** User-placed from backlog (US-C2); movable/resizable. */
   placed?: boolean;
   taskId?: string;
-  /** US-B5 one-off marker when kind is schedule. */
-  oneOff?: ScheduleChangeKind;
-  /** Underlying schedule-change id for removable one-offs. */
-  changeId?: string;
 };
 
 export type DeepWorkWarning = {
@@ -83,10 +74,8 @@ export function buildDayGrid(opts: {
   startHour?: number;
   endHour?: number;
   now?: Date;
-  /** Effective day types (seed + user overrides). */
+  /** Seed day types (labels / fixed-schedule rules); no UI overrides. */
   dayTypes?: SeedDayType[];
-  /** Seed + user one-off schedule changes (US-B5). */
-  scheduleChanges?: SeedScheduleChange[];
   /** User-placed blocks from backlog drag (US-C2). */
   placedBlocks?: PlacedBlock[];
 }): DayGridModel {
@@ -100,22 +89,14 @@ export function buildDayGrid(opts: {
   const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
   const bands = fictionalSeed.bands;
   const dayTypes = opts.dayTypes ?? fictionalSeed.dayTypes;
-  const scheduleChanges =
-    opts.scheduleChanges ?? fictionalSeed.scheduleChanges ?? [];
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
-  const baseSchedule = expandFixedSchedule(
+  const scheduleItems: GridItem[] = expandFixedSchedule(
     dayKeys,
     timezone,
     todayIndex,
     fictionalSeed.schedule,
     dayTypes,
-  );
-  const scheduleItems: GridItem[] = applyScheduleChanges(
-    baseSchedule,
-    dayKeys,
-    todayIndex,
-    scheduleChanges,
   ).map((item) => ({
     id: item.id,
     date: item.date,
@@ -124,10 +105,6 @@ export function buildDayGrid(opts: {
     end: item.end,
     kind: "schedule" as const,
     colour: item.colour,
-    oneOff: item.oneOff,
-    changeId: item.id.startsWith("oneoff-")
-      ? item.id.slice("oneoff-".length)
-      : undefined,
   }));
   const demoItems = opts.isDemo
     ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)

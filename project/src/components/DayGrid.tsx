@@ -12,15 +12,7 @@ import {
 } from "@/components/BlockContextMenu";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
 import { NowIndicator } from "@/components/NowIndicator";
-import {
-  DAY_TYPE_LABELS,
-  fictionalSeed,
-  type DayTypeKind,
-  type ScheduleChangeKind,
-  type SeedArea,
-  type SeedDayType,
-  type SeedScheduleChange,
-} from "@/data/fictional-seed";
+import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
 import {
   addMinutes,
   BLOCK_DRAG_MIME,
@@ -54,12 +46,7 @@ import {
   slotBandLevel,
   type GridItem,
 } from "@/lib/day-grid";
-import {
-  dayTypeForOffset,
-  defaultLabelFor,
-  mergeDayTypes,
-  mergeScheduleChanges,
-} from "@/lib/schedule";
+import { dayTypeForOffset } from "@/lib/schedule";
 import {
   buildHalfHourSlots,
   formatDayLabel,
@@ -90,26 +77,6 @@ type CtxMenu = { x: number; y: number; item: GridItem };
 const HOVER_MARK_START = "05:00";
 const HOVER_MARK_END = "22:00";
 const ROW_PX = 1.35;
-const STORAGE_KEY = "work-planner.day-type-overrides";
-const CHANGES_KEY = "work-planner.schedule-changes";
-
-const DAY_TYPE_OPTIONS: DayTypeKind[] = [
-  "normal",
-  "holiday",
-  "no-fixed-schedule",
-  "online",
-  "exam",
-];
-
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
 
 function yToStart(
   clientY: number,
@@ -129,7 +96,7 @@ function yToStart(
   return formatHhmm(mins);
 }
 
-/** Week grid + day types + context-menu one-offs + US-C2 drag/drop. */
+/** Week grid + energy/availability chunks + US-C2 drag/drop. */
 export function DayGrid({
   isDemo,
   areas,
@@ -140,16 +107,6 @@ export function DayGrid({
   placedBlocks,
   onPlacedBlocksChange,
 }: Props) {
-  const [overrides, setOverrides] = useState<SeedDayType[]>(() =>
-    typeof localStorage === "undefined"
-      ? []
-      : readJson<SeedDayType[]>(STORAGE_KEY, []),
-  );
-  const [extraChanges, setExtraChanges] = useState<SeedScheduleChange[]>(() =>
-    typeof localStorage === "undefined"
-      ? []
-      : readJson<SeedScheduleChange[]>(CHANGES_KEY, []),
-  );
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
   const [checkIns, setCheckIns] = useState<Record<string, BlockCheckIn>>(() =>
@@ -162,30 +119,16 @@ export function DayGrid({
     null,
   );
 
-  const dayTypes = useMemo(
-    () => mergeDayTypes(fictionalSeed.dayTypes, overrides),
-    [overrides],
-  );
-  const scheduleChanges = useMemo(
-    () =>
-      mergeScheduleChanges(
-        fictionalSeed.scheduleChanges ?? [],
-        extraChanges,
-      ),
-    [extraChanges],
-  );
-
   const model = useMemo(
     () =>
       buildDayGrid({
         isDemo,
         areas,
         timezone,
-        dayTypes,
-        scheduleChanges,
+        dayTypes: fictionalSeed.dayTypes,
         placedBlocks,
       }),
-    [isDemo, areas, timezone, dayTypes, scheduleChanges, placedBlocks],
+    [isDemo, areas, timezone, placedBlocks],
   );
   const slots = useMemo(
     () => buildHalfHourSlots(model.startHour, model.endHour),
@@ -564,55 +507,6 @@ export function DayGrid({
     commitBlock({ ...existing, date: dayKey, start, end }, "update");
   }
 
-  function applyDayType(relativeOffset: number, type: DayTypeKind) {
-    const seedHit = fictionalSeed.dayTypes.find(
-      (d) => d.dayOffset === relativeOffset,
-    );
-    setOverrides((prev) => {
-      const without = prev.filter((d) => d.dayOffset !== relativeOffset);
-      const entry: SeedDayType = {
-        dayOffset: relativeOffset,
-        type,
-        label: defaultLabelFor(type),
-        ...(type === "online"
-          ? { onlineSlots: seedHit?.onlineSlots ?? [] }
-          : {}),
-      };
-      const nextList = [...without, entry];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextList));
-      return nextList;
-    });
-  }
-
-  function persistChanges(next: SeedScheduleChange[]) {
-    setExtraChanges(next);
-    localStorage.setItem(CHANGES_KEY, JSON.stringify(next));
-  }
-
-  function dayOffsetForDate(date: string): number | null {
-    const idx = model.dayKeys.indexOf(date);
-    if (idx < 0) return null;
-    return idx - model.todayIndex;
-  }
-
-  function addOneOff(
-    kind: ScheduleChangeKind,
-    item: GridItem,
-    title: string,
-  ) {
-    const dayOffset = dayOffsetForDate(item.date);
-    if (dayOffset == null) return;
-    const entry: SeedScheduleChange = {
-      id: `user-${Date.now()}`,
-      dayOffset,
-      kind,
-      title,
-      start: item.start,
-      end: item.end,
-    };
-    persistChanges([...extraChanges, entry]);
-  }
-
   /** Suggest a free slot for a shortfall — place only after confirm (US-C3). */
   function onSuggestShortfall(date: string, shortfall: RuleShortfall) {
     const slot = suggestFreeSlot(
@@ -658,35 +552,6 @@ export function DayGrid({
     const item = ctx.item;
     setCtx(null);
 
-    if (action === "cancel-session") {
-      addOneOff("cancel", item, item.title);
-      return;
-    }
-    if (action === "replace-session") {
-      const title = window.prompt("Replacement title", item.title);
-      if (!title?.trim()) return;
-      addOneOff("substitute", item, title.trim());
-      return;
-    }
-    if (action === "extra-session") {
-      const title = window.prompt("Extra session title", "Extra session");
-      if (!title?.trim()) return;
-      addOneOff("extra", item, title.trim());
-      return;
-    }
-    if (action === "remove-one-off") {
-      const changeId = item.changeId;
-      if (!changeId) return;
-      const seedIds = new Set(
-        (fictionalSeed.scheduleChanges ?? []).map((c) => c.id),
-      );
-      if (seedIds.has(changeId)) {
-        window.alert("Seeded one-offs can’t be removed here.");
-        return;
-      }
-      persistChanges(extraChanges.filter((c) => c.id !== changeId));
-      return;
-    }
     if (action === "edit-placed") {
       const title = window.prompt("Block title", item.title);
       if (!title?.trim()) return;
@@ -903,15 +768,17 @@ export function DayGrid({
         }}
       >
         <div className="day-grid-corner" aria-hidden />
-        <div className="day-grid-energy-head" title="Energy">
-          E
+        <div
+          className="day-grid-energy-head"
+          title="Availability / energy chunks"
+        >
+          A
         </div>
         {model.dayKeys.map((key, dayIdx) => {
           const relative = dayIdx - model.todayIndex;
           const isPast = relative < 0;
           const isToday = relative === 0;
           const dt = dayTypeForOffset(relative, model.dayTypes);
-          const currentType: DayTypeKind = dt?.type ?? "normal";
           const shortfalls = ruleStatusByDate.get(key) ?? [];
           return (
             <div
@@ -929,22 +796,6 @@ export function DayGrid({
                 {isToday ? "Today · " : null}
                 {formatDayLabel(key, model.timezone)}
               </div>
-              <label className="day-type-picker">
-                <span className="sr-only">Day type</span>
-                <select
-                  value={currentType}
-                  onChange={(e) =>
-                    applyDayType(relative, e.target.value as DayTypeKind)
-                  }
-                  aria-label={`Day type for ${formatDayLabel(key, model.timezone)}`}
-                >
-                  {DAY_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {DAY_TYPE_LABELS[opt]}
-                    </option>
-                  ))}
-                </select>
-              </label>
               {dt && dt.type !== "normal" ? (
                 <span className="day-type-tag">{dt.label}</span>
               ) : null}
@@ -975,7 +826,7 @@ export function DayGrid({
         <div
           className="day-grid-energy"
           style={{ gridRow: `2 / span ${slots.length}` }}
-          aria-label="Energy bands"
+          aria-label="Availability / energy chunks"
         >
           {slots.map((slot) => {
             const level = slotBandLevel(slot, model.bands, stripWeekday);
@@ -1123,7 +974,8 @@ export function DayGrid({
           <span className="swatch" style={{ background: "#C45C26" }} /> Fixed
         </li>
         <li>
-          <span className="swatch" style={{ background: "#8B4513" }} /> One-off
+          <span className="swatch" style={{ background: "#7BC47F" }} />{" "}
+          Availability chunk
         </li>
       </ul>
 

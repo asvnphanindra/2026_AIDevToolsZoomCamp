@@ -34,7 +34,7 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 | US-B2 | Energy bands + deep-work warning |
 | US-B3 | Fixed schedule from seed |
 | US-B4 | Mark special day types |
-| US-B5 | One-off schedule changes (via right-click on grid cards; no standalone one-off form) |
+| US-B5 | One-off schedule changes (shipped earlier; punch-hole UI removed — availability = time chunks) |
 | US-C1 | Capture tasks to backlog |
 | US-C2 | Drag / move / resize on grid + conflict warn |
 | US-C3 | Daily minimum rules (Areas config; planner badges + suggest-on-confirm) |
