@@ -52,6 +52,7 @@ Phase 2 US-* (break-down/roll-up, digests, push, PNG export, schedule import UI)
 | Local issue map + short AC | [`_docs/task-tracker.md`](_docs/task-tracker.md) |
 | Agent team (roles + collaboration) | [`_docs/agent-team.md`](_docs/agent-team.md) |
 | Context management | [`AGENTS.md`](AGENTS.md) → [`_docs/AGENTS.md`](_docs/AGENTS.md) + modular docs |
+| **Project 2 submit checklist** | [`_docs/submit-checklist.md`](_docs/submit-checklist.md) |
 
 Agents pick Issues by `label:work-planner`, implement against the AC in the issue body, and open PRs that name `#N` + `US-*` (see agent-team evidence section).
 
@@ -109,6 +110,7 @@ project/
     ├── product-spec.md · task-tracker.md
     ├── plan.md · agent-team.md · process.md · architecture.md
     ├── observability.md
+    ├── submit-checklist.md
     └── AGENTS.md
 ```
 
@@ -225,4 +227,4 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 ## Links
 
-- [FUNCTIONAL_SPEC](_docs/FUNCTIONAL_SPEC_grok_bot.md) · [product-spec](_docs/product-spec.md) · [task-tracker](_docs/task-tracker.md) · [plan](_docs/plan.md) · [AGENTS](_docs/AGENTS.md) · [agent-team](_docs/agent-team.md) · [observability](_docs/observability.md) · [process](_docs/process.md) · [architecture](_docs/architecture.md)
+- [FUNCTIONAL_SPEC](_docs/FUNCTIONAL_SPEC_grok_bot.md) · [product-spec](_docs/product-spec.md) · [task-tracker](_docs/task-tracker.md) · [plan](_docs/plan.md) · [AGENTS](_docs/AGENTS.md) · [agent-team](_docs/agent-team.md) · [observability](_docs/observability.md) · [process](_docs/process.md) · [architecture](_docs/architecture.md) · [submit checklist](_docs/submit-checklist.md)

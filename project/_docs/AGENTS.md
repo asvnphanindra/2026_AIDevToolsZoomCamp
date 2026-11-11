@@ -17,6 +17,7 @@ _docs/                    # all other markdown (this folder)
   task-tracker.md         # → public GitHub Issues #23–#39 with AC
   agent-team.md · process.md · architecture.md · plan.md
   observability.md
+  submit-checklist.md
   FUNCTIONAL_SPEC_grok_bot.md
 ```
 
@@ -42,6 +43,7 @@ Do not add Phase 2 US-* unless explicitly prioritized in [task-tracker.md](task-
 | [observability.md](observability.md) | Metrics/traces/logs, alert, on-call demo |
 | [plan.md](plan.md) | Build order: local first, Hosting after submission |
 | [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) | Full US-* AC + data model |
+| [submit-checklist.md](submit-checklist.md) | Project 2 platform submit + peer reviews |
 
 Human entry (problem / features / expected behavior / how to run): [`../README.md`](../README.md).
 
