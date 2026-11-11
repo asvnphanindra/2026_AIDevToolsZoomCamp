@@ -1,4 +1,7 @@
 import { fictionalSeed, type SeedArea, type SeedTask } from "@/data/fictional-seed";
+import type { AreaGoal } from "@/lib/area-goals";
+import { isoWeekPeriod } from "@/lib/goals";
+import { DEFAULT_TZ } from "@/lib/time";
 
 export type BacklogTask = SeedTask & {
   due?: string;
@@ -53,5 +56,45 @@ export function emptyTask(defaultAreaId: string): BacklogTask {
     horizon: "day",
     deepWork: false,
     due: "",
+  };
+}
+
+/** Open backlog card already linked to this goal for the given ISO week. */
+export function openBacklogForGoalWeek(
+  tasks: BacklogTask[],
+  goalId: string,
+  period: string,
+): BacklogTask | undefined {
+  return tasks.find(
+    (t) =>
+      t.status === "backlog" &&
+      t.goalId === goalId &&
+      t.period === period,
+  );
+}
+
+/** Build a this-week Scheduler backlog card from a Planner Goals Gantt goal. */
+export function backlogTaskFromAreaGoal(
+  goal: AreaGoal,
+  options?: {
+    timezone?: string;
+    from?: Date;
+    durationMin?: number;
+  },
+): BacklogTask {
+  const timezone = options?.timezone ?? DEFAULT_TZ;
+  const from = options?.from ?? new Date();
+  const period = isoWeekPeriod(from, timezone);
+  return {
+    id: `task-goal-${goal.id}-${period}`,
+    title: goal.title,
+    areaId: goal.areaId,
+    durationMin: Math.max(5, options?.durationMin ?? 60),
+    priority: "med",
+    status: "backlog",
+    horizon: "week",
+    period,
+    goalId: goal.id,
+    deepWork: false,
   };
 }

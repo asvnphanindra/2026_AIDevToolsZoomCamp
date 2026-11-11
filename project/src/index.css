@@ -1481,6 +1481,20 @@ button.nav-active {
   vertical-align: middle;
 }
 
+.goal-link-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #14532d;
+  background: #bbf7d0;
+  border-radius: 0.25rem;
+  vertical-align: middle;
+}
+
 .task-main {
   flex: 1;
   min-width: 0;

@@ -26,6 +26,10 @@ export type SeedTask = {
   status: string;
   horizon: string;
   deepWork?: boolean;
+  /** ISO week `YYYY-Www` when horizon is week (this week’s backlog). */
+  period?: string;
+  /** Planner Goals Gantt id when created from a goal. */
+  goalId?: string;
 };
 
 export type SeedProfile = {

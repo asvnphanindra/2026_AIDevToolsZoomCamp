@@ -19,6 +19,10 @@ type Props = {
   onGoalsChange: (goals: AreaGoal[]) => void;
   timezone?: string;
   onOpenWeekOverview?: () => void;
+  /** Create a Scheduler backlog card for this ISO week from a Gantt goal. */
+  onAddToWeekBacklog?: (goal: AreaGoal) => void;
+  /** Goal ids already on this week’s open backlog (disable re-add). */
+  weekBacklogGoalIds?: ReadonlySet<string>;
 };
 
 const HORIZONS: GoalHorizonKind[] = ["short", "mid", "long"];
@@ -30,6 +34,8 @@ export function GoalsGantt({
   onGoalsChange,
   timezone = "Asia/Kolkata",
   onOpenWeekOverview,
+  onAddToWeekBacklog,
+  weekBacklogGoalIds,
 }: Props) {
   const orderedAreas = useMemo(
     () => [...areas].sort((a, b) => a.order - b.order),
@@ -158,7 +164,9 @@ export function GoalsGantt({
           <h3>Goals</h3>
           <p className="muted">
             Per-area Gantt on a shared timeline — short (~3 weeks), mid
-            (~3 months), long (~3 quarters). Pick an area in the dropdown.
+            (~3 months), long (~3 quarters). Pick an area, then{" "}
+            <strong>→ This week</strong> to put a goal on the Scheduler
+            backlog.
           </p>
         </div>
         <div className="goals-gantt-head-actions">
@@ -360,6 +368,27 @@ export function GoalsGantt({
                                 </div>
                               </div>
                               <div className="gantt-row-actions">
+                                {onAddToWeekBacklog ? (
+                                  <button
+                                    type="button"
+                                    className="secondary"
+                                    disabled={weekBacklogGoalIds?.has(
+                                      goal.id,
+                                    )}
+                                    title={
+                                      weekBacklogGoalIds?.has(goal.id)
+                                        ? "Already on this week’s Scheduler backlog"
+                                        : "Add to this week’s Scheduler backlog"
+                                    }
+                                    onClick={() =>
+                                      onAddToWeekBacklog(goal)
+                                    }
+                                  >
+                                    {weekBacklogGoalIds?.has(goal.id)
+                                      ? "On backlog"
+                                      : "→ This week"}
+                                  </button>
+                                ) : null}
                                 <button
                                   type="button"
                                   className="secondary"

@@ -299,10 +299,23 @@ export function TaskBacklog({
                               replan
                             </span>
                           ) : null}
+                          {task.goalId ? (
+                            <span
+                              className="goal-link-badge"
+                              title={`From Planner goal ${task.goalId}${
+                                task.period ? ` · ${task.period}` : ""
+                              }`}
+                            >
+                              goal
+                            </span>
+                          ) : null}
                         </strong>
                         <span className="muted">
                           {task.durationMin}m
                           {task.replan ? " left" : ""} · {task.priority}
+                          {task.horizon === "week" && task.period
+                            ? ` · ${task.period}`
+                            : ""}
                           {task.due ? ` · due ${task.due}` : ""}
                           {task.deepWork ? " · deep" : ""}
                         </span>

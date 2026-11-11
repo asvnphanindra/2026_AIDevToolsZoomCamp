@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DayGrid } from "@/components/DayGrid";
 import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
@@ -26,12 +26,19 @@ import {
   type AreaGoal,
 } from "@/lib/area-goals";
 import {
+  isoWeekPeriod,
   loadGoals,
   writeGoals,
   type WeeklyGoal,
 } from "@/lib/goals";
 import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
-import { writeBacklog, type BacklogTask } from "@/lib/tasks";
+import {
+  backlogTaskFromAreaGoal,
+  loadBacklog,
+  openBacklogForGoalWeek,
+  writeBacklog,
+  type BacklogTask,
+} from "@/lib/tasks";
 import {
   loadWeekHorizon,
   writeWeekHorizon,
@@ -119,6 +126,57 @@ export function AuthShell() {
     setAreaGoals(next);
     writeAreaGoals(next);
   }, []);
+
+  const plannerTz = "Asia/Kolkata";
+  const thisWeekPeriod = useMemo(
+    () => isoWeekPeriod(new Date(), plannerTz),
+    [],
+  );
+
+  const weekBacklogGoalIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of tasks) {
+      if (
+        t.status === "backlog" &&
+        t.goalId &&
+        t.period === thisWeekPeriod
+      ) {
+        ids.add(t.goalId);
+      }
+    }
+    return ids;
+  }, [tasks, thisWeekPeriod]);
+
+  const onAddGoalToWeekBacklog = useCallback(
+    (goal: AreaGoal) => {
+      const base = tasks.length > 0 ? tasks : loadBacklog(isDemo);
+      const existing = openBacklogForGoalWeek(
+        base,
+        goal.id,
+        thisWeekPeriod,
+      );
+      if (existing) {
+        if (base !== tasks) onTasksChange(base);
+        setAppView("scheduler");
+        return;
+      }
+      const card = backlogTaskFromAreaGoal(goal, {
+        timezone: plannerTz,
+      });
+      const id = base.some((t) => t.id === card.id)
+        ? `task-goal-${Date.now().toString(36)}`
+        : card.id;
+      onTasksChange([{ ...card, id }, ...base]);
+      setAppView("scheduler");
+    },
+    [tasks, isDemo, onTasksChange, thisWeekPeriod],
+  );
+
+  useEffect(() => {
+    if (!ready || !user || tasks.length > 0) return;
+    const loaded = loadBacklog(isDemo);
+    if (loaded.length) onTasksChange(loaded);
+  }, [ready, user, isDemo, tasks.length, onTasksChange]);
 
   if (!ready) {
     return (
@@ -230,6 +288,8 @@ export function AuthShell() {
             areaGoals={areaGoals}
             onAreaGoalsChange={onAreaGoalsChange}
             onOpenWeekOverview={() => setAppView("weeks")}
+            onAddGoalToWeekBacklog={onAddGoalToWeekBacklog}
+            weekBacklogGoalIds={weekBacklogGoalIds}
           />
         ) : appView === "focus" ? (
           <FocusPanel

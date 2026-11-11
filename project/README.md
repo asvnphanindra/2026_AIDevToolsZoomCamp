@@ -17,7 +17,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 - Sign-in + demo mode (US-A1, A2)
 - 5-day grid (left) + area-column backlog (right); availability/energy chunks, seeded schedule
 - **Scheduler** (grid + backlog) and **Planner** (area cards + config icon for daily mins, US-C3); right-click placed cards to edit / unschedule / check-in
-- Planner **Goals Gantt**: area dropdown; short (~3w) / mid (~3m) / long (~3q) bars; 3-week overview shows spanning goals + cross-area clash
+- Planner **Goals Gantt**: area dropdown; short (~3w) / mid (~3m) / long (~3q) bars; **→ This week** sends a goal to Scheduler backlog (same area, `goalId` link); 3-week overview shows spanning goals + cross-area clash
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
 - Focus panel, weekly goals; 3-week goals overview via Planner (US-E1–E3)
@@ -29,7 +29,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
-5. **Planner** nav: short area cards in one row; gear opens daily-min config. Below cards: **Goals** Gantt (area dropdown) for short/mid/long horizons. Scheduler shows shortfall badges and can suggest a slot (confirm only). Right-click placed cards to edit / unschedule.
+5. **Planner** nav: short area cards in one row; gear opens daily-min config. Below cards: **Goals** Gantt (area dropdown) for short/mid/long horizons; **→ This week** creates a Scheduler backlog card (title + area from the goal, linked via `goalId`). Scheduler shows shortfall badges and can suggest a slot (confirm only). Right-click placed cards to edit / unschedule.
 6. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
 7. Focus view: one column per life area with standing focus items (add/edit/remove).
 8. Weekly goals with one-click carry-over; **Planner → 3-week goals overview** for current + next two ISO weeks (shows Gantt goals spanning each week + short-goal clash across areas).
@@ -162,8 +162,9 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 1. `npm start` → **Try demo** → **Planner**.
 2. Area cards stay on top; below, **Goals** uses an **Area** dropdown (not only the cards).
 3. Chart shows short / mid / long bands for the selected area; Add / Edit / Delete; bar ‹ › nudges dates.
-4. **3-week goals overview** lists spanning area goals per week and a short-goal clash banner when 2+ areas overlap.
-5. Reload persists (`work-planner.area-goals`).
+4. On a goal row, **→ This week** → jumps to **Scheduler**; backlog shows the card under the same area with a **goal** badge and current ISO week period. Button becomes **On backlog** if already added.
+5. **3-week goals overview** lists spanning area goals per week and a short-goal clash banner when 2+ areas overlap.
+6. Reload persists (`work-planner.area-goals` + `work-planner.backlog-tasks`).
 
 ## Links
 

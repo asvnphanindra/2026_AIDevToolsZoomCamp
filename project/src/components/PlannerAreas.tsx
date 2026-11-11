@@ -16,6 +16,8 @@ type Props = {
   areaGoals: AreaGoal[];
   onAreaGoalsChange: (goals: AreaGoal[]) => void;
   onOpenWeekOverview?: () => void;
+  onAddGoalToWeekBacklog?: (goal: AreaGoal) => void;
+  weekBacklogGoalIds?: ReadonlySet<string>;
 };
 
 /** Planner surface: area cards in one row; gear opens config (US-C3). */
@@ -27,6 +29,8 @@ export function PlannerAreas({
   areaGoals,
   onAreaGoalsChange,
   onOpenWeekOverview,
+  onAddGoalToWeekBacklog,
+  weekBacklogGoalIds,
 }: Props) {
   const [name, setName] = useState("");
   const [colour, setColour] = useState(DEFAULT_AREA_COLOURS[0]!);
@@ -287,6 +291,8 @@ export function PlannerAreas({
         goals={areaGoals}
         onGoalsChange={onAreaGoalsChange}
         onOpenWeekOverview={onOpenWeekOverview}
+        onAddToWeekBacklog={onAddGoalToWeekBacklog}
+        weekBacklogGoalIds={weekBacklogGoalIds}
       />
     </section>
   );
