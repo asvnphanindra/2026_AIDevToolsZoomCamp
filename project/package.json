@@ -14,7 +14,11 @@
     "emulators": "firebase emulators:start --only auth,firestore --project work-planner-demo",
     "start": "node scripts/dev-start.mjs",
     "start:full": "node scripts/dev-start.mjs",
-    "local": "npm start"
+    "local": "npm start",
+    "test": "node scripts/run-tests.mjs",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "node scripts/run-integration.mjs",
+    "test:integration:vitest": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",
@@ -28,6 +32,7 @@
     "concurrently": "^9.2.0",
     "firebase-tools": "^14.11.0",
     "typescript": "~5.8.3",
-    "vite": "^7.1.0"
+    "vite": "^7.1.0",
+    "vitest": "^3.2.7"
   }
 }

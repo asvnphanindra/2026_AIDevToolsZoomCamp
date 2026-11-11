@@ -81,8 +81,24 @@ project/
 | US-E3 3-week view (Issue #37) | ☑ |
 | US-F1 3-month calendar (Issue #38) | ☑ |
 | US-F2 Recurring series (Issue #39) | ☑ |
-| Remaining tests / Docker / CI / obs | ☐ next |
+| Unit + integration tests (`npm test`) | ☑ |
+| CI tests on PR (`.github/workflows/work-planner-ci.yml`) | ☑ |
+| Remaining Docker / obs / on-call | ☐ next |
 | Hosting URL | ☐ after submission |
+
+## Tests (one command)
+
+**Prerequisites:** Node ≥ 20 and **JDK 21+** (Firestore emulator for integration).
+
+```powershell
+cd project
+npm install
+npm test                 # unit (Vitest) + integration (Auth+Firestore emulators)
+```
+
+- `npm run test:unit` — pure planner/scheduler logic only (no Java).
+- `npm run test:integration` — starts Auth+Firestore via `firebase emulators:exec`, then Vitest.
+- CI: [`.github/workflows/work-planner-ci.yml`](../.github/workflows/work-planner-ci.yml) runs `npm test` on PRs that touch `project/`.
 
 ## Quick start (one command)
 

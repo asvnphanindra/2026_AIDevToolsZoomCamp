@@ -17,14 +17,15 @@
 - No personal data in the change
 - `AGENTS.md` / modular docs updated if process or architecture changed
 
-## Commands (planned; Section B+)
+## Commands
 
 ```powershell
 cd project
-npm install          # or lockfile equivalent
-npm run emulators    # Firebase Emulator Suite
-npm test             # unit + integration
-docker compose up --build
+npm install
+npm start            # Auth + Firestore emulators + Vite
+npm test             # unit + integration (JDK 21+ for Firestore)
+npm run test:unit
+npm run emulators
 ```
 
-Exact scripts land with the scaffold.
+CI on PR: repo workflow `.github/workflows/work-planner-ci.yml` (install + `npm test` in `project/`).

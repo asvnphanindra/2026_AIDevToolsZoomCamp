@@ -9,7 +9,7 @@
 | DB | Cloud Firestore (`users/{uid}/…`) |
 | Host (later) | Firebase Hosting — **after course submission** only |
 | Local | Firebase Emulator Suite (+ Docker Compose for reviewers) |
-| CI | GitHub Actions against emulators (later); no Hosting deploy required pre-submission |
+| CI | GitHub Actions (`.github/workflows/work-planner-ci.yml`) runs `npm test` vs Auth+Firestore emulators on PR; no Hosting deploy required pre-submission |
 
 ## Trust boundaries
 

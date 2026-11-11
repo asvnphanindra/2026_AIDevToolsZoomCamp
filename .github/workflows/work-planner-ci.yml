@@ -1,0 +1,43 @@
+name: work-planner-ci
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "project/**"
+      - ".github/workflows/work-planner-ci.yml"
+  pull_request:
+    paths:
+      - "project/**"
+      - ".github/workflows/work-planner-ci.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: project
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: project/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit + integration tests
+        run: npm test
