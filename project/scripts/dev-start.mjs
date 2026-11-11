@@ -2,6 +2,7 @@
  * Local start: Auth + Firestore emulators (when JDK available) + Vite.
  * - Reuses a healthy Auth+Firestore suite if already up
  * - Else picks free ports, writes firebase.runtime.json + .env.local
+ * - Resolves java from PATH / JAVA_HOME / common Windows JDK installs
  * - Without JDK: Auth-only fallback (Firestore Emulator UI will say "not running")
  * - Vite keeps running if the emulator exits (no -k)
  */
@@ -37,7 +38,6 @@ function probeTcp(port) {
     socket.setTimeout(400);
     socket.on("timeout", () => {
       socket.destroy();
-      resolve(false);
     });
     socket.on("error", () => resolve(false));
   });
@@ -60,12 +60,92 @@ function probeAuth(port) {
   });
 }
 
-function hasJava() {
-  const result = spawnSync("java", ["-version"], {
+function javaWorks(javaBin, env = process.env) {
+  const result = spawnSync(javaBin, ["-version"], {
     encoding: "utf8",
-    shell: true,
+    shell: false,
+    env,
   });
   return result.status === 0;
+}
+
+function expandGlobs(patterns) {
+  const out = [];
+  for (const pattern of patterns) {
+    if (!pattern.includes("*")) {
+      out.push(pattern);
+      continue;
+    }
+    const star = pattern.indexOf("*");
+    const prefix = pattern.slice(0, star);
+    const suffix = pattern.slice(star + 1);
+    const parent = path.dirname(prefix.endsWith(path.sep) ? prefix : prefix);
+    const basePrefix = path.basename(prefix);
+    try {
+      for (const entry of fs.readdirSync(parent, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        if (basePrefix && !entry.name.startsWith(basePrefix)) continue;
+        out.push(path.join(parent, entry.name, suffix.replace(/^[\\/]/, "")));
+      }
+    } catch {
+      /* missing install root */
+    }
+  }
+  return out;
+}
+
+/** Prefer PATH/JAVA_HOME; also find Microsoft/Temurin/JetBrains JDKs (Windows). */
+function resolveJava() {
+  if (javaWorks("java")) {
+    return { javaBin: "java", javaHome: process.env.JAVA_HOME || null };
+  }
+
+  const home = process.env.JAVA_HOME;
+  if (home) {
+    const candidate = path.join(home, "bin", process.platform === "win32" ? "java.exe" : "java");
+    if (fs.existsSync(candidate) && javaWorks(candidate)) {
+      return { javaBin: candidate, javaHome: home };
+    }
+  }
+
+  const pf = process.env.ProgramFiles || "C:\\Program Files";
+  const javaName = process.platform === "win32" ? "java.exe" : "java";
+  const patterns = [
+    path.join(pf, "Microsoft", "jdk-21*", "bin", javaName),
+    path.join(pf, "Eclipse Adoptium", "jdk-21*", "bin", javaName),
+    path.join(pf, "Java", "jdk-21*", "bin", javaName),
+    path.join(pf, "JetBrains", "*", "jbr", "bin", javaName),
+  ];
+
+  for (const candidate of expandGlobs(patterns)) {
+    if (fs.existsSync(candidate) && javaWorks(candidate)) {
+      return {
+        javaBin: candidate,
+        javaHome: path.resolve(path.dirname(candidate), ".."),
+      };
+    }
+  }
+
+  return null;
+}
+
+function envKey(env, name) {
+  return Object.keys(env).find((k) => k.toLowerCase() === name.toLowerCase()) || name;
+}
+
+function emulatorEnv(javaInfo) {
+  const env = { ...process.env };
+  if (!javaInfo?.javaHome) return env;
+  // Windows process.env is case-insensitive, but a spread object can keep
+  // both `Path` and `PATH`; cmd.exe children must see a single updated Path.
+  const javaHomeKey = envKey(env, "JAVA_HOME");
+  const pathKey = envKey(env, "PATH");
+  env[javaHomeKey] = javaInfo.javaHome;
+  if (pathKey !== "PATH" && Object.prototype.hasOwnProperty.call(env, "PATH")) {
+    delete env.PATH;
+  }
+  env[pathKey] = `${path.join(javaInfo.javaHome, "bin")}${path.delimiter}${env[pathKey] || ""}`;
+  return env;
 }
 
 async function pickFreePort(candidates, label) {
@@ -158,12 +238,12 @@ function writeRuntimeConfig({ authPort, firestorePort, uiPort, withFirestore }) 
   return { runtimePath, authUrl };
 }
 
-function run(commandLine, name) {
+function run(commandLine, name, env = process.env) {
   const child = spawn(commandLine, {
     cwd: root,
     stdio: "inherit",
     shell: true,
-    env: process.env,
+    env,
   });
   child.on("exit", (code, signal) => {
     const why = signal ? `signal ${signal}` : `code ${code ?? 0}`;
@@ -179,7 +259,9 @@ function run(commandLine, name) {
   return child;
 }
 
-const javaOk = hasJava();
+const javaInfo = resolveJava();
+const javaOk = Boolean(javaInfo);
+const childEnv = emulatorEnv(javaInfo);
 const healthy = await findHealthySuite();
 
 let plan;
@@ -200,10 +282,13 @@ if (healthy?.reuse && healthy.withFirestore) {
   plan = await pickFreshPorts();
 } else if (!javaOk) {
   console.warn(
-    `[start] JDK (java) not on PATH — Firestore emulator needs JDK 21+.`,
+    `[start] JDK 21+ not found (PATH / JAVA_HOME / common installs).`,
   );
   console.warn(
-    `[start] Starting Auth emulator only. Emulator UI → Firestore will say it is not running.`,
+    `[start] Windows: winget install --id Microsoft.OpenJDK.21 -e`,
+  );
+  console.warn(
+    `[start] Then open a new terminal. Starting Auth-only — Emulator UI → Firestore will say not running.`,
   );
   const authPort = await pickFreePort(AUTH_CANDIDATES, "Auth emulator");
   const uiPort = await pickFreePort(UI_CANDIDATES, "Emulator UI");
@@ -215,6 +300,9 @@ if (healthy?.reuse && healthy.withFirestore) {
     withFirestore: false,
   };
 } else {
+  if (javaInfo.javaHome) {
+    console.log(`[start] Using JDK at ${javaInfo.javaHome}`);
+  }
   plan = await pickFreshPorts();
 }
 
@@ -247,10 +335,11 @@ if (!plan.reuse) {
     run(
       `npx firebase emulators:start --only ${only} --project work-planner-demo --config ${path.basename(runtimePath)}`,
       "emu",
+      childEnv,
     ),
   );
 }
-kids.push(run("npx vite", "web"));
+kids.push(run("npx vite", "web", childEnv));
 
 function shutdown() {
   for (const kid of kids) {

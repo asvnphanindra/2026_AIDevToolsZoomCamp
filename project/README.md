@@ -86,14 +86,20 @@ project/
 
 ## Quick start (one command)
 
-**Prerequisite:** Node ≥ 20. Firestore emulator also needs a local **JDK 21+** (`java` on PATH).
+**Prerequisites:** Node ≥ 20. Firestore emulator needs **JDK 21+**.
 
 ```powershell
+# once on Windows if `java -version` fails:
+winget install --id Microsoft.OpenJDK.21 -e
+# open a new terminal after install so PATH picks up java
+
 cd project
 copy .env.example .env   # first time only
 npm install
-npm start                # Auth + Firestore emulators + Vite (needs JDK 21+ for Firestore)
+npm start                # Auth + Firestore + Emulator UI + Vite
 ```
+
+`npm start` (`scripts/dev-start.mjs`) starts **Auth + Firestore + Emulator UI** together when a JDK is found (PATH, `JAVA_HOME`, or common Windows installs such as Microsoft OpenJDK / Temurin / JetBrains JBR), writes chosen ports to `.env.local`, and keeps Vite up even if the emulator exits.
 
 **Windows — emulators only (no Vite):**
 
@@ -102,27 +108,35 @@ cd project
 npm run emulators
 ```
 
-Or explicitly:
+Or explicitly (defaults from `firebase.json`):
 
 ```powershell
 cd project
 npx firebase emulators:start --only auth,firestore --project work-planner-demo
 ```
 
-- App: http://127.0.0.1:5173  
-- Emulator UI: http://127.0.0.1:4000 (or `:4001+` if busy)  
-- Auth emulator: `:9099` (or `:9100+` if busy; port written to `.env.local`)  
-- Firestore emulator: `:8080` (or `:8081+` if busy; port written to `.env.local`)  
-- Without JDK: `npm start` falls back to Auth-only (Firestore view will say not running)
+| Service | Default port | Notes |
+|---------|--------------|--------|
+| App (Vite) | **5173** | http://127.0.0.1:5173 |
+| Emulator UI | **4000** | http://127.0.0.1:4000 (`:4001+` if busy) |
+| Auth emulator | **9099** | `:9100+` if busy; see `.env.local` |
+| Firestore emulator | **8080** | `:8081+` if busy; see `.env.local` |
+
+Without JDK: `npm start` falls back to Auth-only (Emulator UI → Firestore shows “not running”). Install JDK 21+ and re-run.
 
 UI-only: `npm run dev` — **Try demo** still works via offline local session + fictional seed.  
 Auth emulator only: `npm run emulators:auth`  
-`npm run start:full` is an alias of `npm start`.  
+`npm run start:full` / `npm run local` are aliases of `npm start`.  
 If an old Auth-only emulator is stuck: stop that terminal (Ctrl+C), then re-run `npm start` so Auth+Firestore start together.
 
 ### Browse data (Firestore)
 
-**Firestore** is the app database. With emulators running (`npm start`), open the **Emulator UI** at [http://127.0.0.1:4000](http://127.0.0.1:4000) → click **Firestore** in the left nav to browse collections. Auth users appear under **Authentication** in the same UI. If ports differ (busy machine), check the terminal output or `.env.local` for Auth (`VITE_FIREBASE_AUTH_EMULATOR_URL`) and Firestore (`VITE_FIRESTORE_EMULATOR_PORT`).
+1. Run `npm start` (JDK 21+ required for Firestore).
+2. Open Emulator UI: [http://127.0.0.1:4000](http://127.0.0.1:4000) (or the UI port printed in the terminal).
+3. Left nav → **Firestore** → browse collections (e.g. `users/{uid}/areas` after Try demo).
+4. Left nav → **Authentication** for Auth emulator users.
+
+If ports differ, check the `npm start` log or `.env.local` (`VITE_FIREBASE_AUTH_EMULATOR_URL`, `VITE_FIRESTORE_EMULATOR_PORT`).
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
