@@ -29,6 +29,6 @@ npm run emulators
 docker compose up --build   # app + Auth/Firestore + Grafana LGTM + obs/on-call
 ```
 
-Observability demo: [`observability.md`](observability.md) · `POST http://127.0.0.1:8090/demo/alert`
+Observability demo: [`observability.md`](observability.md) · `curl.exe -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"`
 
 CI on PR: repo workflow `.github/workflows/work-planner-ci.yml` (install + `npm test` in `project/`).

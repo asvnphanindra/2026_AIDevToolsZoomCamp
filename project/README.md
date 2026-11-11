@@ -125,8 +125,10 @@ Details: [`_docs/observability.md`](_docs/observability.md).
 3. Fire the user-impact alert and watch on-call remediate:
 
 ```powershell
-curl -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"
+curl.exe -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"
 ```
+
+(Use `curl.exe` on PowerShell; plain `curl` is often GET via `Invoke-WebRequest` and returns `{"error":"not_found"}`. `GET /demo/alert` also works.)
 
 4. Grafana Explore → Tempo / Loki: search the returned `traceId`. Prometheus: `work_planner_demo_seed_failures_total`, `work_planner_oncall_remediations_total`.
 5. Status: http://127.0.0.1:8090/status · Alerts: http://127.0.0.1:8090/alerts

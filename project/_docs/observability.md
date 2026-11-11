@@ -48,11 +48,15 @@ Manual wake: `POST http://127.0.0.1:8090/oncall/wake`
 
 ## Demo (alert + remediation)
 
-With Compose up:
+With Compose up, fire **`DemoSeedUnavailable`** and (by default) auto-remediate:
+
+**Exact working request** (must be `POST` or `GET` on `/demo/alert` — not `/alert`, no trailing-slash-only mismatch after normalize):
 
 ```powershell
-curl -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"
+curl.exe -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"
 ```
+
+On Windows PowerShell use **`curl.exe`** (plain `curl` is `Invoke-WebRequest` and often yields `{"error":"not_found"}` from a GET). Browser/open: `http://127.0.0.1:8090/demo/alert` (GET also works). Route index: `GET http://127.0.0.1:8090/`.
 
 Or from `project/obs`: `npm run demo:alert` (Node 20+; Compose must be up).
 
@@ -65,11 +69,11 @@ Then open Grafana → Explore:
 Stepwise (break without auto-fix):
 
 ```powershell
-curl -X POST http://127.0.0.1:8090/demo/break
-curl http://127.0.0.1:8090/alerts
+curl.exe -X POST http://127.0.0.1:8090/demo/break
+curl.exe http://127.0.0.1:8090/alerts
 # watcher remediates within ~3s, or:
-curl -X POST http://127.0.0.1:8090/oncall/wake
-curl http://127.0.0.1:8090/status
+curl.exe -X POST http://127.0.0.1:8090/oncall/wake
+curl.exe http://127.0.0.1:8090/status
 ```
 
 ## Local obs without full Compose UI

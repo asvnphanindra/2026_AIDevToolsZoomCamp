@@ -64,13 +64,88 @@ function cors(res) {
   res.end();
 }
 
+const ROUTES = {
+  "GET /": "This index",
+  "GET /health": "Liveness + demoSeedBroken",
+  "GET /status": "Probe, alerts, on-call snapshot",
+  "GET /alerts": "Alert history",
+  "GET /oncall/status": "On-call agent status",
+  "POST /ingest": "Frontend telemetry ingest",
+  "POST /demo/break": "Inject demo-seed break + fire alert",
+  "GET|POST /demo/alert": "Fire DemoSeedUnavailable + optional auto-remediate",
+  "POST /oncall/wake": "Wake on-call and remediate",
+  "POST /probe": "Run health probe + evaluate alerts",
+};
+
+function normalizePath(pathname) {
+  if (!pathname || pathname === "/") return "/";
+  return pathname.length > 1 && pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname;
+}
+
+function parseBool(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "boolean") return value;
+  const s = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(s)) return true;
+  if (["0", "false", "no", "off"].includes(s)) return false;
+  return fallback;
+}
+
+async function runDemoAlert({ traceId, autoRemediate, delayMs }) {
+  return withSharedTrace(
+    traceId,
+    "demo.alert_and_oncall",
+    async ({ traceId: id }) => {
+      breakDemoSeed("demo_alert_script");
+      await runHealthProbe({ traceId: id });
+      const evalResult = await evaluateAlerts({ traceId: id });
+      let remediation = null;
+      if (autoRemediate) {
+        // Small delay so Grafana/OTLP can receive the firing span first.
+        await new Promise((r) => setTimeout(r, Number(delayMs || 500)));
+        // Watcher may already have remediates; treat resolved alert as success.
+        if (!firingAlerts().some((a) => a.name === DEMO_SEED_ALERT)) {
+          remediation = {
+            remediated: true,
+            reason: "already_remediated_by_watcher",
+            traceId: id,
+          };
+        } else {
+          remediation = await wakeAndRemediate({
+            traceId: id,
+            alertName: DEMO_SEED_ALERT,
+          });
+        }
+        await runHealthProbe({ traceId: id });
+      }
+      return { evalResult, remediation };
+    },
+  );
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-  const path = url.pathname;
+  const path = normalizePath(url.pathname);
 
   if (req.method === "OPTIONS") return cors(res);
 
   try {
+    if (req.method === "GET" && path === "/") {
+      return send(res, 200, {
+        service: "work-planner-obs",
+        demoAlert: {
+          method: "POST",
+          path: "/demo/alert",
+          alsoAccepts: "GET",
+          example:
+            'curl.exe -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\\"autoRemediate\\":true}"',
+        },
+        routes: ROUTES,
+      });
+    }
+
     if (req.method === "GET" && path === "/health") {
       return send(res, 200, {
         ok: true,
@@ -169,39 +244,30 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (req.method === "POST" && path === "/demo/alert") {
-      const body = await readJson(req).catch(() => ({}));
-      const traceId = normalizeTraceId(body.traceId || newTraceId());
-      const auto = body.autoRemediate !== false;
-      const result = await withSharedTrace(
-        traceId,
-        "demo.alert_and_oncall",
-        async ({ traceId: id }) => {
-          breakDemoSeed("demo_alert_script");
-          await runHealthProbe({ traceId: id });
-          const evalResult = await evaluateAlerts({ traceId: id });
-          let remediation = null;
-          if (auto) {
-            // Small delay so Grafana/OTLP can receive the firing span first.
-            await new Promise((r) => setTimeout(r, Number(body.delayMs || 500)));
-            // Watcher may already have remediates; treat resolved alert as success.
-            if (!firingAlerts().some((a) => a.name === DEMO_SEED_ALERT)) {
-              remediation = {
-                remediated: true,
-                reason: "already_remediated_by_watcher",
-                traceId: id,
-              };
-            } else {
-              remediation = await wakeAndRemediate({
-                traceId: id,
-                alertName: DEMO_SEED_ALERT,
-              });
-            }
-            await runHealthProbe({ traceId: id });
-          }
-          return { evalResult, remediation };
-        },
+    // GET (browser / PowerShell curl alias) and POST both fire the demo alert.
+    if (
+      (req.method === "GET" || req.method === "POST") &&
+      path === "/demo/alert"
+    ) {
+      const body =
+        req.method === "POST"
+          ? await readJson(req).catch(() => ({}))
+          : {};
+      const traceId = normalizeTraceId(
+        body.traceId || url.searchParams.get("traceId") || newTraceId(),
       );
+      const auto = parseBool(
+        body.autoRemediate ?? url.searchParams.get("autoRemediate"),
+        true,
+      );
+      const delayMs = Number(
+        body.delayMs ?? url.searchParams.get("delayMs") ?? 500,
+      );
+      const result = await runDemoAlert({
+        traceId,
+        autoRemediate: auto,
+        delayMs,
+      });
       return send(res, 200, {
         alert: DEMO_SEED_ALERT,
         traceId,
@@ -232,7 +298,25 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ...out, alert: evalResult });
     }
 
-    return send(res, 404, { error: "not_found" });
+    const known = Object.keys(ROUTES).some((key) => {
+      const routePath = key.split(" ").slice(-1)[0];
+      return routePath === path;
+    });
+    if (known) {
+      return send(res, 405, {
+        error: "method_not_allowed",
+        path,
+        method: req.method,
+        hint: ROUTES,
+      });
+    }
+
+    return send(res, 404, {
+      error: "not_found",
+      path,
+      method: req.method,
+      hint: "POST /demo/alert (also GET). See GET / for routes.",
+    });
   } catch (err) {
     structuredLog({
       severity: "ERROR",
