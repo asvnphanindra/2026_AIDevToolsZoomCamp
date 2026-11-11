@@ -44,21 +44,35 @@ export const SCHEDULER_LAYER_LABELS: Record<SchedulerLayerId, string> = {
 
 export const DEFAULT_SCHEDULER_LAYER_MODE: SchedulerLayerMode = "combined";
 
-/** Derived boolean map for Combined / single-layer visibility. */
+/**
+ * Derived boolean map for Combined / single-layer visibility.
+ *
+ * Focus mode shows drag-dropped (scheduled) blocks on the grid only —
+ * unscheduled work stays in the Tasks to Focus side panel until placed.
+ * Standing FocusPanel strips are not painted onto the calendar.
+ */
 export function layerStateForMode(mode: SchedulerLayerMode): SchedulerLayerState {
   if (mode === "combined") {
     return {
       availability: true,
       recurring: true,
       scheduled: true,
-      focus: true,
+      focus: false,
+    };
+  }
+  if (mode === "focus") {
+    return {
+      availability: false,
+      recurring: false,
+      scheduled: true,
+      focus: false,
     };
   }
   return {
     availability: mode === "availability",
     recurring: mode === "recurring",
     scheduled: mode === "scheduled",
-    focus: mode === "focus",
+    focus: false,
   };
 }
 

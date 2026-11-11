@@ -172,8 +172,8 @@ export function TaskBacklog({
       <div className="day-grid-meta">
         <h2>Tasks to Focus</h2>
         <p className="muted">
-          Capture one-off tasks and drag onto the grid · drop a placed block
-          here to return it
+          Unscheduled work stays here until you drag it onto the calendar ·
+          drop a placed block here to return it
         </p>
       </div>
 

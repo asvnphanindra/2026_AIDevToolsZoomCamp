@@ -164,9 +164,13 @@ export function DayGrid({
     () =>
       model.items.filter((item) => {
         const layer = layerForItem(item);
-        return layer ? layers[layer] : true;
+        if (!layer) return true;
+        if (!layers[layer]) return false;
+        // Focus: unscheduled stay in Tasks to Focus; grid = drag-dropped only.
+        if (layerMode === "focus") return Boolean(item.placed);
+        return true;
       }),
-    [model.items, layers],
+    [model.items, layers, layerMode],
   );
 
   const clashIds = useMemo(() => {
@@ -740,8 +744,8 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Double-click a day to add · Combined = full grid · Focus adds Tasks
-          to Focus · drag a placed block back to that panel · right-click for
+          Combined = full grid · Focus = Tasks to Focus until you drag onto the
+          calendar · drag a placed block back to unschedule · right-click for
           more
         </p>
         <fieldset className="scheduler-layers" aria-label="Calendar layers">
@@ -949,6 +953,7 @@ export function DayGrid({
                 onDragLeave={(e) => onColDragLeave(dayKey, e)}
                 onDrop={(e) => onColDrop(dayKey, e)}
                 onDoubleClick={(e) => {
+                  if (layerMode === "focus") return;
                   if ((e.target as HTMLElement).closest(".day-grid-item"))
                     return;
                   addDirectOnDay(dayKey, e.clientY, e.currentTarget);
