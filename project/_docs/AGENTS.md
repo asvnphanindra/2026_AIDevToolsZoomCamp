@@ -34,6 +34,7 @@ Do not add Phase 2 US-* unless explicitly prioritized in [task-tracker.md](task-
 | [process.md](process.md) | How to work, DoD, planned commands |
 | [agent-team.md](agent-team.md) | Roles and collaboration |
 | [architecture.md](architecture.md) | Stack and data boundaries |
+| [observability.md](observability.md) | Metrics/traces/logs, alert, on-call demo |
 | [task-tracker.md](task-tracker.md) | MVP Issues #23–#39 (US-A1…US-F2) + short AC |
 
 ## Working agreements

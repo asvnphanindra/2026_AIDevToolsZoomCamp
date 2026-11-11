@@ -24,7 +24,7 @@ README · product-spec · public Issues tracker · agent team · `AGENTS.md` + m
 Firebase project config for emulators · Auth · data model · day/week views · horizons (thin) · one-command local run.
 
 ### C. Quality — still local-first
-Tests · Docker Compose (emulators + UI) · CI on PR · observability/alert/on-call as required for scoring.
+Tests · Docker Compose (emulators + UI + Grafana LGTM + obs) · CI on PR · observability/alert/on-call (see observability.md).
 
 ### D. After submission
 Firebase Hosting (demo project) if a public URL is desired · personal project stays private.

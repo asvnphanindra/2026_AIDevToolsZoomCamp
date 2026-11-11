@@ -15,4 +15,40 @@ services:
       VITE_FIREBASE_AUTH_EMULATOR_URL: http://127.0.0.1:9099
       VITE_FIRESTORE_EMULATOR_HOST: 127.0.0.1
       VITE_FIRESTORE_EMULATOR_PORT: "8080"
+      VITE_OBS_URL: http://127.0.0.1:8090
+    restart: unless-stopped
+
+  # Grafana LGTM: Prometheus + Tempo + Loki + Grafana + OTLP collector (one UI).
+  otel-lgtm:
+    image: grafana/otel-lgtm:0.11.0
+    ports:
+      # Host :3300 → Grafana (avoid clash with other local :3000 apps).
+      # OTLP 4317/4318 stay on the Compose network only (obs → otel-lgtm).
+      - "127.0.0.1:3300:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    restart: unless-stopped
+
+  obs:
+    build: ./obs
+    image: work-planner-obs:local
+    ports:
+      - "127.0.0.1:8090:8090"
+    environment:
+      OBS_HOST: 0.0.0.0
+      OBS_PORT: "8090"
+      OBS_ENV: local
+      OBS_AUTO_REMEDIATE: "1"
+      OBS_PROBE_INTERVAL_MS: "10000"
+      OBS_ONCALL_INTERVAL_MS: "3000"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      AUTH_PROBE_HOST: stack
+      AUTH_PROBE_PORT: "9099"
+      FIRESTORE_PROBE_HOST: stack
+      FIRESTORE_PROBE_PORT: "8080"
+      GRAFANA_URL: http://127.0.0.1:3300
+    depends_on:
+      - otel-lgtm
+      - stack
     restart: unless-stopped

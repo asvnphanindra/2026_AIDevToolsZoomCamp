@@ -26,7 +26,9 @@ npm start            # Auth + Firestore emulators + Vite
 npm test             # unit + integration (JDK 21+ for Firestore)
 npm run test:unit
 npm run emulators
-docker compose up --build   # reviewer one-command: app + Auth/Firestore (JDK in image)
+docker compose up --build   # app + Auth/Firestore + Grafana LGTM + obs/on-call
 ```
+
+Observability demo: [`observability.md`](observability.md) · `POST http://127.0.0.1:8090/demo/alert`
 
 CI on PR: repo workflow `.github/workflows/work-planner-ci.yml` (install + `npm test` in `project/`).

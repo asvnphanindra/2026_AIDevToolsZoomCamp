@@ -25,6 +25,7 @@ import {
   loadDemoSeed,
   type PlannerView,
 } from "@/lib/seed";
+import { newTraceId, reportTelemetry } from "@/lib/telemetry";
 
 export type AuthSession = {
   user: AppUser;
@@ -64,6 +65,7 @@ function isNetworkAuthError(err: unknown): boolean {
 
 /** US-A1 — Google via Auth emulator when up; else local owner session. */
 export async function signInWithGoogle(): Promise<AuthSession> {
+  const traceId = newTraceId();
   const emulatorUp = await isAuthEmulatorReachable();
   if (useEmulators && emulatorUp) {
     try {
@@ -81,9 +83,26 @@ export async function signInWithGoogle(): Promise<AuthSession> {
         user.uid,
         user.displayName || user.email || "Planner Owner",
       );
+      void reportTelemetry({
+        name: "signInWithGoogle",
+        kind: "auth",
+        ok: true,
+        traceId,
+        attributes: { backend: "emulator", source: view.source },
+      });
       return { user: toAppUser(user), view, isDemo: false };
     } catch (err) {
-      if (!isNetworkAuthError(err)) throw err;
+      if (!isNetworkAuthError(err)) {
+        void reportTelemetry({
+          name: "signInWithGoogle",
+          kind: "auth",
+          ok: false,
+          status: "error",
+          reason: "auth_failed",
+          traceId,
+        });
+        throw err;
+      }
     }
   } else if (!useEmulators) {
     const user = (await signInWithPopup(auth, googleProvider)).user;
@@ -91,12 +110,26 @@ export async function signInWithGoogle(): Promise<AuthSession> {
       user.uid,
       user.displayName || user.email || "Planner Owner",
     );
+    void reportTelemetry({
+      name: "signInWithGoogle",
+      kind: "auth",
+      ok: true,
+      traceId,
+      attributes: { backend: "firebase", source: view.source },
+    });
     return { user: toAppUser(user), view, isDemo: false };
   }
 
   const user = localOwnerUser();
   emitLocal(user);
   const view = await ensureOwnerProfile(user.uid, user.displayName || "Planner Owner");
+  void reportTelemetry({
+    name: "signInWithGoogle",
+    kind: "auth",
+    ok: true,
+    traceId,
+    attributes: { backend: "local", source: view.source },
+  });
   return { user, view, isDemo: false };
 }
 
@@ -108,15 +141,44 @@ export async function signInWithGoogle(): Promise<AuthSession> {
  * use localStorage until full Firestore persistence lands.
  */
 export async function signInDemo(): Promise<AuthSession> {
+  const traceId = newTraceId();
   const authUp = await isAuthEmulatorReachable();
   if (useEmulators && authUp) {
     try {
       const user = (await signInAnonymously(auth)).user;
       clearLocalSession();
       const view = await loadDemoSeed(user.uid);
+      const ok = view.source === "firestore";
+      void reportTelemetry({
+        name: "signInDemo",
+        kind: "demo_seed",
+        ok,
+        status: ok ? "ok" : "error",
+        reason: ok ? "seeded" : "firestore_fallback_local",
+        traceId,
+        attributes: { source: view.source, taskCount: view.taskCount },
+      });
       return { user: toAppUser(user), view, isDemo: true };
     } catch (err) {
-      if (!isNetworkAuthError(err)) throw err;
+      if (!isNetworkAuthError(err)) {
+        void reportTelemetry({
+          name: "signInDemo",
+          kind: "demo_seed",
+          ok: false,
+          status: "error",
+          reason: "demo_auth_failed",
+          traceId,
+        });
+        throw err;
+      }
+      void reportTelemetry({
+        name: "signInDemo",
+        kind: "demo_seed",
+        ok: false,
+        status: "error",
+        reason: "auth_network_fallback_local",
+        traceId,
+      });
     }
   }
 
@@ -126,6 +188,16 @@ export async function signInDemo(): Promise<AuthSession> {
   const user = localDemoUser();
   emitLocal(user);
   const view = await loadDemoSeed(user.uid);
+  void reportTelemetry({
+    name: "signInDemo",
+    kind: "demo_seed",
+    ok: view.source === "firestore",
+    status: view.source === "firestore" ? "ok" : "error",
+    reason:
+      view.source === "firestore" ? "seeded" : "offline_local_seed",
+    traceId,
+    attributes: { source: view.source, backend: "local" },
+  });
   return { user, view, isDemo: true };
 }
 

@@ -49,8 +49,9 @@ project/
 ├── README.md          ← you are here
 ├── AGENTS.md          → _docs/AGENTS.md
 ├── package.json       ← Vite app + emulator scripts
-├── compose.yaml       ← one-command local stack (app + emulators)
+├── compose.yaml       ← one-command local stack (app + emulators + obs UI)
 ├── Dockerfile
+├── obs/               ← OTel metrics/traces/logs, alert, on-call agent
 ├── firebase.json      ← Auth + Firestore emulators (host npm start)
 ├── firebase.docker.json ← same emulators bound for Compose
 ├── firestore.rules    ← owner + demo stubs
@@ -60,6 +61,7 @@ project/
     ├── product-spec.md
     ├── task-tracker.md
     ├── plan.md · agent-team.md · process.md · architecture.md
+    ├── observability.md
     └── AGENTS.md
 ```
 
@@ -87,7 +89,8 @@ project/
 | Unit + integration tests (`npm test`) | ☑ |
 | CI tests on PR (`.github/workflows/work-planner-ci.yml`) | ☑ |
 | Docker Compose local stack | ☑ `docker compose up` |
-| Remaining obs / on-call | ☐ next |
+| Observability (metrics/traces/logs + trace ID UI) | ☑ Grafana LGTM + `obs/` |
+| User-impact alert + on-call remediation | ☑ `DemoSeedUnavailable` |
 | Hosting URL | ☐ after submission |
 
 ## Docker (one command)
@@ -99,7 +102,7 @@ cd project
 docker compose up --build
 ```
 
-That starts the Vite app plus Auth + Firestore emulators (JDK inside the image). Open:
+That starts the Vite app, Auth + Firestore emulators (JDK inside the image), Grafana LGTM (metrics/traces/logs UI), and the `obs` on-call service. Open:
 
 | Service | URL |
 |---------|-----|
@@ -108,8 +111,27 @@ That starts the Vite app plus Auth + Firestore emulators (JDK inside the image).
 | Auth emulator | http://127.0.0.1:9099 |
 | Firestore emulator | http://127.0.0.1:8080 |
 | Firestore UI websocket | `127.0.0.1:9150` (Compose publishes it) |
+| Grafana (telemetry UI) | http://127.0.0.1:3300 |
+| Obs API (alerts / on-call) | http://127.0.0.1:8090 |
 
-Stop with Ctrl+C (or `docker compose down` in another terminal). First build downloads Node deps + emulator JARs and can take a few minutes.
+Stop with Ctrl+C (or `docker compose down` in another terminal). First build downloads Node deps + emulator JARs + Grafana LGTM and can take a few minutes.
+
+### Observability / alert / on-call (demo)
+
+Details: [`_docs/observability.md`](_docs/observability.md).
+
+1. `docker compose up --build` → open Grafana http://127.0.0.1:3300 (anonymous Admin).
+2. In the app, **Try demo** — browser sends a shared `trace_id` to `obs` `/ingest` (also visible in DevTools console as JSON with `trace_id`).
+3. Fire the user-impact alert and watch on-call remediate:
+
+```powershell
+curl -X POST http://127.0.0.1:8090/demo/alert -H "content-type: application/json" -d "{\"autoRemediate\":true}"
+```
+
+4. Grafana Explore → Tempo / Loki: search the returned `traceId`. Prometheus: `work_planner_demo_seed_failures_total`, `work_planner_oncall_remediations_total`.
+5. Status: http://127.0.0.1:8090/status · Alerts: http://127.0.0.1:8090/alerts
+
+Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call clears the break automatically (or `POST /oncall/wake`).
 
 ## Tests (one command)
 

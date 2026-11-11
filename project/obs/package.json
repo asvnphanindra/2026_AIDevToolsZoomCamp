@@ -1,0 +1,14 @@
+{
+  "name": "work-planner-obs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "demo:alert": "node src/demo-alert.mjs",
+    "test": "node --test src/*.test.mjs"
+  }
+}
