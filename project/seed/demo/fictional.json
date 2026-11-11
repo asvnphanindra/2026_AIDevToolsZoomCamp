@@ -9,10 +9,30 @@
     }
   },
   "areas": [
-    { "id": "work", "name": "Work", "colour": "#0F6B4C", "order": 1 },
-    { "id": "study", "name": "Study", "colour": "#1D4E89", "order": 2 },
-    { "id": "family", "name": "Family", "colour": "#A15C07", "order": 3 },
-    { "id": "passion", "name": "Passion", "colour": "#7A3E9D", "order": 4 }
+    {
+      "id": "work",
+      "name": "Work",
+      "colour": "#0F6B4C",
+      "order": 1
+    },
+    {
+      "id": "study",
+      "name": "Study",
+      "colour": "#1D4E89",
+      "order": 2
+    },
+    {
+      "id": "family",
+      "name": "Family",
+      "colour": "#A15C07",
+      "order": 3
+    },
+    {
+      "id": "passion",
+      "name": "Passion",
+      "colour": "#7A3E9D",
+      "order": 4
+    }
   ],
   "bands": [
     {
@@ -20,21 +40,45 @@
       "level": "high",
       "start": "05:00",
       "end": "12:00",
-      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     },
     {
       "id": "band-med",
       "level": "medium",
       "start": "12:00",
       "end": "17:00",
-      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     },
     {
       "id": "band-low",
       "level": "low",
       "start": "17:00",
       "end": "22:00",
-      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     }
   ],
   "tasks": [
@@ -113,21 +157,43 @@
       "label": "Lunch",
       "start": "13:00",
       "end": "13:30",
-      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     },
     {
       "id": "r-commute",
       "label": "Commute",
       "start": "08:30",
       "end": "09:00",
-      "weekdays": [1, 2, 3, 4, 5]
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
     },
     {
       "id": "r-breakfast",
       "label": "Breakfast",
       "start": "07:00",
       "end": "07:30",
-      "weekdays": [0, 1, 2, 3, 4, 5, 6]
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     }
   ],
   "schedule": [
@@ -564,6 +630,92 @@
       "startOffsetDays": 30,
       "endOffsetDays": 250,
       "progress": 0
+    }
+  ],
+  "events": [
+    {
+      "id": "ev-today-sync",
+      "dayOffset": 0,
+      "kind": "appointment",
+      "label": "Team sync",
+      "time": "15:00"
+    },
+    {
+      "id": "ev-deadline-sprint",
+      "dayOffset": 3,
+      "kind": "deadline",
+      "label": "Sprint demo due"
+    },
+    {
+      "id": "ev-dentist",
+      "dayOffset": 5,
+      "kind": "appointment",
+      "label": "Dentist",
+      "time": "16:30"
+    },
+    {
+      "id": "ev-quiz",
+      "dayOffset": 10,
+      "kind": "exam",
+      "label": "Module quiz",
+      "time": "10:00"
+    },
+    {
+      "id": "ev-cohort-1",
+      "dayOffset": 14,
+      "kind": "series",
+      "label": "Study cohort meetup",
+      "time": "19:00",
+      "seriesId": "ser-cohort"
+    },
+    {
+      "id": "ev-portfolio",
+      "dayOffset": 21,
+      "kind": "deadline",
+      "label": "Portfolio draft"
+    },
+    {
+      "id": "ev-cohort-2",
+      "dayOffset": 35,
+      "kind": "series",
+      "label": "Study cohort meetup",
+      "time": "19:00",
+      "seriesId": "ser-cohort"
+    },
+    {
+      "id": "ev-advisor",
+      "dayOffset": 45,
+      "kind": "appointment",
+      "label": "Advisor check-in",
+      "time": "11:00"
+    },
+    {
+      "id": "ev-practice-exam",
+      "dayOffset": 60,
+      "kind": "exam",
+      "label": "Final practice exam",
+      "time": "09:00"
+    },
+    {
+      "id": "ev-cohort-3",
+      "dayOffset": 56,
+      "kind": "series",
+      "label": "Study cohort meetup",
+      "time": "19:00",
+      "seriesId": "ser-cohort"
+    },
+    {
+      "id": "ev-tax",
+      "dayOffset": 72,
+      "kind": "deadline",
+      "label": "Tax paperwork due"
+    },
+    {
+      "id": "ev-recital",
+      "dayOffset": 80,
+      "kind": "appointment",
+      "label": "Recital venue walkthrough",
+      "time": "18:00"
     }
   ]
 }

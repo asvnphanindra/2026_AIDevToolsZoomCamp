@@ -35,6 +35,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 7. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
 8. Focus view: one column per life area with standing focus items (add/edit/remove).
 9. **Planner → 3-week goals overview** for current + next two ISO weeks (Gantt goals spanning each week + short-goal clash across areas).
+10. **Calendar** nav: this month + next two with coloured markers (deadline / exam / appointment / series), current ISO week highlighted, upcoming list below.
 
 ## Non-goals (MVP)
 
@@ -77,6 +78,7 @@ project/
 | US-E1 Focus panel (Issue #35) | ☑ |
 | US-E2 Weekly goals + carry-over (Issue #36) | ☑ |
 | US-E3 3-week view (Issue #37) | ☑ |
+| US-F1 3-month calendar (Issue #38) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 

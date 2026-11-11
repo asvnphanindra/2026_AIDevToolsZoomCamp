@@ -168,6 +168,25 @@ export type SeedAreaGoal = {
   progress?: number;
 };
 
+/** Calendar event kind for 3-month markers (US-F1). */
+export type CalendarEventKind =
+  | "deadline"
+  | "exam"
+  | "appointment"
+  | "series";
+
+/** Seeded calendar event; dayOffset relative to today at load. */
+export type SeedCalendarEvent = {
+  id: string;
+  dayOffset: number;
+  /** Inclusive end offset when the event spans multiple days. */
+  endDayOffset?: number;
+  kind: CalendarEventKind;
+  label: string;
+  time?: string;
+  seriesId?: string;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -185,6 +204,7 @@ export type FictionalSeed = {
   goals?: SeedGoal[];
   weekHorizon?: SeedWeekHorizonItem[];
   areaGoals?: SeedAreaGoal[];
+  events?: SeedCalendarEvent[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

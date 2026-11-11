@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DayGrid } from "@/components/DayGrid";
 import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
+import { MonthCalendarView } from "@/components/MonthCalendarView";
 import { PlannerAreas } from "@/components/PlannerAreas";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { ThreeWeekView } from "@/components/ThreeWeekView";
@@ -14,6 +15,10 @@ import {
   writePlacedBlocks,
   type PlacedBlock,
 } from "@/lib/blocks";
+import {
+  loadCalendarEvents,
+  type CalendarEvent,
+} from "@/lib/calendar-events";
 import {
   loadFocusItems,
   writeFocusItems,
@@ -45,9 +50,9 @@ import {
   type WeekHorizonItem,
 } from "@/lib/week-horizon";
 
-type AppView = "scheduler" | "planner" | "focus" | "weeks";
+type AppView = "scheduler" | "planner" | "focus" | "weeks" | "calendar";
 
-/** Auth shell + scheduler / planner / focus / 3-week overview. */
+/** Auth shell + scheduler / planner / focus / 3-week / calendar. */
 export function AuthShell() {
   const {
     user,
@@ -79,6 +84,9 @@ export function AuthShell() {
   );
   const [weekHorizon, setWeekHorizon] = useState<WeekHorizonItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadWeekHorizon(),
+  );
+  const [calendarEvents] = useState<CalendarEvent[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadCalendarEvents(),
   );
   const [areaGoals, setAreaGoals] = useState<AreaGoal[]>(() =>
     typeof localStorage === "undefined" ? [] : loadAreaGoals(),
@@ -263,6 +271,15 @@ export function AuthShell() {
               >
                 Focus
               </button>
+              <button
+                type="button"
+                className={
+                  appView === "calendar" ? "nav-active" : "secondary"
+                }
+                onClick={() => setAppView("calendar")}
+              >
+                Calendar
+              </button>
             </nav>
             <div className="header-session">
               <button
@@ -308,6 +325,8 @@ export function AuthShell() {
             areaGoals={areaGoals}
             onBackToPlanner={() => setAppView("planner")}
           />
+        ) : appView === "calendar" ? (
+          <MonthCalendarView events={calendarEvents} />
         ) : (
           <div
             className={
