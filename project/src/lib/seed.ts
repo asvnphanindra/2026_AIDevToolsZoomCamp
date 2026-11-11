@@ -4,8 +4,8 @@ import {
   getDoc,
   getDocs,
   serverTimestamp,
-  setDoc,
   writeBatch,
+  type DocumentData,
 } from "firebase/firestore";
 import {
   fictionalSeed,
@@ -21,6 +21,25 @@ export type PlannerView = {
   source: "firestore" | "local-seed";
 };
 
+const DEMO_SUBCOLLECTIONS = [
+  "areas",
+  "tasks",
+  "bands",
+  "schedule",
+  "dayTypes",
+  "scheduleChanges",
+  "routines",
+  "repeatingTasks",
+  "blocks",
+  "rules",
+  "focusItems",
+  "goals",
+  "weekHorizon",
+  "areaGoals",
+  "events",
+  "series",
+] as const;
+
 /** Ensure owner profile exists under users/{uid} (no demo seed). */
 export async function ensureOwnerProfile(
   uid: string,
@@ -30,7 +49,8 @@ export async function ensureOwnerProfile(
     const ref = doc(db, "users", uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
-      await setDoc(ref, {
+      const batch = writeBatch(db);
+      batch.set(ref, {
         displayName,
         timezone: "Asia/Kolkata",
         settings: fictionalSeed.profile.settings,
@@ -38,6 +58,7 @@ export async function ensureOwnerProfile(
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      await batch.commit();
     }
 
     const areas = await readAreas(uid);
@@ -59,16 +80,22 @@ export async function ensureOwnerProfile(
 }
 
 /**
- * US-A2: copy fictional seed into users/{uid}/… once per anonymous session.
+ * US-A2: copy fictional seed into users/{uid}/… for anonymous demo.
+ * Re-seeds when profile is missing or areas are empty (covers Auth-up /
+ * Firestore-down first click, then Firestore later).
  * Falls back to in-memory seed if Firestore emulator is down.
  */
 export async function loadDemoSeed(uid: string): Promise<PlannerView> {
   try {
     const profileRef = doc(db, "users", uid);
     const profileSnap = await getDoc(profileRef);
-    if (!profileSnap.exists()) {
+    const areasExisting = profileSnap.exists() ? await readAreas(uid) : [];
+    const needsSeed = !profileSnap.exists() || areasExisting.length === 0;
+
+    if (needsSeed) {
       await writeSeedToUser(uid, fictionalSeed);
     }
+
     const areas = await readAreas(uid);
     return {
       displayName: fictionalSeed.profile.displayName,
@@ -86,6 +113,27 @@ export async function loadDemoSeed(uid: string): Promise<PlannerView> {
   }
 }
 
+function setSubcollection(
+  batch: ReturnType<typeof writeBatch>,
+  uid: string,
+  name: string,
+  rows: Array<Record<string, unknown> & { id: string }> | undefined,
+  mapDoc?: (row: Record<string, unknown> & { id: string }) => {
+    id: string;
+    fields: DocumentData;
+  },
+): void {
+  for (const row of rows ?? []) {
+    const mapped = mapDoc
+      ? mapDoc(row)
+      : (() => {
+          const { id, ...fields } = row;
+          return { id, fields };
+        })();
+    batch.set(doc(db, "users", uid, name, mapped.id), mapped.fields);
+  }
+}
+
 async function writeSeedToUser(
   uid: string,
   seed: FictionalSeed,
@@ -95,41 +143,43 @@ async function writeSeedToUser(
     ...seed.profile,
     mode: "demo",
     seededFrom: "seed/demo/fictional.json",
+    seededCollections: [...DEMO_SUBCOLLECTIONS],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  for (const area of seed.areas) {
-    const { id, ...fields } = area;
-    batch.set(doc(db, "users", uid, "areas", id), fields);
-  }
-  for (const task of seed.tasks) {
-    const { id, ...fields } = task;
-    batch.set(doc(db, "users", uid, "tasks", id), fields);
-  }
-  // US-B3 — fixed schedule seeded once (no edit UI).
-  for (const item of seed.schedule) {
-    const { id, ...fields } = item;
-    batch.set(doc(db, "users", uid, "schedule", id), fields);
-  }
-  for (const band of seed.bands) {
-    const { id, ...fields } = band;
-    batch.set(doc(db, "users", uid, "bands", id), fields);
-  }
+
+  setSubcollection(batch, uid, "areas", seed.areas);
+  setSubcollection(batch, uid, "tasks", seed.tasks);
+  setSubcollection(batch, uid, "bands", seed.bands);
+  setSubcollection(batch, uid, "schedule", seed.schedule);
+  setSubcollection(batch, uid, "scheduleChanges", seed.scheduleChanges ?? []);
+  setSubcollection(batch, uid, "routines", seed.routines);
+  setSubcollection(batch, uid, "repeatingTasks", seed.repeatingTasks ?? []);
+  setSubcollection(batch, uid, "blocks", seed.blocks);
+  setSubcollection(batch, uid, "rules", seed.rules);
+  setSubcollection(batch, uid, "focusItems", seed.focusItems ?? []);
+  setSubcollection(batch, uid, "goals", seed.goals ?? []);
+  setSubcollection(batch, uid, "weekHorizon", seed.weekHorizon ?? []);
+  setSubcollection(batch, uid, "areaGoals", seed.areaGoals ?? []);
+  setSubcollection(batch, uid, "events", seed.events ?? []);
+  setSubcollection(batch, uid, "series", seed.series ?? []);
+
   for (const dayType of seed.dayTypes) {
     const dateKey = `offset-${dayType.dayOffset}`;
     batch.set(doc(db, "users", uid, "dayTypes", dateKey), dayType);
   }
-  for (const change of seed.scheduleChanges ?? []) {
-    const { id, ...fields } = change;
-    batch.set(doc(db, "users", uid, "scheduleChanges", id), fields);
-  }
+
   // Shared fictional template (read-only for reviewers via rules).
   batch.set(doc(db, "demo", "seed"), {
     label: "Fictional Work Planner sample",
     areaCount: seed.areas.length,
     taskCount: seed.tasks.length,
     scheduleCount: seed.schedule.length,
+    goalCount: (seed.goals ?? []).length,
+    areaGoalCount: (seed.areaGoals ?? []).length,
+    focusCount: (seed.focusItems ?? []).length,
     scheduleChangeCount: (seed.scheduleChanges ?? []).length,
+    collections: [...DEMO_SUBCOLLECTIONS],
     updatedAt: serverTimestamp(),
   });
   await batch.commit();

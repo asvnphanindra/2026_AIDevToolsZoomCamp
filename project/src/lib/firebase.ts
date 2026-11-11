@@ -64,3 +64,20 @@ export async function isAuthEmulatorReachable(): Promise<boolean> {
     return false;
   }
 }
+
+/** True when Firestore emulator accepts TCP (needs JDK via `npm start`). */
+export async function isFirestoreEmulatorReachable(): Promise<boolean> {
+  if (!useEmulators) return false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 500);
+    await fetch(
+      `http://${FIRESTORE_EMULATOR_HOST}:${FIRESTORE_EMULATOR_PORT}/`,
+      { signal: ctrl.signal },
+    );
+    clearTimeout(timer);
+    return true;
+  } catch {
+    return false;
+  }
+}

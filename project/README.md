@@ -132,11 +132,20 @@ If an old Auth-only emulator is stuck: stop that terminal (Ctrl+C), then re-run 
 ### Browse data (Firestore)
 
 1. Run `npm start` (JDK 21+ required for Firestore).
-2. Open Emulator UI: [http://127.0.0.1:4000](http://127.0.0.1:4000) (or the UI port printed in the terminal).
-3. Left nav → **Firestore** → browse collections (e.g. `users/{uid}/areas` after Try demo).
-4. Left nav → **Authentication** for Auth emulator users.
+2. Open the app → **Try demo** (anonymous Auth + writes fictional seed into Firestore).
+3. Open Emulator UI: [http://127.0.0.1:4000](http://127.0.0.1:4000) (or the UI port printed in the terminal).
+4. Left nav → **Firestore** (or [http://127.0.0.1:4000/firestore](http://127.0.0.1:4000/firestore)) → open `users` → `{uid}` → subcollections such as `areas`, `tasks`, `goals`, `focusItems`, `areaGoals`, `blocks`, `schedule`, `bands`, `dayTypes`, `routines`, `repeatingTasks`, `rules`, `weekHorizon`, `events`, `series`. Top-level `demo/seed` holds template metadata.
+5. Left nav → **Authentication** for Auth emulator users.
 
-If ports differ, check the `npm start` log or `.env.local` (`VITE_FIREBASE_AUTH_EMULATOR_URL`, `VITE_FIRESTORE_EMULATOR_PORT`).
+**Where data lives today**
+
+| Path | Auth | Firestore emulator | What you see |
+|------|------|--------------------|--------------|
+| `npm start` → **Try demo** | Anonymous | Seeded under `users/{uid}/…` | Emulator UI shows docs; app header says “seed in Firestore emulator” |
+| `npm run dev` alone / Auth down | Local session | Not written (rules need Auth) | App works from localStorage / in-memory seed; Emulator UI empty |
+| Runtime edits (backlog drag, etc.) | — | Not yet persisted | Still localStorage until full Firestore sync |
+
+If Firestore was down on first Try demo but Auth stayed signed in, reload the app (or Sign out → Try demo) after `npm start` so seed is written. If ports differ, check the `npm start` log or `.env.local` (`VITE_FIREBASE_AUTH_EMULATOR_URL`, `VITE_FIRESTORE_EMULATOR_PORT`).
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
@@ -144,8 +153,8 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 
 1. `npm start` (JDK 21+ required for Firestore emulator).
 2. **Sign in with Google** → emulator fake Google user; empty owner planner under `users/{uid}`; **Sign out** returns to the login screen (view cleared).
-3. **Try demo** → anonymous auth; life areas + sample tasks from `seed/demo/fictional.json` appear.
-4. Emulator UI :4000 → confirm Auth users and Firestore `users/{uid}/areas`.
+3. **Try demo** → anonymous auth; life areas + sample tasks from `seed/demo/fictional.json` appear; header shows **seed in Firestore emulator**.
+4. Emulator UI :4000 → **Firestore** → `users/{uid}/areas` (and `tasks`, `goals`, …) plus `demo/seed`.
 5. Repo check: only fictional seed committed; `.env` / `seed/personal` git-ignored.
 
 ### Verify week grid UX
