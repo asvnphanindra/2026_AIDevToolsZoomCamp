@@ -422,5 +422,43 @@
       "subtitle": "30 minutes when energy is high",
       "order": 1
     }
+  ],
+  "goals": [
+    {
+      "id": "goal-work-1",
+      "horizon": "week",
+      "period": "CURRENT",
+      "areaId": "work",
+      "title": "Land demo-ready sprint cut",
+      "starred": true,
+      "progress": 40
+    },
+    {
+      "id": "goal-study-1",
+      "horizon": "week",
+      "period": "CURRENT",
+      "areaId": "study",
+      "title": "Finish module notes draft",
+      "starred": true,
+      "progress": 0
+    },
+    {
+      "id": "goal-family-1",
+      "horizon": "week",
+      "period": "CURRENT",
+      "areaId": "family",
+      "title": "Plan weekend outing",
+      "starred": true,
+      "progress": 100
+    },
+    {
+      "id": "goal-passion-1",
+      "horizon": "week",
+      "period": "CURRENT",
+      "areaId": "passion",
+      "title": "Practice set piece three times",
+      "starred": true,
+      "progress": 20
+    }
   ]
 }

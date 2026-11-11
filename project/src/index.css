@@ -515,8 +515,27 @@ button.nav-active {
   margin-bottom: var(--space-4);
 }
 
-.focus-panel .day-grid-meta {
+.focus-panel .day-grid-meta,
+.weekly-goals .day-grid-meta {
   margin-bottom: var(--space-4);
+}
+
+.weekly-goals .week-toolbar {
+  margin-bottom: var(--space-3);
+  align-items: center;
+}
+
+.weekly-goals .week-label {
+  min-width: 9rem;
+  text-align: center;
+}
+
+.goal-item.goal-done {
+  opacity: 0.72;
+}
+
+.goal-item.goal-done .task-main strong {
+  text-decoration: line-through;
 }
 
 .focus-form {

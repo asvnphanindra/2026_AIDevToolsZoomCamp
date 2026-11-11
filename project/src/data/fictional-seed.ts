@@ -124,6 +124,19 @@ export type SeedFocusItem = {
   order: number;
 };
 
+/** Goal (US-E2 weekly; later month/quarter). */
+export type SeedGoal = {
+  id: string;
+  horizon: "week" | "month" | "quarter";
+  /** ISO week `YYYY-Www`, month `YYYY-MM`, or quarter `YYYY-Qn`; seed may use `CURRENT`. */
+  period: string;
+  areaId: string;
+  title: string;
+  starred: boolean;
+  progress: number;
+  parentId?: string;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -137,6 +150,7 @@ export type FictionalSeed = {
   blocks: SeedBlock[];
   rules: SeedRule[];
   focusItems?: SeedFocusItem[];
+  goals?: SeedGoal[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

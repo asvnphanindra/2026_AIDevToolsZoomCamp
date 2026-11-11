@@ -4,6 +4,7 @@ import { DayGrid } from "@/components/DayGrid";
 import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
 import { TaskBacklog } from "@/components/TaskBacklog";
+import { WeeklyGoals } from "@/components/WeeklyGoals";
 import { useAuth } from "@/hooks/useAuth";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
 import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
@@ -18,12 +19,17 @@ import {
   writeFocusItems,
   type FocusItem,
 } from "@/lib/focus";
+import {
+  loadGoals,
+  writeGoals,
+  type WeeklyGoal,
+} from "@/lib/goals";
 import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
 import { writeBacklog, type BacklogTask } from "@/lib/tasks";
 
-type AppView = "planner" | "areas" | "focus";
+type AppView = "planner" | "areas" | "focus" | "goals";
 
-/** Auth shell + planner / areas / focus. */
+/** Auth shell + planner / areas / focus / weekly goals. */
 export function AuthShell() {
   const {
     user,
@@ -53,6 +59,9 @@ export function AuthShell() {
   const [focusItems, setFocusItems] = useState<FocusItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadFocusItems(),
   );
+  const [goals, setGoals] = useState<WeeklyGoal[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadGoals(),
+  );
 
   const onTasksChange = useCallback((next: BacklogTask[]) => {
     setTasks(next);
@@ -77,6 +86,11 @@ export function AuthShell() {
   const onFocusItemsChange = useCallback((next: FocusItem[]) => {
     setFocusItems(next);
     writeFocusItems(next);
+  }, []);
+
+  const onGoalsChange = useCallback((next: WeeklyGoal[]) => {
+    setGoals(next);
+    writeGoals(next);
   }, []);
 
   if (!ready) {
@@ -154,6 +168,13 @@ export function AuthShell() {
               >
                 Focus
               </button>
+              <button
+                type="button"
+                className={appView === "goals" ? "nav-active" : "secondary"}
+                onClick={() => setAppView("goals")}
+              >
+                Goals
+              </button>
             </nav>
             <div className="header-session">
               <button
@@ -181,6 +202,12 @@ export function AuthShell() {
             areas={areas}
             items={focusItems}
             onItemsChange={onFocusItemsChange}
+          />
+        ) : appView === "goals" ? (
+          <WeeklyGoals
+            areas={areas}
+            goals={goals}
+            onGoalsChange={onGoalsChange}
           />
         ) : (
           <div className="planner-layout">

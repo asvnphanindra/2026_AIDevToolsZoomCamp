@@ -69,6 +69,10 @@ project/
 | US-B5 one-off schedule changes (Issue #29) | ☑ |
 | US-C1 capture tasks (Issue #30) | ☑ |
 | US-C2 drag tasks onto grid (Issue #31) | ☑ |
+| US-C3 daily minimum rules (Issue #32) | ☑ |
+| US-D1 / US-D2 check-in + replan (#33 / #34) | ☑ |
+| US-E1 Focus panel (Issue #35) | ☑ |
+| US-E2 Weekly goals + carry-over (Issue #36) | ☑ |
 | Remaining US stories / tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
