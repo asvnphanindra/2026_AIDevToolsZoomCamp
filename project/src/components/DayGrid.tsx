@@ -46,7 +46,17 @@ import {
   slotBandLevel,
   type GridItem,
 } from "@/lib/day-grid";
+import type { FocusItem } from "@/lib/focus";
 import { dayTypeForOffset } from "@/lib/schedule";
+import {
+  DEFAULT_SCHEDULER_LAYERS,
+  loadSchedulerLayers,
+  SCHEDULER_LAYER_LABELS,
+  SCHEDULER_LAYER_ORDER,
+  writeSchedulerLayers,
+  type SchedulerLayerId,
+  type SchedulerLayerState,
+} from "@/lib/scheduler-layers";
 import {
   buildHalfHourSlots,
   formatDayLabel,
@@ -64,6 +74,8 @@ type Props = {
   onTasksChange: (tasks: BacklogTask[]) => void;
   placedBlocks: PlacedBlock[];
   onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
+  /** Standing focus items painted on today→+2d when Focus layer is on. */
+  focusItems?: FocusItem[];
 };
 
 type OverlapPrompt = {
@@ -96,7 +108,20 @@ function yToStart(
   return formatHhmm(mins);
 }
 
-/** Week grid + energy/availability chunks + US-C2 drag/drop. */
+function layerForItem(item: GridItem): SchedulerLayerId | null {
+  if (item.kind === "routine" || item.kind === "schedule") return "recurring";
+  if (item.kind === "block") return "scheduled";
+  return null;
+}
+
+function rangesClash(
+  a: { start: string; end: string },
+  b: { start: string; end: string },
+): boolean {
+  return minutesOf(a.start) < minutesOf(b.end) && minutesOf(a.end) > minutesOf(b.start);
+}
+
+/** Week grid + stacked calendar layers + US-C2 drag/drop. */
 export function DayGrid({
   isDemo,
   areas,
@@ -106,6 +131,7 @@ export function DayGrid({
   onTasksChange,
   placedBlocks,
   onPlacedBlocksChange,
+  focusItems = [],
 }: Props) {
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
@@ -117,6 +143,11 @@ export function DayGrid({
   const [clock, setClock] = useState(() => Date.now());
   const [dropHl, setDropHl] = useState<{ dayKey: string; slot: string } | null>(
     null,
+  );
+  const [layers, setLayers] = useState<SchedulerLayerState>(() =>
+    typeof localStorage === "undefined"
+      ? { ...DEFAULT_SCHEDULER_LAYERS }
+      : loadSchedulerLayers(),
   );
 
   const model = useMemo(
@@ -138,6 +169,65 @@ export function DayGrid({
     () => new Set(model.warnings.map((w) => w.blockId)),
     [model.warnings],
   );
+
+  const visibleItems = useMemo(
+    () =>
+      model.items.filter((item) => {
+        const layer = layerForItem(item);
+        return layer ? layers[layer] : true;
+      }),
+    [model.items, layers],
+  );
+
+  const clashIds = useMemo(() => {
+    const ids = new Set<string>();
+    const byDay = new Map<string, GridItem[]>();
+    for (const item of visibleItems) {
+      const list = byDay.get(item.date) ?? [];
+      list.push(item);
+      byDay.set(item.date, list);
+    }
+    for (const list of byDay.values()) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i]!;
+          const b = list[j]!;
+          if (!rangesClash(a, b)) continue;
+          ids.add(a.id);
+          ids.add(b.id);
+        }
+      }
+    }
+    return ids;
+  }, [visibleItems]);
+
+  const focusDayKeys = useMemo(() => {
+    if (!layers.focus) return new Set<string>();
+    const keys = new Set<string>();
+    for (let offset = 0; offset <= 2; offset++) {
+      const key = model.dayKeys[model.todayIndex + offset];
+      if (key) keys.add(key);
+    }
+    return keys;
+  }, [layers.focus, model.dayKeys, model.todayIndex]);
+
+  const orderedFocus = useMemo(() => {
+    const areaOrder = new Map(areas.map((a) => [a.id, a.order]));
+    return [...focusItems].sort((a, b) => {
+      const ao = areaOrder.get(a.areaId) ?? 0;
+      const bo = areaOrder.get(b.areaId) ?? 0;
+      if (ao !== bo) return ao - bo;
+      return a.order - b.order;
+    });
+  }, [focusItems, areas]);
+
+  function toggleLayer(id: SchedulerLayerId) {
+    setLayers((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      if (typeof localStorage !== "undefined") writeSchedulerLayers(next);
+      return next;
+    });
+  }
   const ruleStatusByDate = useMemo(() => {
     const map = new Map<string, RuleShortfall[]>();
     for (const key of model.dayKeys) {
@@ -708,6 +798,19 @@ export function DayGrid({
           Double-click a day to add · drag from backlog · drag a placed block
           back to backlog · right-click for more
         </p>
+        <fieldset className="scheduler-layers" aria-label="Calendar layers">
+          <legend>Layers</legend>
+          {SCHEDULER_LAYER_ORDER.map((id) => (
+            <label key={id} className="scheduler-layer-toggle">
+              <input
+                type="checkbox"
+                checked={layers[id]}
+                onChange={() => toggleLayer(id)}
+              />
+              <span>{SCHEDULER_LAYER_LABELS[id]}</span>
+            </label>
+          ))}
+        </fieldset>
       </div>
 
       {overlap ? (
@@ -762,24 +865,31 @@ export function DayGrid({
       ) : null}
 
       <div
-        className="day-grid-board has-energy week-5"
+        className={
+          layers.availability
+            ? "day-grid-board has-energy week-5"
+            : "day-grid-board week-5 no-availability"
+        }
         style={{
           gridTemplateRows: `auto repeat(${slots.length}, minmax(${ROW_PX}rem, auto))`,
         }}
       >
         <div className="day-grid-corner" aria-hidden />
-        <div
-          className="day-grid-energy-head"
-          title="Availability / energy chunks"
-        >
-          A
-        </div>
+        {layers.availability ? (
+          <div
+            className="day-grid-energy-head"
+            title="Availability / energy chunks"
+          >
+            A
+          </div>
+        ) : null}
         {model.dayKeys.map((key, dayIdx) => {
           const relative = dayIdx - model.todayIndex;
           const isPast = relative < 0;
           const isToday = relative === 0;
           const dt = dayTypeForOffset(relative, model.dayTypes);
           const shortfalls = ruleStatusByDate.get(key) ?? [];
+          const headCol = layers.availability ? dayIdx + 3 : dayIdx + 2;
           return (
             <div
               key={key}
@@ -790,7 +900,7 @@ export function DayGrid({
                     ? "day-grid-head is-past"
                     : "day-grid-head is-future"
               }
-              style={{ gridColumn: dayIdx + 3, gridRow: 1 }}
+              style={{ gridColumn: headCol, gridRow: 1 }}
             >
               <div className="day-grid-head-title">
                 {isToday ? "Today · " : null}
@@ -809,6 +919,34 @@ export function DayGrid({
                   Min short · {shortfallBadgeText(shortfalls)}
                 </button>
               ) : null}
+              {focusDayKeys.has(key) && orderedFocus.length > 0 ? (
+                <ul className="day-focus-strip" aria-label="Focus for this day">
+                  {orderedFocus.map((item) => {
+                    const area = areas.find((a) => a.id === item.areaId);
+                    return (
+                      <li
+                        key={item.id}
+                        className="day-focus-chip"
+                        style={{
+                          borderColor: area?.colour ?? "#0F6B4C",
+                        }}
+                        title={
+                          item.subtitle
+                            ? `${item.title} — ${item.subtitle}`
+                            : item.title
+                        }
+                      >
+                        <span
+                          className="swatch"
+                          style={{ background: area?.colour ?? "#0F6B4C" }}
+                          aria-hidden
+                        />
+                        {item.title}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
             </div>
           );
         })}
@@ -823,31 +961,35 @@ export function DayGrid({
           </div>
         ))}
 
-        <div
-          className="day-grid-energy"
-          style={{ gridRow: `2 / span ${slots.length}` }}
-          aria-label="Availability / energy chunks"
-        >
-          {slots.map((slot) => {
-            const level = slotBandLevel(slot, model.bands, stripWeekday);
-            return (
-              <div
-                key={`e-${slot}`}
-                className="day-grid-energy-slot"
-                style={{
-                  background: level ? bandColour(level) : "transparent",
-                }}
-                title={level ? `${slot} · ${level}` : slot}
-              />
-            );
-          })}
-        </div>
+        {layers.availability ? (
+          <div
+            className="day-grid-energy"
+            style={{ gridRow: `2 / span ${slots.length}` }}
+            aria-label="Availability / energy chunks"
+          >
+            {slots.map((slot) => {
+              const level = slotBandLevel(slot, model.bands, stripWeekday);
+              return (
+                <div
+                  key={`e-${slot}`}
+                  className="day-grid-energy-slot"
+                  style={{
+                    background: level ? bandColour(level) : "transparent",
+                  }}
+                  title={level ? `${slot} · ${level}` : slot}
+                />
+              );
+            })}
+          </div>
+        ) : null}
 
         <div
           ref={bodyRef}
           className="day-grid-body"
           style={{
-            gridColumn: `3 / span ${model.dayKeys.length}`,
+            gridColumn: layers.availability
+              ? `3 / span ${model.dayKeys.length}`
+              : `2 / span ${model.dayKeys.length}`,
             gridRow: `2 / span ${slots.length}`,
           }}
           onMouseMove={onBodyMove}
@@ -887,7 +1029,7 @@ export function DayGrid({
                     }
                   />
                 ))}
-                {model.items
+                {visibleItems
                   .filter((item) => item.date === dayKey)
                   .map((item) => {
                     const place = itemPlacement(
@@ -898,16 +1040,18 @@ export function DayGrid({
                     if (!place) return null;
                     const warned = warnIds.has(item.id);
                     const checkIn = checkIns[item.id];
+                    const clashing = clashIds.has(item.id);
+                    const layer = layerForItem(item);
                     return (
                       <article
                         key={item.id}
-                        className={`day-grid-item kind-${item.kind}${warned ? " is-warn" : ""}${item.placed ? " is-placed" : ""}${checkIn ? ` checkin-${checkIn.outcome}` : ""}`}
+                        className={`day-grid-item kind-${item.kind} layer-${layer ?? "none"}${warned ? " is-warn" : ""}${item.placed ? " is-placed" : ""}${checkIn ? ` checkin-${checkIn.outcome}` : ""}${clashing ? " is-clash" : ""}`}
                         style={{
                           top: `calc(${(place.rowStart - 2) * ROW_PX}rem)`,
                           height: `calc(${place.rowSpan * ROW_PX}rem - 2px)`,
                           background: item.colour,
                         }}
-                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}${checkIn ? ` · ${outcomeLabel(checkIn.outcome)}${checkIn.remainingMin != null ? ` (${checkIn.remainingMin}m left)` : ""}` : ""} · right-click for actions`}
+                        title={`${item.title} ${item.start}–${item.end}${warned ? " · deep work in low band" : ""}${clashing ? " · overlaps another layer" : ""}${checkIn ? ` · ${outcomeLabel(checkIn.outcome)}${checkIn.remainingMin != null ? ` (${checkIn.remainingMin}m left)` : ""}` : ""} · right-click for actions`}
                         draggable={Boolean(item.placed)}
                         onDragStart={(e) => {
                           if (!item.placed) return;
@@ -917,7 +1061,7 @@ export function DayGrid({
                         onContextMenu={(e) => onBlockContext(item, e)}
                       >
                         <span className="day-grid-item-title">
-                          {warned ? "! " : ""}
+                          {warned || clashing ? "! " : ""}
                           {item.title}
                         </span>
                         <span className="day-grid-item-time">
@@ -964,18 +1108,25 @@ export function DayGrid({
 
       <ul className="day-grid-legend muted">
         <li>
-          <span className="swatch" style={{ background: "#0F6B4C" }} /> Area
-          block
+          <span className="swatch" style={{ background: "#0F6B4C" }} /> Scheduled
+          work
         </li>
         <li>
-          <span className="swatch" style={{ background: "#9AA29A" }} /> Routine
+          <span className="swatch" style={{ background: "#9AA29A" }} /> Recurring
         </li>
         <li>
           <span className="swatch" style={{ background: "#C45C26" }} /> Fixed
         </li>
         <li>
           <span className="swatch" style={{ background: "#7BC47F" }} />{" "}
-          Availability chunk
+          Availability
+        </li>
+        <li>
+          <span
+            className="swatch clash-swatch"
+            style={{ background: "transparent" }}
+          />{" "}
+          Clash (overlap)
         </li>
       </ul>
 

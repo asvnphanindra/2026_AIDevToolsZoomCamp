@@ -323,6 +323,7 @@ export function AuthShell() {
                 onTasksChange={onTasksChange}
                 placedBlocks={blocks}
                 onPlacedBlocksChange={onBlocksChange}
+                focusItems={focusItems}
               />
             </div>
             <aside className="scheduler-side">
