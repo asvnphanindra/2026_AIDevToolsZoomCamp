@@ -150,6 +150,20 @@ export type SeedWeekHorizonItem = {
   done?: boolean;
 };
 
+/**
+ * Planner Goals Gantt item. Offsets are relative to “today” at seed load.
+ * Horizons: short ~3w, mid ~3m, long ~3q.
+ */
+export type SeedAreaGoal = {
+  id: string;
+  areaId: string;
+  title: string;
+  horizon: "short" | "mid" | "long";
+  startOffsetDays: number;
+  endOffsetDays: number;
+  progress?: number;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -166,6 +180,7 @@ export type FictionalSeed = {
   focusItems?: SeedFocusItem[];
   goals?: SeedGoal[];
   weekHorizon?: SeedWeekHorizonItem[];
+  areaGoals?: SeedAreaGoal[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

@@ -482,5 +482,88 @@
       "weekOffset": 2,
       "placement": "week"
     }
+  ],
+  "areaGoals": [
+    {
+      "id": "ag-work-short",
+      "areaId": "work",
+      "title": "Ship planner Goals Gantt",
+      "horizon": "short",
+      "startOffsetDays": 0,
+      "endOffsetDays": 20,
+      "progress": 35
+    },
+    {
+      "id": "ag-study-short",
+      "areaId": "study",
+      "title": "Finish module notes draft",
+      "horizon": "short",
+      "startOffsetDays": 0,
+      "endOffsetDays": 13,
+      "progress": 10
+    },
+    {
+      "id": "ag-family-short",
+      "areaId": "family",
+      "title": "Plan weekend outing",
+      "horizon": "short",
+      "startOffsetDays": 3,
+      "endOffsetDays": 17,
+      "progress": 0
+    },
+    {
+      "id": "ag-work-mid",
+      "areaId": "work",
+      "title": "Stabilize scheduling loops",
+      "horizon": "mid",
+      "startOffsetDays": 0,
+      "endOffsetDays": 89,
+      "progress": 15
+    },
+    {
+      "id": "ag-study-mid",
+      "areaId": "study",
+      "title": "Complete certificate modules",
+      "horizon": "mid",
+      "startOffsetDays": 7,
+      "endOffsetDays": 95,
+      "progress": 20
+    },
+    {
+      "id": "ag-passion-mid",
+      "areaId": "passion",
+      "title": "Learn two new set pieces",
+      "horizon": "mid",
+      "startOffsetDays": 0,
+      "endOffsetDays": 80,
+      "progress": 5
+    },
+    {
+      "id": "ag-work-long",
+      "areaId": "work",
+      "title": "Personal ops system in daily use",
+      "horizon": "long",
+      "startOffsetDays": 0,
+      "endOffsetDays": 270,
+      "progress": 8
+    },
+    {
+      "id": "ag-family-long",
+      "areaId": "family",
+      "title": "Steady shared weekend rhythm",
+      "horizon": "long",
+      "startOffsetDays": 14,
+      "endOffsetDays": 260,
+      "progress": 0
+    },
+    {
+      "id": "ag-passion-long",
+      "areaId": "passion",
+      "title": "Perform a short recital set",
+      "horizon": "long",
+      "startOffsetDays": 30,
+      "endOffsetDays": 250,
+      "progress": 0
+    }
   ]
 }

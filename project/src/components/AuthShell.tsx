@@ -21,6 +21,11 @@ import {
   type FocusItem,
 } from "@/lib/focus";
 import {
+  loadAreaGoals,
+  writeAreaGoals,
+  type AreaGoal,
+} from "@/lib/area-goals";
+import {
   loadGoals,
   writeGoals,
   type WeeklyGoal,
@@ -71,6 +76,9 @@ export function AuthShell() {
   const [weekHorizon, setWeekHorizon] = useState<WeekHorizonItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadWeekHorizon(),
   );
+  const [areaGoals, setAreaGoals] = useState<AreaGoal[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadAreaGoals(),
+  );
 
   const onTasksChange = useCallback((next: BacklogTask[]) => {
     setTasks(next);
@@ -105,6 +113,11 @@ export function AuthShell() {
   const onWeekHorizonChange = useCallback((next: WeekHorizonItem[]) => {
     setWeekHorizon(next);
     writeWeekHorizon(next);
+  }, []);
+
+  const onAreaGoalsChange = useCallback((next: AreaGoal[]) => {
+    setAreaGoals(next);
+    writeAreaGoals(next);
   }, []);
 
   if (!ready) {
@@ -214,6 +227,8 @@ export function AuthShell() {
             onAreasChange={onAreasChange}
             rules={rules}
             onRulesChange={onRulesChange}
+            areaGoals={areaGoals}
+            onAreaGoalsChange={onAreaGoalsChange}
             onOpenWeekOverview={() => setAppView("weeks")}
           />
         ) : appView === "focus" ? (
@@ -233,6 +248,7 @@ export function AuthShell() {
             areas={areas}
             items={weekHorizon}
             onItemsChange={onWeekHorizonChange}
+            areaGoals={areaGoals}
             onBackToPlanner={() => setAppView("planner")}
           />
         ) : (

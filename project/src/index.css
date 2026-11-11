@@ -631,22 +631,284 @@ button.nav-active {
   max-width: 40rem;
 }
 
-.goals-gantt-placeholder {
+.goals-gantt {
   margin-top: var(--space-2);
-  padding: var(--space-5) var(--space-4);
-  border: 1px dashed var(--line);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 250, 242, 0.55);
-  max-width: 48rem;
+  background: var(--panel);
 }
 
-.goals-gantt-placeholder h3 {
+.goals-gantt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.goals-gantt-head h3 {
   margin: 0 0 var(--space-2);
   font-size: 1.05rem;
 }
 
-.goals-gantt-placeholder p {
-  margin: 0 0 var(--space-3);
+.goals-gantt-head p {
+  margin: 0;
+  max-width: 38rem;
+}
+
+.goals-gantt-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.goals-gantt-area-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.goals-gantt-area-select select {
+  font: inherit;
+  min-width: 10rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+.goals-gantt-form {
+  margin-bottom: var(--space-4);
+}
+
+.gantt-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  --area-colour: var(--accent);
+}
+
+.gantt-axis {
+  position: relative;
+  min-height: 2.6rem;
+  margin-left: 9.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.gantt-axis-quarters,
+.gantt-axis-months {
+  position: relative;
+  height: 1.2rem;
+}
+
+.gantt-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  color: var(--muted, #5c6660);
+  white-space: nowrap;
+}
+
+.gantt-tick-quarter {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.gantt-band {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.gantt-band-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.gantt-track {
+  position: relative;
+  min-height: 2.5rem;
+  padding: 0.35rem 0;
+  background: rgba(255, 250, 242, 0.45);
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  overflow: hidden;
+}
+
+.gantt-gridlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gantt-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(28, 36, 32, 0.08);
+}
+
+.gantt-empty {
+  margin: 0.5rem 0.75rem;
+}
+
+.gantt-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gantt-row-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.gantt-row-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-row-track {
+  position: relative;
+  height: 1.65rem;
+}
+
+.gantt-bar {
+  position: absolute;
+  top: 0.15rem;
+  bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  min-width: 1.25rem;
+  padding: 0 1.1rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--area-colour) 82%, #fff);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.gantt-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gantt-nudge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1rem;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.12);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.gantt-nudge-start {
+  left: 0;
+  border-radius: 0.35rem 0 0 0.35rem;
+}
+
+.gantt-nudge-end {
+  right: 0;
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+.gantt-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.gantt-row-actions button {
+  min-height: 1.85rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.week-area-goals {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px dashed var(--line);
+}
+
+.week-clash-banner {
+  margin: 0 0 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.35rem;
+  background: rgba(161, 92, 7, 0.12);
+  border: 1px solid rgba(161, 92, 7, 0.35);
+  color: #6b3d05;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.week-area-goal-list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.week-area-goal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+}
+
+.week-area-goal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .gantt-axis {
+    margin-left: 0;
+  }
+
+  .gantt-band {
+    grid-template-columns: 1fr;
+  }
+
+  .gantt-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .three-week-back {

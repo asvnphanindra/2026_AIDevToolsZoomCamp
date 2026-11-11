@@ -1,5 +1,10 @@
 import { useMemo, useState, type FormEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
+import {
+  goalsOverlappingWeek,
+  shortGoalClashAreas,
+  type AreaGoal,
+} from "@/lib/area-goals";
 import { formatDayLabel } from "@/lib/time";
 import {
   itemsForDay,
@@ -14,6 +19,8 @@ type Props = {
   areas: SeedArea[];
   items: WeekHorizonItem[];
   onItemsChange: (items: WeekHorizonItem[]) => void;
+  /** Planner Gantt goals — short/mid/long; used for clash lens. */
+  areaGoals?: AreaGoal[];
   timezone?: string;
   onBackToPlanner?: () => void;
 };
@@ -23,6 +30,7 @@ export function ThreeWeekView({
   areas,
   items,
   onItemsChange,
+  areaGoals = [],
   timezone = "Asia/Kolkata",
   onBackToPlanner,
 }: Props) {
@@ -221,8 +229,9 @@ export function ThreeWeekView({
         ) : null}
         <h2>3-week goals overview</h2>
         <p className="muted">
-          Planning lens for how goals sit across ~3 weeks. Assign work to a
-          day or sometime this week — no clock times required.
+          Planning lens for how Planner goals sit across ~3 weeks and whether
+          areas clash. Assign week work to a day or sometime this week — no
+          clock times required.
         </p>
       </div>
 
@@ -314,11 +323,69 @@ export function ThreeWeekView({
       <div className="three-week-columns">
         {columns.map((col) => {
           const bucket = weekBucketItems(items, col.period);
+          const spanning = goalsOverlappingWeek(
+            areaGoals,
+            col.period,
+            timezone,
+          );
+          const clashAreaIds = shortGoalClashAreas(
+            areaGoals,
+            col.period,
+            timezone,
+          );
+          const clashNames = clashAreaIds
+            .map((id) => orderedAreas.find((a) => a.id === id)?.name ?? id)
+            .join(", ");
           return (
             <div key={col.period} className="three-week-column">
               <header className="focus-column-head">
                 <h3>{col.label}</h3>
               </header>
+
+              <div className="week-area-goals">
+                <h4>Area goals this week</h4>
+                {clashAreaIds.length > 0 ? (
+                  <p className="week-clash-banner" role="status">
+                    Clash · short goals from {clashNames}
+                  </p>
+                ) : (
+                  <p className="muted hint-inline">
+                    No short-goal clash across areas.
+                  </p>
+                )}
+                {spanning.length === 0 ? (
+                  <p className="muted hint-inline">
+                    No Planner goals span this week.
+                  </p>
+                ) : (
+                  <ul className="week-area-goal-list">
+                    {spanning.map((goal) => {
+                      const area = orderedAreas.find(
+                        (a) => a.id === goal.areaId,
+                      );
+                      return (
+                        <li key={goal.id} className="week-area-goal-item">
+                          <span
+                            className="swatch"
+                            style={{
+                              background: area?.colour ?? "#0F6B4C",
+                            }}
+                            aria-hidden
+                          />
+                          <span className="week-area-goal-text">
+                            <strong>{goal.title}</strong>
+                            <span className="muted">
+                              {area?.name ?? goal.areaId} · {goal.horizon}
+                              {" · "}
+                              {goal.startDate} → {goal.endDate}
+                            </span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
 
               <div className="week-bucket">
                 <h4>Sometime this week</h4>

@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
+import { GoalsGantt } from "@/components/GoalsGantt";
 import type { SeedArea } from "@/data/fictional-seed";
+import type { AreaGoal } from "@/lib/area-goals";
 import {
   DEFAULT_AREA_COLOURS,
   nextAreaId,
@@ -11,6 +13,8 @@ type Props = {
   onAreasChange: (areas: SeedArea[]) => void;
   rules: DailyRule[];
   onRulesChange: (rules: DailyRule[]) => void;
+  areaGoals: AreaGoal[];
+  onAreaGoalsChange: (goals: AreaGoal[]) => void;
   onOpenWeekOverview?: () => void;
 };
 
@@ -20,6 +24,8 @@ export function PlannerAreas({
   onAreasChange,
   rules,
   onRulesChange,
+  areaGoals,
+  onAreaGoalsChange,
   onOpenWeekOverview,
 }: Props) {
   const [name, setName] = useState("");
@@ -53,6 +59,7 @@ export function PlannerAreas({
       return;
     onAreasChange(areas.filter((a) => a.id !== id));
     onRulesChange(rules.filter((r) => r.areaId !== id));
+    onAreaGoalsChange(areaGoals.filter((g) => g.areaId !== id));
     if (configAreaId === id) setConfigAreaId(null);
   }
 
@@ -275,21 +282,12 @@ export function PlannerAreas({
         </div>
       ) : null}
 
-      <div className="goals-gantt-placeholder" aria-label="Goals Gantt">
-        <h3>Goals</h3>
-        <p className="muted">
-          Per-area Gantt (short / mid / long horizons) — coming next.
-        </p>
-        {onOpenWeekOverview ? (
-          <button
-            type="button"
-            className="secondary"
-            onClick={onOpenWeekOverview}
-          >
-            3-week goals overview
-          </button>
-        ) : null}
-      </div>
+      <GoalsGantt
+        areas={areas}
+        goals={areaGoals}
+        onGoalsChange={onAreaGoalsChange}
+        onOpenWeekOverview={onOpenWeekOverview}
+      />
     </section>
   );
 }
