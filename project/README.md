@@ -36,6 +36,7 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 8. Focus view: one column per life area with standing focus items (add/edit/remove).
 9. **Planner → 3-week goals overview** for current + next two ISO weeks (Gantt goals spanning each week + short-goal clash across areas).
 10. **Calendar** nav: this month + next two with coloured markers (deadline / exam / appointment / series), current ISO week highlighted, upcoming list below.
+11. Recurring **series** are stored as rules and expanded on read (add / pause / resume on Calendar); one-offs stay separate.
 
 ## Non-goals (MVP)
 
@@ -79,7 +80,8 @@ project/
 | US-E2 Weekly goals + carry-over (Issue #36) | ☑ |
 | US-E3 3-week view (Issue #37) | ☑ |
 | US-F1 3-month calendar (Issue #38) | ☑ |
-| Remaining US stories / tests / Docker / CI / obs | ☐ next |
+| US-F2 Recurring series (Issue #39) | ☑ |
+| Remaining tests / Docker / CI / obs | ☐ next |
 | Hosting URL | ☐ after submission |
 
 ## Quick start (one command)

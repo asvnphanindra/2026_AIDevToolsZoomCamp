@@ -1221,20 +1221,27 @@ button.nav-active {
   max-width: 100%;
 }
 
+.cal-series {
+  margin-bottom: var(--space-5);
+}
+
+.cal-series h3,
 .cal-upcoming h3 {
   margin: 0 0 var(--space-3);
   font-size: 1rem;
 }
 
+.cal-series-list,
 .cal-upcoming-list {
   list-style: none;
-  margin: 0;
+  margin: 0 0 var(--space-3);
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
+.cal-series-item,
 .cal-upcoming-item {
   display: flex;
   align-items: flex-start;
@@ -1245,8 +1252,44 @@ button.nav-active {
   border-radius: var(--radius-lg);
 }
 
+.cal-series-item .cal-dot,
 .cal-upcoming-item .cal-dot {
   margin-top: 0.4rem;
+}
+
+.cal-series-item button {
+  margin-left: auto;
+  align-self: center;
+}
+
+.cal-series-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: end;
+  padding: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.cal-series-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted, #5c6660);
+}
+
+.cal-series-form input,
+.cal-series-form select {
+  min-width: 7rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg, #fff);
+  color: inherit;
+  font: inherit;
 }
 
 @media (max-width: 900px) {

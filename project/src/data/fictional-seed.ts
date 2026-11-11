@@ -187,6 +187,22 @@ export type SeedCalendarEvent = {
   seriesId?: string;
 };
 
+/** Recurring series rule (US-F2); expanded on read, not stored as copies. */
+export type SeedSeriesRule =
+  | { freq: "weeks"; interval: number }
+  | { freq: "months"; interval: number; dayOfMonth: number };
+
+/** Seeded series; startDayOffset relative to today at load → startDate. */
+export type SeedCalendarSeries = {
+  id: string;
+  label: string;
+  kind: CalendarEventKind;
+  rule: SeedSeriesRule;
+  startDayOffset: number;
+  paused?: boolean;
+  time?: string;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -205,6 +221,7 @@ export type FictionalSeed = {
   weekHorizon?: SeedWeekHorizonItem[];
   areaGoals?: SeedAreaGoal[];
   events?: SeedCalendarEvent[];
+  series?: SeedCalendarSeries[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */

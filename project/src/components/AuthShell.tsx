@@ -17,8 +17,15 @@ import {
 } from "@/lib/blocks";
 import {
   loadCalendarEvents,
+  mergeCalendarEvents,
   type CalendarEvent,
 } from "@/lib/calendar-events";
+import {
+  expandAllSeries,
+  loadCalendarSeries,
+  writeCalendarSeries,
+  type CalendarSeries,
+} from "@/lib/calendar-series";
 import {
   loadFocusItems,
   writeFocusItems,
@@ -85,8 +92,11 @@ export function AuthShell() {
   const [weekHorizon, setWeekHorizon] = useState<WeekHorizonItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadWeekHorizon(),
   );
-  const [calendarEvents] = useState<CalendarEvent[]>(() =>
+  const [oneOffEvents] = useState<CalendarEvent[]>(() =>
     typeof localStorage === "undefined" ? [] : loadCalendarEvents(),
+  );
+  const [calendarSeries, setCalendarSeries] = useState<CalendarSeries[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadCalendarSeries(),
   );
   const [areaGoals, setAreaGoals] = useState<AreaGoal[]>(() =>
     typeof localStorage === "undefined" ? [] : loadAreaGoals(),
@@ -137,10 +147,24 @@ export function AuthShell() {
     if (typeof localStorage !== "undefined") writeSchedulerLayerMode(mode);
   }, []);
 
+  const onCalendarSeriesChange = useCallback((next: CalendarSeries[]) => {
+    setCalendarSeries(next);
+    writeCalendarSeries(next);
+  }, []);
+
   const plannerTz = "Asia/Kolkata";
   const thisWeekPeriod = useMemo(
     () => isoWeekPeriod(new Date(), plannerTz),
     [],
+  );
+
+  const calendarEvents = useMemo(
+    () =>
+      mergeCalendarEvents(
+        oneOffEvents,
+        expandAllSeries(calendarSeries, new Date(), plannerTz),
+      ),
+    [calendarSeries, oneOffEvents],
   );
 
   const weekBacklogGoalIds = useMemo(() => {
@@ -326,7 +350,11 @@ export function AuthShell() {
             onBackToPlanner={() => setAppView("planner")}
           />
         ) : appView === "calendar" ? (
-          <MonthCalendarView events={calendarEvents} />
+          <MonthCalendarView
+            events={calendarEvents}
+            series={calendarSeries}
+            onSeriesChange={onCalendarSeriesChange}
+          />
         ) : (
           <div
             className={

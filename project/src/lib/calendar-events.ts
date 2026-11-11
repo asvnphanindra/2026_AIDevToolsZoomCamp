@@ -160,18 +160,36 @@ export function writeCalendarEvents(events: CalendarEvent[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 }
 
+/**
+ * One-off calendar events only. Series copies (with seriesId) are stripped so
+ * US-F2 expand-on-read owns recurring markers.
+ */
 export function loadCalendarEvents(
   timeZone = DEFAULT_TZ,
   from = new Date(),
 ): CalendarEvent[] {
   const stored =
     typeof localStorage !== "undefined" ? readCalendarEvents() : null;
-  if (stored && stored.length) return stored;
-  const seeded = seedCalendarEvents(timeZone, from);
+  if (stored && stored.length) {
+    const oneOffs = stored.filter((e) => !e.seriesId);
+    if (oneOffs.length !== stored.length && typeof localStorage !== "undefined") {
+      writeCalendarEvents(oneOffs);
+    }
+    if (oneOffs.length) return oneOffs;
+  }
+  const seeded = seedCalendarEvents(timeZone, from).filter((e) => !e.seriesId);
   if (typeof localStorage !== "undefined" && seeded.length) {
     writeCalendarEvents(seeded);
   }
   return seeded;
+}
+
+/** Merge persisted one-offs with expand-on-read series occurrences. */
+export function mergeCalendarEvents(
+  oneOffs: CalendarEvent[],
+  seriesOccurrences: CalendarEvent[],
+): CalendarEvent[] {
+  return [...oneOffs.filter((e) => !e.seriesId), ...seriesOccurrences];
 }
 
 export function eventsOnDate(

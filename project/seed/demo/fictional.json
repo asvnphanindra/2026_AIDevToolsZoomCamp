@@ -661,26 +661,10 @@
       "time": "10:00"
     },
     {
-      "id": "ev-cohort-1",
-      "dayOffset": 14,
-      "kind": "series",
-      "label": "Study cohort meetup",
-      "time": "19:00",
-      "seriesId": "ser-cohort"
-    },
-    {
       "id": "ev-portfolio",
       "dayOffset": 21,
       "kind": "deadline",
       "label": "Portfolio draft"
-    },
-    {
-      "id": "ev-cohort-2",
-      "dayOffset": 35,
-      "kind": "series",
-      "label": "Study cohort meetup",
-      "time": "19:00",
-      "seriesId": "ser-cohort"
     },
     {
       "id": "ev-advisor",
@@ -697,14 +681,6 @@
       "time": "09:00"
     },
     {
-      "id": "ev-cohort-3",
-      "dayOffset": 56,
-      "kind": "series",
-      "label": "Study cohort meetup",
-      "time": "19:00",
-      "seriesId": "ser-cohort"
-    },
-    {
       "id": "ev-tax",
       "dayOffset": 72,
       "kind": "deadline",
@@ -716,6 +692,33 @@
       "kind": "appointment",
       "label": "Recital venue walkthrough",
       "time": "18:00"
+    }
+  ],
+  "series": [
+    {
+      "id": "ser-cohort",
+      "label": "Study cohort meetup",
+      "kind": "series",
+      "rule": { "freq": "weeks", "interval": 3 },
+      "startDayOffset": 0,
+      "time": "19:00"
+    },
+    {
+      "id": "ser-rent",
+      "label": "Rent review checkpoint",
+      "kind": "series",
+      "rule": { "freq": "months", "interval": 4, "dayOfMonth": 24 },
+      "startDayOffset": 0,
+      "time": "10:00"
+    },
+    {
+      "id": "ser-paused-lab",
+      "label": "Paused lab stream",
+      "kind": "series",
+      "rule": { "freq": "weeks", "interval": 2 },
+      "startDayOffset": 1,
+      "paused": true,
+      "time": "14:00"
     }
   ]
 }
