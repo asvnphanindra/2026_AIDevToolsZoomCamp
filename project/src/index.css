@@ -896,6 +896,25 @@ button.nav-active {
   border-radius: 0.55rem;
 }
 
+.task-row.is-replan {
+  border-color: #b45309;
+  background: #fffbeb;
+}
+
+.replan-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fde68a;
+  border-radius: 0.25rem;
+  vertical-align: middle;
+}
+
 .task-main {
   flex: 1;
   min-width: 0;

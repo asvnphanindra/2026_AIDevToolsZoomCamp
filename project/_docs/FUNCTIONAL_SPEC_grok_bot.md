@@ -118,6 +118,9 @@ As a user, I want the app to ask "Done / Partly done / Not done" after a block's
 
 **US-D2 (MVP): Replan unfinished work**
 As a user, I want partly done and not done tasks to return to the backlog flagged "replan" so that they aren't lost.
+- AC1: Partly / not done on a placed block removes it from the grid and returns the task to the backlog with a replan flag.
+- AC2: Partly done sets remaining minutes as the task duration; not done keeps the block duration.
+- AC3: Done does not return the task to the backlog.
 
 **US-D3 (Phase 2): End-of-day summary and energy tag**
 As a user, I want an evening summary of planned versus done per area, and to tag my energy for the day, so that I can improve my energy bands over time.

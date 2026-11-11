@@ -2,6 +2,8 @@ import { fictionalSeed, type SeedArea, type SeedTask } from "@/data/fictional-se
 
 export type BacklogTask = SeedTask & {
   due?: string;
+  /** US-D2 — returned from unfinished check-in. */
+  replan?: boolean;
 };
 
 export const TASK_DRAG_MIME = "application/x-work-planner-task";

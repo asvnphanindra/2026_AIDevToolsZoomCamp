@@ -1,3 +1,5 @@
+import { durationMinutes } from "@/lib/blocks";
+import type { BacklogTask } from "@/lib/tasks";
 import { dateKeyInTz, minutesOf, DEFAULT_TZ } from "@/lib/time";
 
 const STORAGE_KEY = "work-planner.check-ins";
@@ -11,6 +13,51 @@ export type BlockCheckIn = {
   remainingMin?: number;
   checkedAt: string;
 };
+
+export type ReplanBlockRef = {
+  taskId?: string;
+  title: string;
+  areaId: string;
+  start: string;
+  end: string;
+  deepWork?: boolean;
+};
+
+/**
+ * US-D2 — partly / not-done → backlog with replan flag (+ remaining time).
+ * Does nothing for "done".
+ */
+export function replanUnfinishedTask(
+  tasks: BacklogTask[],
+  block: ReplanBlockRef,
+  outcome: CheckInOutcome,
+  remainingMin?: number,
+): BacklogTask[] | null {
+  if (outcome === "done") return null;
+
+  const blockMins = Math.max(15, durationMinutes(block.start, block.end));
+  const durationMin =
+    outcome === "partly"
+      ? Math.max(1, Math.round(remainingMin ?? blockMins))
+      : blockMins;
+
+  const taskId = block.taskId || `task-replan-${Date.now()}`;
+  const hit = tasks.find((t) => t.id === taskId);
+  const next: BacklogTask = {
+    id: taskId,
+    title: hit?.title ?? block.title,
+    areaId: hit?.areaId ?? block.areaId,
+    durationMin,
+    priority: hit?.priority ?? "med",
+    status: "backlog",
+    horizon: hit?.horizon ?? "day",
+    deepWork: hit?.deepWork ?? block.deepWork,
+    due: hit?.due,
+    replan: true,
+  };
+
+  return [next, ...tasks.filter((t) => t.id !== taskId)];
+}
 
 export function readCheckIns(): Record<string, BlockCheckIn> {
   try {

@@ -39,7 +39,7 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 | US-C2 | Drag / move / resize on grid + conflict warn |
 | US-C3 | Daily minimum rules (Areas config; planner badges + suggest-on-confirm) |
 | US-D1 | Done / Partly / Not done after block end |
-| US-D2 | Replan unfinished → backlog |
+| US-D2 | Replan unfinished → backlog (+ remaining, replan flag) |
 | US-E1 | Focus panel by life area |
 | US-E2 | Weekly goals + carry-over |
 | US-E3 | 3-week view (no clock times required) |

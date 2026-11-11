@@ -82,6 +82,9 @@ export function TaskBacklog({
       horizon: draft.horizon || "day",
       durationMin: Math.max(5, Number(draft.durationMin) || 30),
       due: draft.due?.trim() || undefined,
+      replan: editingId
+        ? tasks.find((t) => t.id === editingId)?.replan
+        : undefined,
     };
 
     if (editingId) {
@@ -261,7 +264,10 @@ export function TaskBacklog({
       ) : (
         <div className="backlog-by-area">
           {listAreas.map((area) => {
-            const columnTasks = openTasks.filter((t) => t.areaId === area.id);
+            const columnTasks = openTasks
+              .filter((t) => t.areaId === area.id)
+              .slice()
+              .sort((a, b) => Number(Boolean(b.replan)) - Number(Boolean(a.replan)));
             if (!columnTasks.length) return null;
             return (
               <div key={area.id} className="backlog-area-col">
@@ -277,7 +283,7 @@ export function TaskBacklog({
                   {columnTasks.map((task) => (
                     <li
                       key={task.id}
-                      className="task-row is-draggable"
+                      className={`task-row is-draggable${task.replan ? " is-replan" : ""}`}
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
@@ -286,9 +292,17 @@ export function TaskBacklog({
                       }}
                     >
                       <div className="task-main">
-                        <strong>{task.title}</strong>
+                        <strong>
+                          {task.title}
+                          {task.replan ? (
+                            <span className="replan-badge" title="Needs replan">
+                              replan
+                            </span>
+                          ) : null}
+                        </strong>
                         <span className="muted">
-                          {task.durationMin}m · {task.priority}
+                          {task.durationMin}m
+                          {task.replan ? " left" : ""} · {task.priority}
                           {task.due ? ` · due ${task.due}` : ""}
                           {task.deepWork ? " · deep" : ""}
                         </span>

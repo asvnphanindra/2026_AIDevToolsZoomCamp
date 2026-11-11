@@ -34,6 +34,7 @@ import {
   isBlockEnded,
   loadCheckIns,
   outcomeLabel,
+  replanUnfinishedTask,
   upsertCheckIn,
   type BlockCheckIn,
   type CheckInOutcome,
@@ -268,6 +269,34 @@ export function DayGrid({
       checkedAt: new Date().toISOString(),
     };
     setCheckIns((prev) => upsertCheckIn(prev, entry));
+
+    // US-D2 — unfinished placed work returns to backlog flagged replan.
+    if (
+      (outcome === "partly" || outcome === "not-done") &&
+      checkInTarget.placed
+    ) {
+      const existing = placedBlocks.find((b) => b.id === checkInTarget.id);
+      if (existing) {
+        const nextTasks = replanUnfinishedTask(
+          tasks,
+          {
+            taskId: existing.taskId,
+            title: existing.title,
+            areaId: existing.areaId,
+            start: existing.start,
+            end: existing.end,
+            deepWork: existing.deepWork,
+          },
+          outcome,
+          remainingMin,
+        );
+        if (nextTasks) onTasksChange(nextTasks);
+        onPlacedBlocksChange(
+          placedBlocks.filter((b) => b.id !== existing.id),
+        );
+      }
+    }
+
     setCheckInTarget(null);
   }
 
@@ -308,7 +337,9 @@ export function DayGrid({
         if (hit) {
           onTasksChange(
             tasks.map((t) =>
-              t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+              t.id === candidate.taskId
+                ? { ...t, status: "planned", replan: undefined }
+                : t,
             ),
           );
         } else {
@@ -382,7 +413,9 @@ export function DayGrid({
         if (overlap.mode === "create" && candidate.taskId) {
           onTasksChange(
             tasks.map((t) =>
-              t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+              t.id === candidate.taskId
+                ? { ...t, status: "planned", replan: undefined }
+                : t,
             ),
           );
         }
@@ -395,7 +428,9 @@ export function DayGrid({
       if (candidate.taskId) {
         onTasksChange(
           tasks.map((t) =>
-            t.id === candidate.taskId ? { ...t, status: "planned" } : t,
+            t.id === candidate.taskId
+              ? { ...t, status: "planned", replan: undefined }
+              : t,
           ),
         );
       }
