@@ -2,18 +2,19 @@
 
 ## Working agreements
 
-1. Prefer the simplest option that matches [product-spec.md](product-spec.md).
-2. Section A = docs + tracker only. No app scaffold until Section B is assigned.
+1. Prefer the simplest option that matches [product-spec.md](product-spec.md) + FUNCTIONAL_SPEC US-* AC.
+2. Track work on **public** GitHub Issues [`work-planner` #23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner) (AC in issue bodies; map in [task-tracker.md](task-tracker.md)).
 3. Local run/test first; Firebase Hosting only after course submission ([plan.md](plan.md)).
 4. Copy/adapt useful ideas from `module_2` (Weekslot); **never overwrite** `module_2`. All Work Planner files stay under `project/`.
 5. English docs. IST for all user-facing times.
-6. Commit and push on meaningful chunks; open PRs against `master`.
+6. Commit and push on meaningful chunks; open PRs against `master` that name Issue `#N` + `US-*`.
 7. One clarifying question at a time when blocked.
+8. Collaboration roles: [agent-team.md](agent-team.md). Context entry: [AGENTS.md](AGENTS.md).
 
 ## Definition of done (feature)
 
-- Linked US-* backlog AC checked (`_docs/task-tracker.md`)
-- Tests added/updated when code exists
+- Linked US-* backlog AC checked (GitHub issue + `_docs/task-tracker.md`)
+- Tests added/updated when code exists (`npm test`)
 - No personal data in the change
 - `AGENTS.md` / modular docs updated if process or architecture changed
 

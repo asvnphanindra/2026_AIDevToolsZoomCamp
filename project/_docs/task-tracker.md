@@ -1,24 +1,24 @@
 # Work Planner — Task Tracker
 
-**Source of truth for AC detail:** [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) v1.0  
-**Product summary:** [product-spec.md](product-spec.md) · **Build order:** [plan.md](plan.md)  
-**GitHub:** [label:`work-planner`](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner)
+**Public tracker (source of truth for filed work):** GitHub Issues labeled [`work-planner`](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner) — **#23–#39** (US-A1…US-F2).  
+Each issue body includes **acceptance criteria**. Full AC detail: [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) v1.0.  
+**Product summary:** [product-spec.md](product-spec.md) · **Build order:** [plan.md](plan.md)
 
 ## Policy
 
-- Active MVP backlog = Issues **#23–#39** below (US-A1…US-F2).
+- Active MVP backlog = public Issues **#23–#39** below (US-A1…US-F2).
 - Do **not** open Phase 2 Issues unless the owner asks.
-- Agents implement only MVP items; PRs reference the Issue + US-* id.
+- Agents implement only MVP items; PRs reference the Issue + US-* id (evidence the tracker is used).
 - Local run/test first; Firebase Hosting only **after course submission**.
 
 ## Historical (closed)
 
 #13–#22 — FR-era tracker; superseded by US-* Issues #23–#39.
 
-## MVP Issues
+## MVP Issues (public + AC)
 
-| US-* | # | Title | Short AC |
-|------|---|--------|----------|
+| US-* | # | Title | Short AC (full AC in issue body) |
+|------|---|--------|----------------------------------|
 | US-A1 | [#23](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/23) | Sign in (Google + owner rules) | Firebase Google sign-in; Firestore only under `uid`; sign-out clears view |
 | US-A2 | [#24](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/24) | Demo mode (anonymous + seed) | Try demo + fictional seed; no personal data/keys in repo |
 | US-B1 | [#25](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/25) | 3-day hourly grid | Today+2; default 06:00–23:00; colours; last-updated TZ |
@@ -41,7 +41,8 @@
 
 US-C4, US-D3, US-D4, US-E4, US-E5, US-E6, US-F3, US-G1 (+ PNG export, schedule import UI).
 
-## Evidence
+## Evidence (agents used the tracker)
 
-- Closed #13–#22 (prior tracker) + open #23–#39 (US-* MVP) with AC in bodies.
-- Agents: filter `label:work-planner`; PR titles include Issue number + US-* id.
+- Public Issues #23–#39 with **acceptance criteria in bodies**; label `work-planner`.
+- Agents filter `label:work-planner`; PR titles include Issue number + US-* id.
+- Local map in this file; full AC in FUNCTIONAL_SPEC; collaboration rules in [agent-team.md](agent-team.md).
