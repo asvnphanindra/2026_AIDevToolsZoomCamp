@@ -1057,6 +1057,12 @@ button.nav-active {
   margin-bottom: var(--space-4);
 }
 
+.focus-panel-embedded {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--line);
+}
+
 .three-week-columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(14rem, 1fr));

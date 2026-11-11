@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DayGrid } from "@/components/DayGrid";
-import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
 import { MonthCalendarView } from "@/components/MonthCalendarView";
 import { PlannerAreas } from "@/components/PlannerAreas";
@@ -57,9 +56,9 @@ import {
   type WeekHorizonItem,
 } from "@/lib/week-horizon";
 
-type AppView = "scheduler" | "planner" | "focus" | "weeks" | "calendar";
+type AppView = "scheduler" | "planner" | "weeks" | "calendar";
 
-/** Auth shell + scheduler / planner / focus / 3-week / calendar. */
+/** Auth shell + scheduler / planner / 3-week / calendar. */
 export function AuthShell() {
   const {
     user,
@@ -290,13 +289,6 @@ export function AuthShell() {
               </button>
               <button
                 type="button"
-                className={appView === "focus" ? "nav-active" : "secondary"}
-                onClick={() => setAppView("focus")}
-              >
-                Focus
-              </button>
-              <button
-                type="button"
                 className={
                   appView === "calendar" ? "nav-active" : "secondary"
                 }
@@ -333,13 +325,9 @@ export function AuthShell() {
             weekPeriod={thisWeekPeriod}
             tasks={tasks}
             onTasksChange={onTasksChange}
+            focusItems={focusItems}
+            onFocusItemsChange={onFocusItemsChange}
             onOpenSchedulerFocus={openSchedulerFocus}
-          />
-        ) : appView === "focus" ? (
-          <FocusPanel
-            areas={areas}
-            items={focusItems}
-            onItemsChange={onFocusItemsChange}
           />
         ) : appView === "weeks" ? (
           <ThreeWeekView
@@ -372,7 +360,6 @@ export function AuthShell() {
                 onTasksChange={onTasksChange}
                 placedBlocks={blocks}
                 onPlacedBlocksChange={onBlocksChange}
-                focusItems={focusItems}
                 layerMode={layerMode}
                 onLayerModeChange={onLayerModeChange}
               />

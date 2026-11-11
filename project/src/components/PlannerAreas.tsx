@@ -7,6 +7,7 @@ import {
   DEFAULT_AREA_COLOURS,
   nextAreaId,
 } from "@/lib/areas";
+import type { FocusItem } from "@/lib/focus";
 import type { DailyRule } from "@/lib/rules";
 import type { BacklogTask } from "@/lib/tasks";
 
@@ -23,6 +24,8 @@ type Props = {
   weekPeriod: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
+  focusItems: FocusItem[];
+  onFocusItemsChange: (items: FocusItem[]) => void;
   onOpenSchedulerFocus?: () => void;
 };
 
@@ -40,6 +43,8 @@ export function PlannerAreas({
   weekPeriod,
   tasks,
   onTasksChange,
+  focusItems,
+  onFocusItemsChange,
   onOpenSchedulerFocus,
 }: Props) {
   const [name, setName] = useState("");
@@ -325,10 +330,13 @@ export function PlannerAreas({
       />
 
       <PlannerWeekBacklog
+        areas={areas}
         area={orderedForGantt.find((a) => a.id === ganttAreaId)}
         period={weekPeriod}
         tasks={tasks}
         onTasksChange={onTasksChange}
+        focusItems={focusItems}
+        onFocusItemsChange={onFocusItemsChange}
         onOpenScheduler={onOpenSchedulerFocus}
       />
     </section>

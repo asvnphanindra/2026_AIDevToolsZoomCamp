@@ -10,10 +10,17 @@ type Props = {
   areas: SeedArea[];
   items: FocusItem[];
   onItemsChange: (items: FocusItem[]) => void;
+  /** When embedded under Planner Backlog (default). */
+  embedded?: boolean;
 };
 
-/** Standing focus items by life area (US-E1). */
-export function FocusPanel({ areas, items, onItemsChange }: Props) {
+/** Standing focus items by life area (US-E1) — lives under Planner Backlog. */
+export function FocusPanel({
+  areas,
+  items,
+  onItemsChange,
+  embedded = true,
+}: Props) {
   const orderedAreas = [...areas].sort((a, b) => a.order - b.order);
   const [areaId, setAreaId] = useState(orderedAreas[0]?.id ?? "");
   const [title, setTitle] = useState("");
@@ -77,12 +84,15 @@ export function FocusPanel({ areas, items, onItemsChange }: Props) {
   }
 
   return (
-    <section className="focus-panel" aria-label="Focus by life area">
+    <section
+      className={embedded ? "focus-panel focus-panel-embedded" : "focus-panel"}
+      aria-label="Standing focus by life area"
+    >
       <div className="day-grid-meta">
-        <h2>Focus</h2>
+        <h3>{embedded ? "Standing focus" : "Focus"}</h3>
         <p className="muted">
-          Standing focus items per life area — what should stay visible while
-          you plan the week.
+          Standing items per life area — what should stay visible while you
+          plan the week. Place work from Backlog via Scheduler → Focus.
         </p>
       </div>
 

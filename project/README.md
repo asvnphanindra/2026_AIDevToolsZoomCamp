@@ -18,10 +18,11 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 - 5-day grid with layer modes (Combined / Availability / Recurring / Scheduled / Focus); availability/energy chunks, seeded schedule
 - **Scheduler** (calendar layers) and **Planner** (area cards + config icon for daily mins used in weekly retrospective, US-C3); right-click placed cards to edit / unschedule / check-in
 - Planner **Goals Gantt** only (no separate Goals nav): area dropdown; short (~3w) / mid (~3m) / long (~3q) bars; **→ This week** fills the **Backlog** under the Gantt; 3-week overview shows spanning goals + cross-area clash
-- Scheduler **Focus** layer: **Tasks to Focus** holds unscheduled work until drag-drop onto the calendar; **Combined** is grid-only
+- Planner **Backlog** owns Focus: weekly cards + standing focus columns (US-E1); no separate Focus nav
+- Scheduler **Focus** layer: **Tasks to Focus** = same backlog queue until drag-drop onto the calendar; **Combined** is grid-only
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
-- Focus panel; 3-week goals overview via Planner (US-E1, E3)
+- 3-week goals overview via Planner (US-E3)
 - 3-month calendar + recurring series (US-F1, F2)
 
 ## Expected behavior
@@ -30,13 +31,12 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to Tasks to Focus.
-5. **Planner** nav: area cards + gear (daily mins); **Goals** Gantt (area dropdown); **Backlog** under the Gantt for this week / selected area. **→ This week** adds a goal-linked card. Right-click placed cards to edit / unschedule.
-6. **Scheduler** layers: **Combined** = full grid only; **Focus** = **Tasks to Focus** (unscheduled) + grid shows only after drag-drop; other layers show only that layer’s items (side panel deferred).
+5. **Planner** nav: area cards + gear (daily mins); **Goals** Gantt (area dropdown); **Backlog** under the Gantt for this week / selected area + **Standing focus** columns (US-E1). **→ This week** adds a goal-linked card. Right-click placed cards to edit / unschedule.
+6. **Scheduler** layers: **Combined** = full grid only; **Focus** = **Tasks to Focus** (same Backlog queue) + grid shows only after drag-drop; other layers show only that layer’s items (side panel deferred).
 7. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
-8. Focus view: one column per life area with standing focus items (add/edit/remove).
-9. **Planner → 3-week goals overview** for current + next two ISO weeks (Gantt goals spanning each week + short-goal clash across areas).
-10. **Calendar** nav: this month + next two with coloured markers (deadline / exam / appointment / series), current ISO week highlighted, upcoming list below.
-11. Recurring **series** are stored as rules and expanded on read (add / pause / resume on Calendar); one-offs stay separate.
+8. **Planner → 3-week goals overview** for current + next two ISO weeks (Gantt goals spanning each week + short-goal clash across areas).
+9. **Calendar** nav: this month + next two with coloured markers (deadline / exam / appointment / series), current ISO week highlighted, upcoming list below.
+10. Recurring **series** are stored as rules and expanded on read (add / pause / resume on Calendar); one-offs stay separate.
 
 ## Non-goals (MVP)
 
@@ -76,7 +76,7 @@ project/
 | US-C2 drag tasks onto grid (Issue #31) | ☑ |
 | US-C3 daily minimum rules (Issue #32) | ☑ |
 | US-D1 / US-D2 check-in + replan (#33 / #34) | ☑ |
-| US-E1 Focus panel (Issue #35) | ☑ |
+| US-E1 Focus in Backlog (Issue #35) | ☑ |
 | US-E2 Weekly goals + carry-over (Issue #36) | ☑ |
 | US-E3 3-week view (Issue #37) | ☑ |
 | US-F1 3-month calendar (Issue #38) | ☑ |
@@ -102,6 +102,10 @@ npm start                # Auth emulator + Vite (reuses/frees busy ports; Vite s
 UI-only: `npm run dev` — **Try demo** still works via offline local session + fictional seed.  
 Auth emulator only: `npm run emulators:auth`  
 If an old emulator is stuck: stop the terminal that started it, or `npm start` will reuse/pick the next free port.
+
+### Browse data (Firestore)
+
+**Firestore** is the app database. With emulators running (`npm run start:full`), open the **Emulator UI** (typically [http://127.0.0.1:4000](http://127.0.0.1:4000)) → **Firestore** to browse collections. Auth users appear under **Authentication** in the same UI. If ports differ (busy machine), check the terminal output or `.env.local` for the Auth emulator port (`:9099` default; `:9100+` when reused) and the Emulator UI / Firestore ports printed by `firebase emulators:start`.
 
 Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds out of git.
 
@@ -163,14 +167,16 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 3. Add a task with **Sometime this week** or **Specific day**; Done / Edit / Delete; → Week / → Day… moves placement.
 4. Reload persists (`work-planner.week-horizon`). Scheduler has no day-type dropdown / one-off menu.
 
-### Verify Goals Gantt (Planner)
+### Verify Goals Gantt + Backlog Focus (Planner)
 
 1. `npm start` → **Try demo** → **Planner**.
 2. Area cards stay on top; below, **Goals** uses an **Area** dropdown (not only the cards).
 3. Chart shows short / mid / long bands for the selected area; Add / Edit / Delete; bar ‹ › nudges dates.
-4. On a goal row, **→ This week** → jumps to **Scheduler**; backlog shows the card under the same area with a **goal** badge and current ISO week period. Button becomes **On backlog** if already added.
-5. **3-week goals overview** lists spanning area goals per week and a short-goal clash banner when 2+ areas overlap.
-6. Reload persists (`work-planner.area-goals` + `work-planner.backlog-tasks`).
+4. On a goal row, **→ This week** → card appears under **Backlog** with a **goal** badge and current ISO week period. Button becomes **On backlog** if already added. **Schedule** opens Scheduler → Focus.
+5. Under **Backlog**, **Standing focus** shows one column per area; Add / Edit / Delete; reload persists (`work-planner.focus-items`). No **Focus** nav item.
+6. **Scheduler** → Layers → **Focus** → **Tasks to Focus** shows the same unscheduled backlog queue for drag-drop.
+7. **3-week goals overview** lists spanning area goals per week and a short-goal clash banner when 2+ areas overlap.
+8. Reload persists (`work-planner.area-goals` + `work-planner.backlog-tasks`).
 
 ## Links
 

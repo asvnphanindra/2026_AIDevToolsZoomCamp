@@ -132,10 +132,10 @@ As a user, I want to add a short note when I finish a block in an area and later
 
 **US-E1 (MVP): Focus panel**
 As a user, I want a panel with one column per life area listing my standing focus items so that I always see what matters.
-- AC1: Focus view shows one column per life area (area order).
+- AC1: Standing focus (under Planner → Backlog) shows one column per life area (area order).
 - AC2: Each column lists standing focus items (`title`, optional `subtitle`, `order`).
 - AC3: Add / edit / remove items; persist locally; demo seeds fictional `focusItems`.
-- AC4: Planner + Areas UX unchanged (Focus is its own nav view).
+- AC4: No separate Focus nav page — Focus behavior lives in Planner → Backlog; Scheduler Focus layer uses Tasks to Focus (same backlog queue).
 
 **US-E2 (MVP): Weekly goals**
 As a user, I want to set a few starred goals for the week so that daily tasks serve a bigger aim.

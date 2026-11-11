@@ -48,8 +48,8 @@ export const DEFAULT_SCHEDULER_LAYER_MODE: SchedulerLayerMode = "combined";
  * Derived boolean map for Combined / single-layer visibility.
  *
  * Focus mode shows drag-dropped (scheduled) blocks on the grid only —
- * unscheduled work stays in the Tasks to Focus side panel until placed.
- * Standing FocusPanel strips are not painted onto the calendar.
+ * unscheduled work stays in Tasks to Focus (same Backlog queue as Planner).
+ * Standing focus items live under Planner → Backlog; not painted on the grid.
  */
 export function layerStateForMode(mode: SchedulerLayerMode): SchedulerLayerState {
   if (mode === "combined") {

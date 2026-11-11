@@ -31,7 +31,7 @@
 | US-C3 | [#32](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/32) | Daily minimum rules | Config + weekly retrospective; not scheduling blockers |
 | US-D1 | [#33](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/33) | Block check-in | Done / Partly / Not done after end (prompt; never auto) |
 | US-D2 | [#34](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/34) | Replan unfinished | Partly/not-done → backlog + replan flag + remaining |
-| US-E1 | [#35](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/35) | Focus panel | Columns per area; CRUD standing items |
+| US-E1 | [#35](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/35) | Focus panel | Standing focus under Planner Backlog; CRUD per area |
 | US-E2 | [#36](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/36) | Weekly goals + carry-over | ISO week; one-click carry |
 | US-E3 | [#37](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/37) | 3-week view | 3 ISO-week columns; day or sometime-this-week; local persist |
 | US-F1 | [#38](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/38) | 3-month calendar | Markers + upcoming list |

@@ -1,20 +1,28 @@
+import { FocusPanel } from "@/components/FocusPanel";
 import type { SeedArea } from "@/data/fictional-seed";
+import type { FocusItem } from "@/lib/focus";
 import type { BacklogTask } from "@/lib/tasks";
 
 type Props = {
+  areas: SeedArea[];
   area: SeedArea | undefined;
   period: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
+  focusItems: FocusItem[];
+  onFocusItemsChange: (items: FocusItem[]) => void;
   onOpenScheduler?: () => void;
 };
 
-/** Weekly Backlog under the Planner Gantt for the selected area. */
+/** Weekly Backlog under the Planner Gantt (owns Focus / standing items). */
 export function PlannerWeekBacklog({
+  areas,
   area,
   period,
   tasks,
   onTasksChange,
+  focusItems,
+  onFocusItemsChange,
   onOpenScheduler,
 }: Props) {
   const weekTasks = tasks
@@ -40,7 +48,9 @@ export function PlannerWeekBacklog({
         <p className="muted">
           This week’s planning list for{" "}
           {area ? <strong>{area.name}</strong> : "the selected area"} ({period}
-          ). Add from Goals above, then place while working in Scheduler → Focus.
+          ). Add from Goals above; standing focus lives here (no separate Focus
+          page). Place while working in Scheduler → Focus (
+          <strong>Tasks to Focus</strong>).
         </p>
       </div>
 
@@ -101,6 +111,13 @@ export function PlannerWeekBacklog({
           ))}
         </ul>
       )}
+
+      <FocusPanel
+        areas={areas}
+        items={focusItems}
+        onItemsChange={onFocusItemsChange}
+        embedded
+      />
     </section>
   );
 }

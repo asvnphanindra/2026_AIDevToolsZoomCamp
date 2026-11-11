@@ -172,8 +172,9 @@ export function TaskBacklog({
       <div className="day-grid-meta">
         <h2>Tasks to Focus</h2>
         <p className="muted">
-          Unscheduled work stays here until you drag it onto the calendar ·
-          drop a placed block here to return it
+          Same Backlog queue as Planner → Backlog. Unscheduled work stays here
+          until you drag it onto the calendar · drop a placed block here to
+          return it
         </p>
       </div>
 

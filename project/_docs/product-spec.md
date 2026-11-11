@@ -40,7 +40,7 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 | US-C3 | Daily minimum rules (Areas config; weekly retrospective allocated vs min — soft metric) |
 | US-D1 | Done / Partly / Not done after block end |
 | US-D2 | Replan unfinished → backlog (+ remaining, replan flag) |
-| US-E1 | Focus panel by life area |
+| US-E1 | Standing focus by life area (under Planner Backlog) |
 | US-E2 | Weekly goals + carry-over |
 | US-E3 | 3-week view (no clock times required) |
 | US-F1 | 3-month mini calendar markers |

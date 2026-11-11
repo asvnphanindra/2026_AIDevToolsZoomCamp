@@ -39,7 +39,6 @@ import {
   slotBandLevel,
   type GridItem,
 } from "@/lib/day-grid";
-import type { FocusItem } from "@/lib/focus";
 import { dayTypeForOffset } from "@/lib/schedule";
 import {
   layerStateForMode,
@@ -64,8 +63,6 @@ type Props = {
   onTasksChange: (tasks: BacklogTask[]) => void;
   placedBlocks: PlacedBlock[];
   onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
-  /** Standing focus items painted on today→+2d when Focus layer is on. */
-  focusItems?: FocusItem[];
   /** Combined or a single exclusive layer (controlled by AuthShell). */
   layerMode: SchedulerLayerMode;
   onLayerModeChange: (mode: SchedulerLayerMode) => void;
@@ -123,7 +120,6 @@ export function DayGrid({
   onTasksChange,
   placedBlocks,
   onPlacedBlocksChange,
-  focusItems = [],
   layerMode,
   onLayerModeChange,
 }: Props) {
@@ -194,26 +190,6 @@ export function DayGrid({
     }
     return ids;
   }, [visibleItems]);
-
-  const focusDayKeys = useMemo(() => {
-    if (!layers.focus) return new Set<string>();
-    const keys = new Set<string>();
-    for (let offset = 0; offset <= 2; offset++) {
-      const key = model.dayKeys[model.todayIndex + offset];
-      if (key) keys.add(key);
-    }
-    return keys;
-  }, [layers.focus, model.dayKeys, model.todayIndex]);
-
-  const orderedFocus = useMemo(() => {
-    const areaOrder = new Map(areas.map((a) => [a.id, a.order]));
-    return [...focusItems].sort((a, b) => {
-      const ao = areaOrder.get(a.areaId) ?? 0;
-      const bo = areaOrder.get(b.areaId) ?? 0;
-      if (ao !== bo) return ao - bo;
-      return a.order - b.order;
-    });
-  }, [focusItems, areas]);
 
   function selectLayerMode(mode: SchedulerLayerMode) {
     onLayerModeChange(mode);
@@ -857,34 +833,6 @@ export function DayGrid({
               </div>
               {dt && dt.type !== "normal" ? (
                 <span className="day-type-tag">{dt.label}</span>
-              ) : null}
-              {focusDayKeys.has(key) && orderedFocus.length > 0 ? (
-                <ul className="day-focus-strip" aria-label="Focus for this day">
-                  {orderedFocus.map((item) => {
-                    const area = areas.find((a) => a.id === item.areaId);
-                    return (
-                      <li
-                        key={item.id}
-                        className="day-focus-chip"
-                        style={{
-                          borderColor: area?.colour ?? "#0F6B4C",
-                        }}
-                        title={
-                          item.subtitle
-                            ? `${item.title} — ${item.subtitle}`
-                            : item.title
-                        }
-                      >
-                        <span
-                          className="swatch"
-                          style={{ background: area?.colour ?? "#0F6B4C" }}
-                          aria-hidden
-                        />
-                        {item.title}
-                      </li>
-                    );
-                  })}
-                </ul>
               ) : null}
             </div>
           );
