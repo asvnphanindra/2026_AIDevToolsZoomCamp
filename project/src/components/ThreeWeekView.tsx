@@ -15,6 +15,7 @@ type Props = {
   items: WeekHorizonItem[];
   onItemsChange: (items: WeekHorizonItem[]) => void;
   timezone?: string;
+  onBackToPlanner?: () => void;
 };
 
 /** Current + next two ISO weeks; day or sometime-this-week (US-E3). */
@@ -23,6 +24,7 @@ export function ThreeWeekView({
   items,
   onItemsChange,
   timezone = "Asia/Kolkata",
+  onBackToPlanner,
 }: Props) {
   const orderedAreas = [...areas].sort((a, b) => a.order - b.order);
   const columns = useMemo(
@@ -204,12 +206,23 @@ export function ThreeWeekView({
   }
 
   return (
-    <section className="three-week-view" aria-label="3-week view">
+    <section className="three-week-view" aria-label="3-week goals overview">
       <div className="day-grid-meta">
-        <h2>3-week view</h2>
+        {onBackToPlanner ? (
+          <p className="three-week-back">
+            <button
+              type="button"
+              className="secondary"
+              onClick={onBackToPlanner}
+            >
+              ← Planner
+            </button>
+          </p>
+        ) : null}
+        <h2>3-week goals overview</h2>
         <p className="muted">
-          Current week and the next two as columns. Assign work to a day or
-          sometime this week — no clock times required.
+          Planning lens for how goals sit across ~3 weeks. Assign work to a
+          day or sometime this week — no clock times required.
         </p>
       </div>
 

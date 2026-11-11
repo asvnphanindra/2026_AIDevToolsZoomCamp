@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import { AreasConfig } from "@/components/AreasConfig";
 import { DayGrid } from "@/components/DayGrid";
 import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
+import { PlannerAreas } from "@/components/PlannerAreas";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { ThreeWeekView } from "@/components/ThreeWeekView";
 import { WeeklyGoals } from "@/components/WeeklyGoals";
@@ -33,9 +33,9 @@ import {
   type WeekHorizonItem,
 } from "@/lib/week-horizon";
 
-type AppView = "planner" | "areas" | "focus" | "goals" | "weeks";
+type AppView = "scheduler" | "planner" | "focus" | "goals" | "weeks";
 
-/** Auth shell + planner / areas / focus / weekly goals / 3-week view. */
+/** Auth shell + scheduler / planner / focus / weekly goals / 3-week overview. */
 export function AuthShell() {
   const {
     user,
@@ -49,7 +49,7 @@ export function AuthShell() {
     signOut,
   } = useAuth();
 
-  const [appView, setAppView] = useState<AppView>("planner");
+  const [appView, setAppView] = useState<AppView>("scheduler");
   const [tasks, setTasks] = useState<BacklogTask[]>([]);
   const [blocks, setBlocks] = useState<PlacedBlock[]>(() =>
     typeof localStorage === "undefined" ? [] : readPlacedBlocks(),
@@ -148,6 +148,8 @@ export function AuthShell() {
     );
   }
 
+  const plannerNavActive = appView === "planner" || appView === "weeks";
+
   return (
     <SecondClockProvider>
       <main className="shell shell-wide">
@@ -163,17 +165,19 @@ export function AuthShell() {
             <nav className="app-nav" aria-label="App views">
               <button
                 type="button"
-                className={appView === "planner" ? "nav-active" : "secondary"}
-                onClick={() => setAppView("planner")}
+                className={
+                  appView === "scheduler" ? "nav-active" : "secondary"
+                }
+                onClick={() => setAppView("scheduler")}
               >
-                Planner
+                Scheduler
               </button>
               <button
                 type="button"
-                className={appView === "areas" ? "nav-active" : "secondary"}
-                onClick={() => setAppView("areas")}
+                className={plannerNavActive ? "nav-active" : "secondary"}
+                onClick={() => setAppView("planner")}
               >
-                Areas
+                Planner
               </button>
               <button
                 type="button"
@@ -188,13 +192,6 @@ export function AuthShell() {
                 onClick={() => setAppView("goals")}
               >
                 Goals
-              </button>
-              <button
-                type="button"
-                className={appView === "weeks" ? "nav-active" : "secondary"}
-                onClick={() => setAppView("weeks")}
-              >
-                3 weeks
               </button>
             </nav>
             <div className="header-session">
@@ -211,12 +208,13 @@ export function AuthShell() {
           </div>
         </header>
 
-        {appView === "areas" ? (
-          <AreasConfig
+        {appView === "planner" ? (
+          <PlannerAreas
             areas={areas}
             onAreasChange={onAreasChange}
             rules={rules}
             onRulesChange={onRulesChange}
+            onOpenWeekOverview={() => setAppView("weeks")}
           />
         ) : appView === "focus" ? (
           <FocusPanel
@@ -235,10 +233,11 @@ export function AuthShell() {
             areas={areas}
             items={weekHorizon}
             onItemsChange={onWeekHorizonChange}
+            onBackToPlanner={() => setAppView("planner")}
           />
         ) : (
-          <div className="planner-layout">
-            <div className="planner-main">
+          <div className="scheduler-layout">
+            <div className="scheduler-main">
               <DayGrid
                 isDemo={isDemo}
                 areas={areas}
@@ -250,16 +249,16 @@ export function AuthShell() {
                 onPlacedBlocksChange={onBlocksChange}
               />
             </div>
-          <aside className="planner-side">
-            <TaskBacklog
-              isDemo={isDemo}
-              areas={areas}
-              tasks={tasks}
-              onTasksChange={onTasksChange}
-              placedBlocks={blocks}
-              onPlacedBlocksChange={onBlocksChange}
-            />
-          </aside>
+            <aside className="scheduler-side">
+              <TaskBacklog
+                isDemo={isDemo}
+                areas={areas}
+                tasks={tasks}
+                onTasksChange={onTasksChange}
+                placedBlocks={blocks}
+                onPlacedBlocksChange={onBlocksChange}
+              />
+            </aside>
           </div>
         )}
 

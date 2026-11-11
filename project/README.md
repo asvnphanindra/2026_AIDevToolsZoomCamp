@@ -16,10 +16,10 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 
 - Sign-in + demo mode (US-A1, A2)
 - 5-day grid (left) + area-column backlog (right); availability/energy chunks, seeded schedule
-- Areas config for life areas + daily mins (US-C3); right-click placed cards to edit / unschedule / check-in
+- **Scheduler** (grid + backlog) and **Planner** (area cards + config icon for daily mins, US-C3); right-click placed cards to edit / unschedule / check-in
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
-- Focus panel, weekly goals, 3-week view (US-E1–E3)
+- Focus panel, weekly goals; 3-week goals overview via Planner (US-E1–E3)
 - 3-month calendar + recurring series (US-F1, F2)
 
 ## Expected behavior
@@ -28,10 +28,10 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
-5. Areas view: edit life areas + daily mins. Planner: shortfall badge → suggest slot (confirm only). Right-click placed cards to edit / unschedule.
+5. **Planner** nav: short area cards in one row; gear opens daily-min config. Scheduler shows shortfall badges and can suggest a slot (confirm only). Right-click placed cards to edit / unschedule.
 6. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
 7. Focus view: one column per life area with standing focus items (add/edit/remove).
-8. Weekly goals with one-click carry-over; **3 weeks** nav for current + next two ISO weeks (day or sometime-this-week).
+8. Weekly goals with one-click carry-over; **Planner → 3-week goals overview** for current + next two ISO weeks (day or sometime-this-week).
 
 ## Non-goals (MVP)
 
@@ -151,10 +151,10 @@ Placeholder project id: `work-planner-demo` (`.firebaserc`). Keep personal seeds
 
 ### Verify US-E3 (Issue #37)
 
-1. `npm start` → **Try demo** → **3 weeks** nav.
+1. `npm start` → **Try demo** → **Planner** → **3-week goals overview**.
 2. Three columns: current ISO week + next two; seeded items on day and “sometime this week”.
 3. Add a task with **Sometime this week** or **Specific day**; Done / Edit / Delete; → Week / → Day… moves placement.
-4. Reload persists (`work-planner.week-horizon`). Planner has no day-type dropdown / one-off menu.
+4. Reload persists (`work-planner.week-horizon`). Scheduler has no day-type dropdown / one-off menu.
 
 ## Links
 

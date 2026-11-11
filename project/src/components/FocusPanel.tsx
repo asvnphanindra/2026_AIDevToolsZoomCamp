@@ -133,7 +133,7 @@ export function FocusPanel({ areas, items, onItemsChange }: Props) {
       </form>
 
       {orderedAreas.length === 0 ? (
-        <p className="muted">Create a life area in Areas first.</p>
+        <p className="muted">Create a life area in Planner first.</p>
       ) : (
         <div className="focus-columns">
           {orderedAreas.map((area) => {

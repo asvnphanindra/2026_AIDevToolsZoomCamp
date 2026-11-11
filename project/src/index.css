@@ -53,18 +53,18 @@ body {
   padding-inline: clamp(1rem, 2vw, 1.75rem);
 }
 
-.planner-layout {
+.scheduler-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.9fr);
   gap: var(--space-5);
   align-items: start;
 }
 
-.planner-main {
+.scheduler-main {
   min-width: 0;
 }
 
-.planner-side {
+.scheduler-side {
   position: sticky;
   top: var(--space-3);
   max-height: calc(100vh - 1.5rem);
@@ -72,23 +72,23 @@ body {
   padding-bottom: var(--space-2);
 }
 
-.planner-side .task-backlog {
+.scheduler-side .task-backlog {
   margin-bottom: 0;
 }
 
 @media (max-width: 960px) {
-  .planner-layout {
+  .scheduler-layout {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
 
-  .planner-side {
+  .scheduler-side {
     position: static;
     max-height: none;
     order: 2;
   }
 
-  .planner-main {
+  .scheduler-main {
     order: 1;
   }
 }
@@ -508,12 +508,161 @@ button.nav-active {
   }
 }
 
-.areas-config {
+.planner-areas .day-grid-meta {
+  margin-bottom: var(--space-4);
+}
+
+.planner-area-row {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.planner-area-row > li {
+  flex: 0 0 auto;
+}
+
+.planner-area-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 11.5rem;
+  max-width: 16rem;
+  padding: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--area-colour, var(--accent));
+}
+
+.planner-area-card.is-open {
+  border-color: var(--accent);
+  box-shadow: var(--focus);
+}
+
+.planner-area-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: 1px solid rgba(28, 36, 32, 0.15);
+}
+
+.planner-area-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.planner-area-name {
+  font-size: 0.95rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-area-meta {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.planner-area-gear {
+  width: 2.1rem;
+  min-height: 2.1rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.planner-area-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 100%;
+  padding: var(--space-3);
+  background: transparent;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.planner-area-add input[type="text"],
+.planner-area-add input:not([type]) {
+  width: 8.5rem;
+  min-height: 2.1rem;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+.planner-area-add input[type="color"] {
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.planner-area-add button {
+  min-height: 2.1rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.planner-area-config {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  max-width: 40rem;
+}
+
+.goals-gantt-placeholder {
+  margin-top: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 250, 242, 0.55);
   max-width: 48rem;
 }
 
-.areas-config .day-grid-meta {
-  margin-bottom: var(--space-4);
+.goals-gantt-placeholder h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+
+.goals-gantt-placeholder p {
+  margin: 0 0 var(--space-3);
+}
+
+.three-week-back {
+  margin: 0 0 var(--space-2);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .focus-panel .day-grid-meta,
