@@ -49,9 +49,12 @@ project/
 ├── README.md          ← you are here
 ├── AGENTS.md          → _docs/AGENTS.md
 ├── package.json       ← Vite app + emulator scripts
-├── firebase.json      ← Auth + Firestore emulators (no Hosting deploy yet)
+├── compose.yaml       ← one-command local stack (app + emulators)
+├── Dockerfile
+├── firebase.json      ← Auth + Firestore emulators (host npm start)
+├── firebase.docker.json ← same emulators bound for Compose
 ├── firestore.rules    ← owner + demo stubs
-├── src/               ← React UI shell (US-A1/A2 placeholders)
+├── src/               ← React UI
 └── _docs/
     ├── FUNCTIONAL_SPEC_grok_bot.md
     ├── product-spec.md
@@ -83,8 +86,30 @@ project/
 | US-F2 Recurring series (Issue #39) | ☑ |
 | Unit + integration tests (`npm test`) | ☑ |
 | CI tests on PR (`.github/workflows/work-planner-ci.yml`) | ☑ |
-| Remaining Docker / obs / on-call | ☐ next |
+| Docker Compose local stack | ☑ `docker compose up` |
+| Remaining obs / on-call | ☐ next |
 | Hosting URL | ☐ after submission |
+
+## Docker (one command)
+
+**Prerequisite:** Docker Desktop (or Engine + Compose v2).
+
+```powershell
+cd project
+docker compose up --build
+```
+
+That starts the Vite app plus Auth + Firestore emulators (JDK inside the image). Open:
+
+| Service | URL |
+|---------|-----|
+| App | http://127.0.0.1:5173 |
+| Emulator UI | http://127.0.0.1:4000 |
+| Auth emulator | http://127.0.0.1:9099 |
+| Firestore emulator | http://127.0.0.1:8080 |
+| Firestore UI websocket | `127.0.0.1:9150` (Compose publishes it) |
+
+Stop with Ctrl+C (or `docker compose down` in another terminal). First build downloads Node deps + emulator JARs and can take a few minutes.
 
 ## Tests (one command)
 

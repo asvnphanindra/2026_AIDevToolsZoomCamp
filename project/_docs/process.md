@@ -26,6 +26,7 @@ npm start            # Auth + Firestore emulators + Vite
 npm test             # unit + integration (JDK 21+ for Firestore)
 npm run test:unit
 npm run emulators
+docker compose up --build   # reviewer one-command: app + Auth/Firestore (JDK in image)
 ```
 
 CI on PR: repo workflow `.github/workflows/work-planner-ci.yml` (install + `npm test` in `project/`).
