@@ -696,15 +696,20 @@ button.nav-active {
 
 .gantt-axis {
   position: relative;
-  min-height: 2.6rem;
+  min-height: 2.75rem;
   margin-left: 9.5rem;
   border-bottom: 1px solid var(--line);
 }
 
-.gantt-axis-quarters,
-.gantt-axis-months {
+.gantt-axis-months,
+.gantt-axis-weeks {
   position: relative;
   height: 1.2rem;
+}
+
+.gantt-axis-weeks {
+  height: 1.35rem;
+  overflow: hidden;
 }
 
 .gantt-tick {
@@ -716,9 +721,15 @@ button.nav-active {
   white-space: nowrap;
 }
 
-.gantt-tick-quarter {
+.gantt-tick-month {
   font-weight: 600;
   color: var(--ink);
+}
+
+.gantt-tick-week {
+  font-size: 0.62rem;
+  letter-spacing: -0.02em;
+  color: var(--muted, #5c6660);
 }
 
 .gantt-band {
@@ -758,6 +769,14 @@ button.nav-active {
   bottom: 0;
   width: 1px;
   background: rgba(28, 36, 32, 0.08);
+}
+
+.gantt-gridline-week {
+  background: rgba(28, 36, 32, 0.06);
+}
+
+.gantt-gridline-month {
+  background: rgba(28, 36, 32, 0.16);
 }
 
 .gantt-empty {

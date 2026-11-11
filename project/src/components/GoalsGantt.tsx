@@ -8,7 +8,7 @@ import {
   goalsForArea,
   monthTicks,
   nextAreaGoalId,
-  quarterTicks,
+  weekTicks,
   type AreaGoal,
   type GoalHorizonKind,
 } from "@/lib/area-goals";
@@ -57,9 +57,9 @@ export function GoalsGantt({
     () => monthTicks(timeline.startDate, timeline.totalDays),
     [timeline],
   );
-  const quarters = useMemo(
-    () => quarterTicks(timeline.startDate, timeline.totalDays),
-    [timeline],
+  const weeks = useMemo(
+    () => weekTicks(timeline.startDate, timeline.totalDays, timezone),
+    [timeline, timezone],
   );
 
   useEffect(() => {
@@ -272,23 +272,24 @@ export function GoalsGantt({
             }}
           >
             <div className="gantt-axis" aria-hidden="true">
-              <div className="gantt-axis-quarters">
-                {quarters.map((t) => (
-                  <span
-                    key={`q-${t.date}`}
-                    className="gantt-tick gantt-tick-quarter"
-                    style={{ left: `${t.left}%` }}
-                  >
-                    {t.label}
-                  </span>
-                ))}
-              </div>
               <div className="gantt-axis-months">
                 {months.map((t) => (
                   <span
                     key={`m-${t.date}`}
                     className="gantt-tick gantt-tick-month"
                     style={{ left: `${t.left}%` }}
+                  >
+                    {t.label}
+                  </span>
+                ))}
+              </div>
+              <div className="gantt-axis-weeks">
+                {weeks.map((t) => (
+                  <span
+                    key={`w-${t.period}`}
+                    className="gantt-tick gantt-tick-week"
+                    style={{ left: `${t.left}%` }}
+                    title={t.period}
                   >
                     {t.label}
                   </span>
@@ -306,10 +307,17 @@ export function GoalsGantt({
                   </div>
                   <div className="gantt-track">
                     <div className="gantt-gridlines" aria-hidden="true">
+                      {weeks.map((t) => (
+                        <span
+                          key={`gl-w-${band}-${t.period}`}
+                          className="gantt-gridline gantt-gridline-week"
+                          style={{ left: `${t.left}%` }}
+                        />
+                      ))}
                       {months.map((t) => (
                         <span
-                          key={`gl-${band}-${t.date}`}
-                          className="gantt-gridline"
+                          key={`gl-m-${band}-${t.date}`}
+                          className="gantt-gridline gantt-gridline-month"
                           style={{ left: `${t.left}%` }}
                         />
                       ))}

@@ -209,12 +209,14 @@ export function shortGoalClashAreas(
   return areaIds.length >= 2 ? areaIds : [];
 }
 
+export type GanttAxisTick = { date: string; label: string; left: number };
+
 /** Month tick labels across the Gantt window. */
 export function monthTicks(
   windowStart: string,
   totalDays: number,
-): { date: string; label: string; left: number }[] {
-  const ticks: { date: string; label: string; left: number }[] = [];
+): GanttAxisTick[] {
+  const ticks: GanttAxisTick[] = [];
   for (let i = 0; i < totalDays; i++) {
     const date = addDaysToDateKey(windowStart, i);
     const day = Number(date.slice(8, 10));
@@ -233,8 +235,8 @@ export function monthTicks(
 export function quarterTicks(
   windowStart: string,
   totalDays: number,
-): { date: string; label: string; left: number }[] {
-  const ticks: { date: string; label: string; left: number }[] = [];
+): GanttAxisTick[] {
+  const ticks: GanttAxisTick[] = [];
   for (let i = 0; i < totalDays; i++) {
     const date = addDaysToDateKey(windowStart, i);
     const [, m, d] = date.split("-").map(Number);
@@ -245,6 +247,36 @@ export function quarterTicks(
     ticks.push({
       date,
       label: `Q${q} ’${y.slice(2)}`,
+      left: (i / totalDays) * 100,
+    });
+  }
+  return ticks;
+}
+
+/**
+ * ISO week tick labels across the Gantt window (one per `YYYY-Www`).
+ * Labels are week numbers (`W12`); full period stays on `period` for tooltips.
+ */
+export function weekTicks(
+  windowStart: string,
+  totalDays: number,
+  timeZone = DEFAULT_TZ,
+): (GanttAxisTick & { period: string })[] {
+  const ticks: (GanttAxisTick & { period: string })[] = [];
+  let lastPeriod = "";
+  for (let i = 0; i < totalDays; i++) {
+    const date = addDaysToDateKey(windowStart, i);
+    const period = isoWeekPeriod(
+      new Date(`${date}T12:00:00Z`),
+      timeZone,
+    );
+    if (period === lastPeriod) continue;
+    lastPeriod = period;
+    const weekNum = period.slice(period.lastIndexOf("W") + 1);
+    ticks.push({
+      date,
+      period,
+      label: `W${weekNum}`,
       left: (i / totalDays) * 100,
     });
   }
