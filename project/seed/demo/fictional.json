@@ -387,5 +387,40 @@
       "minMinutesPerDay": 45,
       "label": "Study minimum"
     }
+  ],
+  "focusItems": [
+    {
+      "id": "focus-work-1",
+      "areaId": "work",
+      "title": "Ship sprint demo",
+      "subtitle": "Keep the review build green",
+      "order": 1
+    },
+    {
+      "id": "focus-work-2",
+      "areaId": "work",
+      "title": "Unblock design reviews",
+      "order": 2
+    },
+    {
+      "id": "focus-study-1",
+      "areaId": "study",
+      "title": "Finish module notes",
+      "subtitle": "One chapter a day",
+      "order": 1
+    },
+    {
+      "id": "focus-family-1",
+      "areaId": "family",
+      "title": "Weekend outing plan",
+      "order": 1
+    },
+    {
+      "id": "focus-passion-1",
+      "areaId": "passion",
+      "title": "Practice set piece",
+      "subtitle": "30 minutes when energy is high",
+      "order": 1
+    }
   ]
 }

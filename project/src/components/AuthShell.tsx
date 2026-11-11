@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { AreasConfig } from "@/components/AreasConfig";
 import { DayGrid } from "@/components/DayGrid";
+import { FocusPanel } from "@/components/FocusPanel";
 import { LiveClock } from "@/components/LiveClock";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,12 +13,17 @@ import {
   writePlacedBlocks,
   type PlacedBlock,
 } from "@/lib/blocks";
+import {
+  loadFocusItems,
+  writeFocusItems,
+  type FocusItem,
+} from "@/lib/focus";
 import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
 import { writeBacklog, type BacklogTask } from "@/lib/tasks";
 
-type AppView = "planner" | "areas";
+type AppView = "planner" | "areas" | "focus";
 
-/** Auth shell + planner / areas config. */
+/** Auth shell + planner / areas / focus. */
 export function AuthShell() {
   const {
     user,
@@ -44,6 +50,9 @@ export function AuthShell() {
   const [rules, setRules] = useState<DailyRule[]>(() =>
     typeof localStorage === "undefined" ? [] : loadRules(),
   );
+  const [focusItems, setFocusItems] = useState<FocusItem[]>(() =>
+    typeof localStorage === "undefined" ? [] : loadFocusItems(),
+  );
 
   const onTasksChange = useCallback((next: BacklogTask[]) => {
     setTasks(next);
@@ -63,6 +72,11 @@ export function AuthShell() {
   const onRulesChange = useCallback((next: DailyRule[]) => {
     setRules(next);
     writeRules(next);
+  }, []);
+
+  const onFocusItemsChange = useCallback((next: FocusItem[]) => {
+    setFocusItems(next);
+    writeFocusItems(next);
   }, []);
 
   if (!ready) {
@@ -133,6 +147,13 @@ export function AuthShell() {
               >
                 Areas
               </button>
+              <button
+                type="button"
+                className={appView === "focus" ? "nav-active" : "secondary"}
+                onClick={() => setAppView("focus")}
+              >
+                Focus
+              </button>
             </nav>
             <div className="header-session">
               <button
@@ -154,6 +175,12 @@ export function AuthShell() {
             onAreasChange={onAreasChange}
             rules={rules}
             onRulesChange={onRulesChange}
+          />
+        ) : appView === "focus" ? (
+          <FocusPanel
+            areas={areas}
+            items={focusItems}
+            onItemsChange={onFocusItemsChange}
           />
         ) : (
           <div className="planner-layout">

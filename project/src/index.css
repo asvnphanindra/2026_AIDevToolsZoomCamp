@@ -515,6 +515,83 @@ button.nav-active {
   margin-bottom: var(--space-4);
 }
 
+.focus-panel .day-grid-meta {
+  margin-bottom: var(--space-4);
+}
+
+.focus-form {
+  margin-bottom: var(--space-4);
+}
+
+.focus-title-field,
+.focus-subtitle-field {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.focus-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.focus-column {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  min-height: 8rem;
+}
+
+.focus-column-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: var(--space-3);
+}
+
+.focus-column-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.focus-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.focus-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: flex-start;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fff;
+}
+
+.focus-item .task-main {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.focus-item .task-main strong,
+.focus-item .task-main .muted {
+  display: block;
+}
+
+.focus-item button {
+  min-height: 2rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
 .area-config-list {
   list-style: none;
   margin: 0;

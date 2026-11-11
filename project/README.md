@@ -30,7 +30,8 @@ Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/is
 4. After a block ends → Done / Partly / Not done; unfinished returns to backlog.
 5. Areas view: edit life areas + daily mins. Planner: shortfall badge → suggest slot (confirm only). Right-click cards for one-offs / unschedule.
 6. After a block ends → Done / Partly / Not done check-in (partly asks remaining minutes; never auto-done).
-6. Weekly goals with one-click carry-over; 3-week and calendar views for what’s ahead.
+7. Focus view: one column per life area with standing focus items (add/edit/remove).
+8. Weekly goals with one-click carry-over; 3-week and calendar views for what’s ahead.
 
 ## Non-goals (MVP)
 

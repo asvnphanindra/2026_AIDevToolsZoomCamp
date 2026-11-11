@@ -115,6 +115,15 @@ export type SeedRule = {
   label?: string;
 };
 
+/** Standing focus item (US-E1). */
+export type SeedFocusItem = {
+  id: string;
+  areaId: string;
+  title: string;
+  subtitle?: string;
+  order: number;
+};
+
 export type FictionalSeed = {
   profile: SeedProfile;
   areas: SeedArea[];
@@ -127,6 +136,7 @@ export type FictionalSeed = {
   dayTypes: SeedDayType[];
   blocks: SeedBlock[];
   rules: SeedRule[];
+  focusItems?: SeedFocusItem[];
 };
 
 /** Fictional demo payload only — never commit personal seeds. */
