@@ -20,7 +20,7 @@ type Props = {
 
 const PRIORITIES = ["low", "med", "high"] as const;
 
-/** US-C1 backlog + accept placed blocks from grid. */
+/** Scheduler “Tasks to Focus” panel (US-C1) + accept placed blocks from grid. */
 export function TaskBacklog({
   isDemo,
   areas,
@@ -164,13 +164,13 @@ export function TaskBacklog({
   return (
     <section
       className={`task-backlog${dropReady ? " is-drop-ready" : ""}`}
-      aria-label="Task backlog"
+      aria-label="Tasks to Focus"
       onDragOver={onBacklogDragOver}
       onDragLeave={() => setDropReady(false)}
       onDrop={onBacklogDrop}
     >
       <div className="day-grid-meta">
-        <h2>Backlog</h2>
+        <h2>Tasks to Focus</h2>
         <p className="muted">
           Capture one-off tasks and drag onto the grid · drop a placed block
           here to return it
@@ -259,7 +259,7 @@ export function TaskBacklog({
 
       {openTasks.length === 0 ? (
         <p className="muted">
-          No open backlog tasks — double-click the grid to add one.
+          No open tasks to focus — double-click the grid to add one.
         </p>
       ) : (
         <div className="backlog-by-area">

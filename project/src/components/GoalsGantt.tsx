@@ -19,10 +19,13 @@ type Props = {
   onGoalsChange: (goals: AreaGoal[]) => void;
   timezone?: string;
   onOpenWeekOverview?: () => void;
-  /** Create a Scheduler backlog card for this ISO week from a Gantt goal. */
+  /** Create a weekly Planner Backlog card from a Gantt goal. */
   onAddToWeekBacklog?: (goal: AreaGoal) => void;
   /** Goal ids already on this week’s open backlog (disable re-add). */
   weekBacklogGoalIds?: ReadonlySet<string>;
+  /** Controlled area filter (shared with Planner Backlog below). */
+  areaId?: string;
+  onAreaIdChange?: (areaId: string) => void;
 };
 
 const HORIZONS: GoalHorizonKind[] = ["short", "mid", "long"];
@@ -36,13 +39,19 @@ export function GoalsGantt({
   onOpenWeekOverview,
   onAddToWeekBacklog,
   weekBacklogGoalIds,
+  areaId: controlledAreaId,
+  onAreaIdChange,
 }: Props) {
   const orderedAreas = useMemo(
     () => [...areas].sort((a, b) => a.order - b.order),
     [areas],
   );
 
-  const [areaId, setAreaId] = useState(orderedAreas[0]?.id ?? "");
+  const [uncontrolledAreaId, setUncontrolledAreaId] = useState(
+    orderedAreas[0]?.id ?? "",
+  );
+  const areaId = controlledAreaId ?? uncontrolledAreaId;
+  const setAreaId = onAreaIdChange ?? setUncontrolledAreaId;
   const [title, setTitle] = useState("");
   const [horizon, setHorizon] = useState<GoalHorizonKind>("short");
   const [startDate, setStartDate] = useState("");
@@ -66,7 +75,7 @@ export function GoalsGantt({
     if (!orderedAreas.some((a) => a.id === areaId)) {
       setAreaId(orderedAreas[0]?.id ?? "");
     }
-  }, [orderedAreas, areaId]);
+  }, [orderedAreas, areaId, setAreaId]);
 
   useEffect(() => {
     if (editingId) return;
@@ -165,8 +174,8 @@ export function GoalsGantt({
           <p className="muted">
             Per-area Gantt on a shared timeline — short (~3 weeks), mid
             (~3 months), long (~3 quarters). Pick an area, then{" "}
-            <strong>→ This week</strong> to put a goal on the Scheduler
-            backlog.
+            <strong>→ This week</strong> to put a goal on the weekly Backlog
+            below.
           </p>
         </div>
         <div className="goals-gantt-head-actions">
@@ -385,8 +394,8 @@ export function GoalsGantt({
                                     )}
                                     title={
                                       weekBacklogGoalIds?.has(goal.id)
-                                        ? "Already on this week’s Scheduler backlog"
-                                        : "Add to this week’s Scheduler backlog"
+                                        ? "Already on this week’s Backlog"
+                                        : "Add to this week’s Backlog"
                                     }
                                     onClick={() =>
                                       onAddToWeekBacklog(goal)

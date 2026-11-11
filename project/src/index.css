@@ -60,6 +60,10 @@ body {
   align-items: start;
 }
 
+.scheduler-layout-combined {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .scheduler-main {
   min-width: 0;
 }
@@ -717,6 +721,27 @@ button.nav-active {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--panel);
+}
+
+.planner-week-backlog {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+
+.planner-week-backlog .day-grid-meta {
+  margin-bottom: var(--space-3);
+}
+
+.planner-week-backlog h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+
+.planner-week-backlog-list {
+  margin: 0;
 }
 
 .goals-gantt-head {

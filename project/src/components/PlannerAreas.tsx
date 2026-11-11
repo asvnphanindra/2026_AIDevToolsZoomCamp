@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { GoalsGantt } from "@/components/GoalsGantt";
+import { PlannerWeekBacklog } from "@/components/PlannerWeekBacklog";
 import type { SeedArea } from "@/data/fictional-seed";
 import type { AreaGoal } from "@/lib/area-goals";
 import {
@@ -7,6 +8,7 @@ import {
   nextAreaId,
 } from "@/lib/areas";
 import type { DailyRule } from "@/lib/rules";
+import type { BacklogTask } from "@/lib/tasks";
 
 type Props = {
   areas: SeedArea[];
@@ -18,6 +20,10 @@ type Props = {
   onOpenWeekOverview?: () => void;
   onAddGoalToWeekBacklog?: (goal: AreaGoal) => void;
   weekBacklogGoalIds?: ReadonlySet<string>;
+  weekPeriod: string;
+  tasks: BacklogTask[];
+  onTasksChange: (tasks: BacklogTask[]) => void;
+  onOpenSchedulerFocus?: () => void;
 };
 
 /** Planner surface: area cards in one row; gear opens config (US-C3). */
@@ -31,10 +37,27 @@ export function PlannerAreas({
   onOpenWeekOverview,
   onAddGoalToWeekBacklog,
   weekBacklogGoalIds,
+  weekPeriod,
+  tasks,
+  onTasksChange,
+  onOpenSchedulerFocus,
 }: Props) {
   const [name, setName] = useState("");
   const [colour, setColour] = useState(DEFAULT_AREA_COLOURS[0]!);
   const [configAreaId, setConfigAreaId] = useState<string | null>(null);
+  const orderedForGantt = useMemo(
+    () => [...areas].sort((a, b) => a.order - b.order),
+    [areas],
+  );
+  const [ganttAreaId, setGanttAreaId] = useState(
+    () => [...areas].sort((a, b) => a.order - b.order)[0]?.id ?? "",
+  );
+
+  useEffect(() => {
+    if (!orderedForGantt.some((a) => a.id === ganttAreaId)) {
+      setGanttAreaId(orderedForGantt[0]?.id ?? "");
+    }
+  }, [orderedForGantt, ganttAreaId]);
 
   function onAddArea(event: FormEvent) {
     event.preventDefault();
@@ -297,6 +320,16 @@ export function PlannerAreas({
         onOpenWeekOverview={onOpenWeekOverview}
         onAddToWeekBacklog={onAddGoalToWeekBacklog}
         weekBacklogGoalIds={weekBacklogGoalIds}
+        areaId={ganttAreaId}
+        onAreaIdChange={setGanttAreaId}
+      />
+
+      <PlannerWeekBacklog
+        area={orderedForGantt.find((a) => a.id === ganttAreaId)}
+        period={weekPeriod}
+        tasks={tasks}
+        onTasksChange={onTasksChange}
+        onOpenScheduler={onOpenSchedulerFocus}
       />
     </section>
   );

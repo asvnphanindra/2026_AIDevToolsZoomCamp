@@ -5,7 +5,6 @@ import { LiveClock } from "@/components/LiveClock";
 import { PlannerAreas } from "@/components/PlannerAreas";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import { ThreeWeekView } from "@/components/ThreeWeekView";
-import { WeeklyGoals } from "@/components/WeeklyGoals";
 import { useAuth } from "@/hooks/useAuth";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
 import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
@@ -25,13 +24,14 @@ import {
   writeAreaGoals,
   type AreaGoal,
 } from "@/lib/area-goals";
-import {
-  isoWeekPeriod,
-  loadGoals,
-  writeGoals,
-  type WeeklyGoal,
-} from "@/lib/goals";
+import { isoWeekPeriod } from "@/lib/goals";
 import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
+import {
+  loadSchedulerLayerMode,
+  showsTasksToFocus,
+  writeSchedulerLayerMode,
+  type SchedulerLayerMode,
+} from "@/lib/scheduler-layers";
 import {
   backlogTaskFromAreaGoal,
   loadBacklog,
@@ -45,9 +45,9 @@ import {
   type WeekHorizonItem,
 } from "@/lib/week-horizon";
 
-type AppView = "scheduler" | "planner" | "focus" | "goals" | "weeks";
+type AppView = "scheduler" | "planner" | "focus" | "weeks";
 
-/** Auth shell + scheduler / planner / focus / weekly goals / 3-week overview. */
+/** Auth shell + scheduler / planner / focus / 3-week overview. */
 export function AuthShell() {
   const {
     user,
@@ -77,14 +77,16 @@ export function AuthShell() {
   const [focusItems, setFocusItems] = useState<FocusItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadFocusItems(),
   );
-  const [goals, setGoals] = useState<WeeklyGoal[]>(() =>
-    typeof localStorage === "undefined" ? [] : loadGoals(),
-  );
   const [weekHorizon, setWeekHorizon] = useState<WeekHorizonItem[]>(() =>
     typeof localStorage === "undefined" ? [] : loadWeekHorizon(),
   );
   const [areaGoals, setAreaGoals] = useState<AreaGoal[]>(() =>
     typeof localStorage === "undefined" ? [] : loadAreaGoals(),
+  );
+  const [layerMode, setLayerMode] = useState<SchedulerLayerMode>(() =>
+    typeof localStorage === "undefined"
+      ? "combined"
+      : loadSchedulerLayerMode(),
   );
 
   const onTasksChange = useCallback((next: BacklogTask[]) => {
@@ -112,11 +114,6 @@ export function AuthShell() {
     writeFocusItems(next);
   }, []);
 
-  const onGoalsChange = useCallback((next: WeeklyGoal[]) => {
-    setGoals(next);
-    writeGoals(next);
-  }, []);
-
   const onWeekHorizonChange = useCallback((next: WeekHorizonItem[]) => {
     setWeekHorizon(next);
     writeWeekHorizon(next);
@@ -125,6 +122,11 @@ export function AuthShell() {
   const onAreaGoalsChange = useCallback((next: AreaGoal[]) => {
     setAreaGoals(next);
     writeAreaGoals(next);
+  }, []);
+
+  const onLayerModeChange = useCallback((mode: SchedulerLayerMode) => {
+    setLayerMode(mode);
+    if (typeof localStorage !== "undefined") writeSchedulerLayerMode(mode);
   }, []);
 
   const plannerTz = "Asia/Kolkata";
@@ -157,7 +159,6 @@ export function AuthShell() {
       );
       if (existing) {
         if (base !== tasks) onTasksChange(base);
-        setAppView("scheduler");
         return;
       }
       const card = backlogTaskFromAreaGoal(goal, {
@@ -167,10 +168,14 @@ export function AuthShell() {
         ? `task-goal-${Date.now().toString(36)}`
         : card.id;
       onTasksChange([{ ...card, id }, ...base]);
-      setAppView("scheduler");
     },
     [tasks, isDemo, onTasksChange, thisWeekPeriod],
   );
+
+  const openSchedulerFocus = useCallback(() => {
+    onLayerModeChange("focus");
+    setAppView("scheduler");
+  }, [onLayerModeChange]);
 
   useEffect(() => {
     if (!ready || !user || tasks.length > 0) return;
@@ -220,6 +225,7 @@ export function AuthShell() {
   }
 
   const plannerNavActive = appView === "planner" || appView === "weeks";
+  const showFocusSide = showsTasksToFocus(layerMode);
 
   return (
     <SecondClockProvider>
@@ -257,13 +263,6 @@ export function AuthShell() {
               >
                 Focus
               </button>
-              <button
-                type="button"
-                className={appView === "goals" ? "nav-active" : "secondary"}
-                onClick={() => setAppView("goals")}
-              >
-                Goals
-              </button>
             </nav>
             <div className="header-session">
               <button
@@ -290,21 +289,16 @@ export function AuthShell() {
             onOpenWeekOverview={() => setAppView("weeks")}
             onAddGoalToWeekBacklog={onAddGoalToWeekBacklog}
             weekBacklogGoalIds={weekBacklogGoalIds}
+            weekPeriod={thisWeekPeriod}
+            tasks={tasks}
+            onTasksChange={onTasksChange}
+            onOpenSchedulerFocus={openSchedulerFocus}
           />
         ) : appView === "focus" ? (
           <FocusPanel
             areas={areas}
             items={focusItems}
             onItemsChange={onFocusItemsChange}
-          />
-        ) : appView === "goals" ? (
-          <WeeklyGoals
-            areas={areas}
-            goals={goals}
-            onGoalsChange={onGoalsChange}
-            rules={rules}
-            placedBlocks={blocks}
-            timezone="Asia/Kolkata"
           />
         ) : appView === "weeks" ? (
           <ThreeWeekView
@@ -315,7 +309,13 @@ export function AuthShell() {
             onBackToPlanner={() => setAppView("planner")}
           />
         ) : (
-          <div className="scheduler-layout">
+          <div
+            className={
+              showFocusSide
+                ? "scheduler-layout"
+                : "scheduler-layout scheduler-layout-combined"
+            }
+          >
             <div className="scheduler-main">
               <DayGrid
                 isDemo={isDemo}
@@ -326,18 +326,22 @@ export function AuthShell() {
                 placedBlocks={blocks}
                 onPlacedBlocksChange={onBlocksChange}
                 focusItems={focusItems}
+                layerMode={layerMode}
+                onLayerModeChange={onLayerModeChange}
               />
             </div>
-            <aside className="scheduler-side">
-              <TaskBacklog
-                isDemo={isDemo}
-                areas={areas}
-                tasks={tasks}
-                onTasksChange={onTasksChange}
-                placedBlocks={blocks}
-                onPlacedBlocksChange={onBlocksChange}
-              />
-            </aside>
+            {showFocusSide ? (
+              <aside className="scheduler-side">
+                <TaskBacklog
+                  isDemo={isDemo}
+                  areas={areas}
+                  tasks={tasks}
+                  onTasksChange={onTasksChange}
+                  placedBlocks={blocks}
+                  onPlacedBlocksChange={onBlocksChange}
+                />
+              </aside>
+            ) : null}
           </div>
         )}
 

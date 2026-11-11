@@ -42,13 +42,11 @@ import {
 import type { FocusItem } from "@/lib/focus";
 import { dayTypeForOffset } from "@/lib/schedule";
 import {
-  DEFAULT_SCHEDULER_LAYERS,
-  loadSchedulerLayers,
-  SCHEDULER_LAYER_LABELS,
-  SCHEDULER_LAYER_ORDER,
-  writeSchedulerLayers,
+  layerStateForMode,
+  SCHEDULER_LAYER_MODE_LABELS,
+  SCHEDULER_LAYER_MODES,
   type SchedulerLayerId,
-  type SchedulerLayerState,
+  type SchedulerLayerMode,
 } from "@/lib/scheduler-layers";
 import {
   buildHalfHourSlots,
@@ -68,6 +66,9 @@ type Props = {
   onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
   /** Standing focus items painted on today→+2d when Focus layer is on. */
   focusItems?: FocusItem[];
+  /** Combined or a single exclusive layer (controlled by AuthShell). */
+  layerMode: SchedulerLayerMode;
+  onLayerModeChange: (mode: SchedulerLayerMode) => void;
 };
 
 type OverlapPrompt = {
@@ -123,6 +124,8 @@ export function DayGrid({
   placedBlocks,
   onPlacedBlocksChange,
   focusItems = [],
+  layerMode,
+  onLayerModeChange,
 }: Props) {
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
@@ -135,11 +138,7 @@ export function DayGrid({
   const [dropHl, setDropHl] = useState<{ dayKey: string; slot: string } | null>(
     null,
   );
-  const [layers, setLayers] = useState<SchedulerLayerState>(() =>
-    typeof localStorage === "undefined"
-      ? { ...DEFAULT_SCHEDULER_LAYERS }
-      : loadSchedulerLayers(),
-  );
+  const layers = layerStateForMode(layerMode);
 
   const model = useMemo(
     () =>
@@ -212,12 +211,8 @@ export function DayGrid({
     });
   }, [focusItems, areas]);
 
-  function toggleLayer(id: SchedulerLayerId) {
-    setLayers((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      if (typeof localStorage !== "undefined") writeSchedulerLayers(next);
-      return next;
-    });
+  function selectLayerMode(mode: SchedulerLayerMode) {
+    onLayerModeChange(mode);
   }
   const stripWeekday = weekdaySun0(model.todayKey, model.timezone);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -745,19 +740,20 @@ export function DayGrid({
       <div className="day-grid-meta">
         <h2>This week</h2>
         <p className="muted">
-          Double-click a day to add · drag from backlog · drag a placed block
-          back to backlog · right-click for more
+          Double-click a day to add · Combined = full grid · Focus adds Tasks
+          to Focus · drag a placed block back to that panel · right-click for
+          more
         </p>
         <fieldset className="scheduler-layers" aria-label="Calendar layers">
           <legend>Layers</legend>
-          {SCHEDULER_LAYER_ORDER.map((id) => (
-            <label key={id} className="scheduler-layer-toggle">
+          {SCHEDULER_LAYER_MODES.map((mode) => (
+            <label key={mode} className="scheduler-layer-toggle">
               <input
                 type="checkbox"
-                checked={layers[id]}
-                onChange={() => toggleLayer(id)}
+                checked={layerMode === mode}
+                onChange={() => selectLayerMode(mode)}
               />
-              <span>{SCHEDULER_LAYER_LABELS[id]}</span>
+              <span>{SCHEDULER_LAYER_MODE_LABELS[mode]}</span>
             </label>
           ))}
         </fieldset>

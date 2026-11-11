@@ -73,7 +73,7 @@ export function openBacklogForGoalWeek(
   );
 }
 
-/** Build a this-week Scheduler backlog card from a Planner Goals Gantt goal. */
+/** Build a this-week Planner Backlog card from a Goals Gantt goal. */
 export function backlogTaskFromAreaGoal(
   goal: AreaGoal,
   options?: {
