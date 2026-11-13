@@ -1,4 +1,4 @@
-import { fictionalSeed, type SeedArea, type SeedTask } from "@/data/fictional-seed";
+import { type SeedArea, type SeedTask } from "@/data/fictional-seed";
 import type { AreaGoal } from "@/lib/area-goals";
 import { isoWeekPeriod } from "@/lib/goals";
 import { DEFAULT_TZ } from "@/lib/time";
@@ -12,10 +12,6 @@ export type BacklogTask = SeedTask & {
 export const TASK_DRAG_MIME = "application/x-work-planner-task";
 
 const STORAGE_KEY = "work-planner.backlog-tasks";
-
-export function seedBacklogTasks(): BacklogTask[] {
-  return (fictionalSeed.tasks ?? []).map((t) => ({ ...t }));
-}
 
 export function readBacklog(): BacklogTask[] | null {
   try {
@@ -31,10 +27,11 @@ export function writeBacklog(tasks: BacklogTask[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
 
-export function loadBacklog(isDemo: boolean): BacklogTask[] {
+/** Personal path only (localStorage). Demo loads tasks from Firestore demo/{uid}. */
+export function loadBacklog(): BacklogTask[] {
   const stored = typeof localStorage !== "undefined" ? readBacklog() : null;
   if (stored && stored.length) return stored;
-  return isDemo ? seedBacklogTasks() : [];
+  return [];
 }
 
 export function areaName(areas: SeedArea[], areaId: string): string {

@@ -78,11 +78,20 @@ export function loadCheckIns(): Record<string, BlockCheckIn> {
   return readCheckIns();
 }
 
+/** Pure merge (no persistence). */
+export function withCheckIn(
+  map: Record<string, BlockCheckIn>,
+  entry: BlockCheckIn,
+): Record<string, BlockCheckIn> {
+  return { ...map, [entry.blockId]: entry };
+}
+
+/** Merge + write localStorage (personal / non-demo path). */
 export function upsertCheckIn(
   map: Record<string, BlockCheckIn>,
   entry: BlockCheckIn,
 ): Record<string, BlockCheckIn> {
-  const next = { ...map, [entry.blockId]: entry };
+  const next = withCheckIn(map, entry);
   writeCheckIns(next);
   return next;
 }

@@ -37,8 +37,9 @@ export function TaskBacklog({
 
   useEffect(() => {
     if (booted) return;
-    if (tasks.length === 0) {
-      const loaded = loadBacklog(isDemo);
+    // Demo: AuthShell loads/persists Firestore demo/{uid}; never localStorage.
+    if (!isDemo && tasks.length === 0) {
+      const loaded = loadBacklog();
       if (loaded.length) {
         onTasksChange(loaded);
         writeBacklog(loaded);
@@ -57,7 +58,7 @@ export function TaskBacklog({
 
   function persist(next: BacklogTask[]) {
     onTasksChange(next);
-    writeBacklog(next);
+    if (!isDemo) writeBacklog(next);
   }
 
   function startEdit(task: BacklogTask) {

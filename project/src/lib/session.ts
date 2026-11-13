@@ -3,7 +3,7 @@ export type AppUser = {
   email: string | null;
   displayName: string | null;
   isAnonymous: boolean;
-  /** firebase = Auth emulator/cloud; local-* = offline session */
+  /** firebase = Auth emulator/cloud; local = rare Google emulator-down fallback */
   backend: "firebase" | "local";
 };
 
@@ -43,15 +43,6 @@ export function writeLocalSession(user: Omit<AppUser, "backend">): AppUser {
 
 export function clearLocalSession(): void {
   localStorage.removeItem(LOCAL_KEY);
-}
-
-export function localDemoUser(): AppUser {
-  return writeLocalSession({
-    uid: "local-demo-user",
-    email: null,
-    displayName: "Alex Rivera (demo)",
-    isAnonymous: true,
-  });
 }
 
 export function localOwnerUser(): AppUser {

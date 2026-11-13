@@ -28,6 +28,7 @@ import {
   outcomeLabel,
   replanUnfinishedTask,
   upsertCheckIn,
+  withCheckIn,
   type BlockCheckIn,
   type CheckInOutcome,
 } from "@/lib/checkin";
@@ -66,6 +67,9 @@ type Props = {
   /** Combined or a single exclusive layer (controlled by AuthShell). */
   layerMode: SchedulerLayerMode;
   onLayerModeChange: (mode: SchedulerLayerMode) => void;
+  /** When set (demo Firestore), check-ins are controlled; no localStorage. */
+  checkIns?: Record<string, BlockCheckIn>;
+  onCheckInsChange?: (next: Record<string, BlockCheckIn>) => void;
 };
 
 type OverlapPrompt = {
@@ -122,12 +126,22 @@ export function DayGrid({
   onPlacedBlocksChange,
   layerMode,
   onLayerModeChange,
+  checkIns: checkInsProp,
+  onCheckInsChange,
 }: Props) {
+  const checkInsControlled = typeof onCheckInsChange === "function";
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
-  const [checkIns, setCheckIns] = useState<Record<string, BlockCheckIn>>(() =>
-    typeof localStorage === "undefined" ? {} : loadCheckIns(),
+  const [checkInsLocal, setCheckInsLocal] = useState<
+    Record<string, BlockCheckIn>
+  >(() =>
+    checkInsControlled || typeof localStorage === "undefined"
+      ? {}
+      : loadCheckIns(),
   );
+  const checkIns = checkInsControlled
+    ? (checkInsProp ?? {})
+    : checkInsLocal;
   const [checkInTarget, setCheckInTarget] = useState<GridItem | null>(null);
   const [snoozedIds, setSnoozedIds] = useState<Set<string>>(() => new Set());
   const [clock, setClock] = useState(() => Date.now());
@@ -260,7 +274,11 @@ export function DayGrid({
       remainingMin: outcome === "partly" ? remainingMin : undefined,
       checkedAt: new Date().toISOString(),
     };
-    setCheckIns((prev) => upsertCheckIn(prev, entry));
+    if (checkInsControlled) {
+      onCheckInsChange!(withCheckIn(checkIns, entry));
+    } else {
+      setCheckInsLocal((prev) => upsertCheckIn(prev, entry));
+    }
 
     // US-D2 — unfinished placed work returns to backlog flagged replan.
     if (
