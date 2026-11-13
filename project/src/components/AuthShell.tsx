@@ -246,14 +246,12 @@ export function AuthShell() {
         </div>
         {error ? <p className="error">{error}</p> : null}
         <p className="hint">
-          Local (<code>work-planner-demo</code>): <code>npm start</code> runs
-          Auth + Firestore + Emulator UI + Vite (JDK 21+).{" "}
-          <strong>Try demo</strong> signs in anonymously and writes fictional
-          seed under <code>{"users/{uid}/…"}</code> when emulators are up —
-          browse{" "}
+          Local: <code>npm start</code> runs Auth + Firestore + Emulator UI +
+          Vite (JDK 21+). <strong>Try demo</strong> signs in anonymously and
+          writes fictional seed under <code>{"demo/{uid}/…"}</code> (isolated
+          from personal <code>{"users/{uid}/…"}</code>) — browse{" "}
           <a href="http://127.0.0.1:4000/firestore">:4000 → Firestore</a>.
-          Without emulators, Try demo still works offline (local session +
-          localStorage; Emulator UI stays empty).
+          Auth + Firestore must be up; there is no offline local seed.
         </p>
       </main>
     );
@@ -271,10 +269,8 @@ export function AuthShell() {
             <p className="lede">
               {isDemo ? "Demo mode · " : ""}
               {view?.displayName || user.email || user.uid}
-              {isDemo && view?.source
-                ? view.source === "firestore"
-                  ? " · seed in Firestore emulator"
-                  : " · offline local seed (Firestore not written)"
+              {isDemo && view?.source === "firestore"
+                ? " · seed in Firestore (demo/{uid})"
                 : ""}
             </p>
           </div>

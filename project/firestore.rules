@@ -1,30 +1,36 @@
 rules_version = '2';
 
-// US-A1 / US-A2 — owner-only user data; fictional demo template is read-only.
+// Personal data: users/{uid}/… (non-anonymous only).
+// Try demo: demo/{uid}/… (anonymous only; isolated per Auth uid).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
+    function isAnonymous() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function isUid(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
-    // Profile + all planner data live under users/{uid}/…
+    // Google / non-anonymous owners — never anonymous Try-demo sessions.
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      match /{document=**} {
-        allow read, write: if isOwner(userId);
-      }
+      allow read, write: if isUid(userId) && !isAnonymous();
+    }
+    match /users/{userId}/{document=**} {
+      allow read, write: if isUid(userId) && !isAnonymous();
     }
 
-    // Shared fictional template metadata (no personal data).
-    match /demo/{document=**} {
-      allow read: if signedIn();
-      allow write: if signedIn()
-        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    // Anonymous Try-demo — only own demo/{uid} tree; no users/{…} access.
+    match /demo/{demoUserId} {
+      allow read, write: if isAnonymous() && isUid(demoUserId);
+    }
+    match /demo/{demoUserId}/{document=**} {
+      allow read, write: if isAnonymous() && isUid(demoUserId);
     }
   }
 }

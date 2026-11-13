@@ -21,6 +21,9 @@ export type PlannerView = {
   source: "firestore" | "local-seed";
 };
 
+/** Anonymous Try-demo root. Personal Google data stays under `users/{uid}/…`. */
+export const DEMO_COLLECTION = "demo" as const;
+
 const DEMO_SUBCOLLECTIONS = [
   "areas",
   "tasks",
@@ -61,7 +64,7 @@ export async function ensureOwnerProfile(
       await batch.commit();
     }
 
-    const areas = await readAreas(uid);
+    const areas = await readAreas(["users", uid]);
     return {
       displayName: displayName || "Signed-in user",
       areas,
@@ -80,42 +83,40 @@ export async function ensureOwnerProfile(
 }
 
 /**
- * US-A2: copy fictional seed into users/{uid}/… for anonymous demo.
- * Re-seeds when profile is missing or areas are empty (covers Auth-up /
- * Firestore-down first click, then Firestore later).
- * Falls back to in-memory seed if Firestore emulator is down.
+ * US-A2: copy fictional seed into `demo/{uid}/…` for anonymous Try demo.
+ * Requires working Firestore (emulator or prod). No offline / localStorage seed.
  */
 export async function loadDemoSeed(uid: string): Promise<PlannerView> {
-  try {
-    const profileRef = doc(db, "users", uid);
-    const profileSnap = await getDoc(profileRef);
-    const areasExisting = profileSnap.exists() ? await readAreas(uid) : [];
-    const needsSeed = !profileSnap.exists() || areasExisting.length === 0;
+  const root = [DEMO_COLLECTION, uid] as const;
+  const profileRef = doc(db, DEMO_COLLECTION, uid);
+  const profileSnap = await getDoc(profileRef);
+  const areasExisting = profileSnap.exists()
+    ? await readAreas(root)
+    : [];
+  const needsSeed = !profileSnap.exists() || areasExisting.length === 0;
 
-    if (needsSeed) {
-      await writeSeedToUser(uid, fictionalSeed);
-    }
-
-    const areas = await readAreas(uid);
-    return {
-      displayName: fictionalSeed.profile.displayName,
-      areas: areas.length ? areas : fictionalSeed.areas,
-      taskCount: fictionalSeed.tasks.length,
-      source: "firestore",
-    };
-  } catch {
-    return {
-      displayName: fictionalSeed.profile.displayName,
-      areas: fictionalSeed.areas,
-      taskCount: fictionalSeed.tasks.length,
-      source: "local-seed",
-    };
+  if (needsSeed) {
+    await writeSeedToDemo(uid, fictionalSeed);
   }
+
+  const areas = await readAreas(root);
+  if (!areas.length) {
+    throw new Error(
+      "Demo seed failed: Firestore returned no areas under demo/{uid}.",
+    );
+  }
+
+  return {
+    displayName: fictionalSeed.profile.displayName,
+    areas,
+    taskCount: fictionalSeed.tasks.length,
+    source: "firestore",
+  };
 }
 
 function setSubcollection(
   batch: ReturnType<typeof writeBatch>,
-  uid: string,
+  root: readonly [string, string],
   name: string,
   rows: Array<Record<string, unknown> & { id: string }> | undefined,
   mapDoc?: (row: Record<string, unknown> & { id: string }) => {
@@ -130,16 +131,17 @@ function setSubcollection(
           const { id, ...fields } = row;
           return { id, fields };
         })();
-    batch.set(doc(db, "users", uid, name, mapped.id), mapped.fields);
+    batch.set(doc(db, root[0], root[1], name, mapped.id), mapped.fields);
   }
 }
 
-async function writeSeedToUser(
+async function writeSeedToDemo(
   uid: string,
   seed: FictionalSeed,
 ): Promise<void> {
+  const root = [DEMO_COLLECTION, uid] as const;
   const batch = writeBatch(db);
-  batch.set(doc(db, "users", uid), {
+  batch.set(doc(db, DEMO_COLLECTION, uid), {
     ...seed.profile,
     mode: "demo",
     seededFrom: "seed/demo/fictional.json",
@@ -148,45 +150,34 @@ async function writeSeedToUser(
     updatedAt: serverTimestamp(),
   });
 
-  setSubcollection(batch, uid, "areas", seed.areas);
-  setSubcollection(batch, uid, "tasks", seed.tasks);
-  setSubcollection(batch, uid, "bands", seed.bands);
-  setSubcollection(batch, uid, "schedule", seed.schedule);
-  setSubcollection(batch, uid, "scheduleChanges", seed.scheduleChanges ?? []);
-  setSubcollection(batch, uid, "routines", seed.routines);
-  setSubcollection(batch, uid, "repeatingTasks", seed.repeatingTasks ?? []);
-  setSubcollection(batch, uid, "blocks", seed.blocks);
-  setSubcollection(batch, uid, "rules", seed.rules);
-  setSubcollection(batch, uid, "focusItems", seed.focusItems ?? []);
-  setSubcollection(batch, uid, "goals", seed.goals ?? []);
-  setSubcollection(batch, uid, "weekHorizon", seed.weekHorizon ?? []);
-  setSubcollection(batch, uid, "areaGoals", seed.areaGoals ?? []);
-  setSubcollection(batch, uid, "events", seed.events ?? []);
-  setSubcollection(batch, uid, "series", seed.series ?? []);
+  setSubcollection(batch, root, "areas", seed.areas);
+  setSubcollection(batch, root, "tasks", seed.tasks);
+  setSubcollection(batch, root, "bands", seed.bands);
+  setSubcollection(batch, root, "schedule", seed.schedule);
+  setSubcollection(batch, root, "scheduleChanges", seed.scheduleChanges ?? []);
+  setSubcollection(batch, root, "routines", seed.routines);
+  setSubcollection(batch, root, "repeatingTasks", seed.repeatingTasks ?? []);
+  setSubcollection(batch, root, "blocks", seed.blocks);
+  setSubcollection(batch, root, "rules", seed.rules);
+  setSubcollection(batch, root, "focusItems", seed.focusItems ?? []);
+  setSubcollection(batch, root, "goals", seed.goals ?? []);
+  setSubcollection(batch, root, "weekHorizon", seed.weekHorizon ?? []);
+  setSubcollection(batch, root, "areaGoals", seed.areaGoals ?? []);
+  setSubcollection(batch, root, "events", seed.events ?? []);
+  setSubcollection(batch, root, "series", seed.series ?? []);
 
   for (const dayType of seed.dayTypes) {
     const dateKey = `offset-${dayType.dayOffset}`;
-    batch.set(doc(db, "users", uid, "dayTypes", dateKey), dayType);
+    batch.set(doc(db, DEMO_COLLECTION, uid, "dayTypes", dateKey), dayType);
   }
 
-  // Shared fictional template (read-only for reviewers via rules).
-  batch.set(doc(db, "demo", "seed"), {
-    label: "Fictional Work Planner sample",
-    areaCount: seed.areas.length,
-    taskCount: seed.tasks.length,
-    scheduleCount: seed.schedule.length,
-    goalCount: (seed.goals ?? []).length,
-    areaGoalCount: (seed.areaGoals ?? []).length,
-    focusCount: (seed.focusItems ?? []).length,
-    scheduleChangeCount: (seed.scheduleChanges ?? []).length,
-    collections: [...DEMO_SUBCOLLECTIONS],
-    updatedAt: serverTimestamp(),
-  });
   await batch.commit();
 }
 
-async function readAreas(uid: string): Promise<SeedArea[]> {
-  const snap = await getDocs(collection(db, "users", uid, "areas"));
+async function readAreas(
+  root: readonly [string, string],
+): Promise<SeedArea[]> {
+  const snap = await getDocs(collection(db, root[0], root[1], "areas"));
   return snap.docs
     .map((d) => {
       const data = d.data();

@@ -138,13 +138,13 @@ npm start                # Auth + Firestore + Emulator UI + Vite
 | Auth emulator | **9099** | `:9100+` if busy; see `.env.local` |
 | Firestore emulator | **8080** | `:8081+` if busy; see `.env.local` |
 
-Without JDK: `npm start` falls back to Auth-only. UI-only: `npm run dev` (Try demo uses offline local session). Emulators only: `npm run emulators`.
+Without JDK: `npm start` falls back to Auth-only (Try demo needs Firestore — install JDK 21+). UI-only: `npm run dev` (Google/demo need Auth). Emulators only: `npm run emulators`.
 
 ### Browse data (Firestore)
 
-1. `npm start` → **Try demo**.
-2. Emulator UI [http://127.0.0.1:4000](http://127.0.0.1:4000) → **Firestore** → `users/{uid}/…` (+ `demo/seed`).
-3. Placeholder project id: `work-planner-demo`. Keep personal seeds out of git.
+1. `npm start` → **Try demo** (anonymous Auth).
+2. Emulator UI [http://127.0.0.1:4000](http://127.0.0.1:4000) → **Firestore** → `demo/{uid}/…` (personal Google data stays under `users/{uid}/…`).
+3. Emulator placeholder project id: `work-planner-demo`. Keep personal seeds out of git.
 
 ## Tests (one command)
 
@@ -205,8 +205,8 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 ### US-A1 / US-A2 (#23 / #24)
 
-1. `npm start` → **Sign in with Google** (emulator fake user) or **Try demo** (anonymous + seed).
-2. Emulator UI :4000 → Firestore `users/{uid}/…` + `demo/seed`. Sign-out clears the view.
+1. `npm start` → **Sign in with Google** (emulator fake user → `users/{uid}/…`) or **Try demo** (anonymous → `demo/{uid}/…`).
+2. Emulator UI :4000 → Firestore `demo/{uid}/…` for Try demo. Sign-out clears the view.
 
 ### Week grid / layers
 

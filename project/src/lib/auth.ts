@@ -11,11 +11,11 @@ import {
   auth,
   googleProvider,
   isAuthEmulatorReachable,
+  isFirestoreEmulatorReachable,
   useEmulators,
 } from "@/lib/firebase";
 import {
   clearLocalSession,
-  localDemoUser,
   localOwnerUser,
   readLocalSession,
   type AppUser,
@@ -134,71 +134,60 @@ export async function signInWithGoogle(): Promise<AuthSession> {
 }
 
 /**
- * US-A2 — anonymous Auth emulator when reachable; otherwise offline local demo
- * so Try demo works with `npm run dev` alone (no Hosting / no Java).
- * When Auth + Firestore emulators are up, fictional seed is written under
- * `users/{uid}/…` (visible in Emulator UI → Firestore). Runtime UI edits still
- * use localStorage until full Firestore persistence lands.
+ * US-A2 — anonymous Auth + fictional seed under `demo/{uid}/…` in Firestore.
+ * No offline / localStorage demo path. Requires Auth (+ Firestore) reachable.
  */
 export async function signInDemo(): Promise<AuthSession> {
   const traceId = newTraceId();
-  const authUp = await isAuthEmulatorReachable();
-  if (useEmulators && authUp) {
-    try {
-      const user = (await signInAnonymously(auth)).user;
-      clearLocalSession();
-      const view = await loadDemoSeed(user.uid);
-      const ok = view.source === "firestore";
-      void reportTelemetry({
-        name: "signInDemo",
-        kind: "demo_seed",
-        ok,
-        status: ok ? "ok" : "error",
-        reason: ok ? "seeded" : "firestore_fallback_local",
-        traceId,
-        attributes: { source: view.source, taskCount: view.taskCount },
-      });
-      return { user: toAppUser(user), view, isDemo: true };
-    } catch (err) {
-      if (!isNetworkAuthError(err)) {
-        void reportTelemetry({
-          name: "signInDemo",
-          kind: "demo_seed",
-          ok: false,
-          status: "error",
-          reason: "demo_auth_failed",
-          traceId,
-        });
-        throw err;
-      }
+
+  if (useEmulators) {
+    const authUp = await isAuthEmulatorReachable();
+    const fsUp = await isFirestoreEmulatorReachable();
+    if (!authUp || !fsUp) {
       void reportTelemetry({
         name: "signInDemo",
         kind: "demo_seed",
         ok: false,
         status: "error",
-        reason: "auth_network_fallback_local",
+        reason: "emulators_required",
         traceId,
       });
+      throw new Error(
+        "Try demo needs Auth + Firestore emulators. Run npm start (JDK 21+), then try again.",
+      );
     }
   }
 
-  // Offline / Auth-down path: local session + in-memory/localStorage seed.
-  // Without Firebase Auth, Firestore rules block writes — Emulator UI stays
-  // empty until Auth+Firestore are both up and Try demo runs again.
-  const user = localDemoUser();
-  emitLocal(user);
-  const view = await loadDemoSeed(user.uid);
-  void reportTelemetry({
-    name: "signInDemo",
-    kind: "demo_seed",
-    ok: view.source === "firestore",
-    status: view.source === "firestore" ? "ok" : "error",
-    reason:
-      view.source === "firestore" ? "seeded" : "offline_local_seed",
-    traceId,
-    attributes: { source: view.source, backend: "local" },
-  });
-  return { user, view, isDemo: true };
+  try {
+    const user = (await signInAnonymously(auth)).user;
+    clearLocalSession();
+    const view = await loadDemoSeed(user.uid);
+    void reportTelemetry({
+      name: "signInDemo",
+      kind: "demo_seed",
+      ok: true,
+      status: "ok",
+      reason: "seeded",
+      traceId,
+      attributes: {
+        source: view.source,
+        taskCount: view.taskCount,
+        path: `demo/${user.uid}`,
+        backend: useEmulators ? "emulator" : "firebase",
+      },
+    });
+    return { user: toAppUser(user), view, isDemo: true };
+  } catch (err) {
+    void reportTelemetry({
+      name: "signInDemo",
+      kind: "demo_seed",
+      ok: false,
+      status: "error",
+      reason: "demo_auth_or_seed_failed",
+      traceId,
+    });
+    throw err;
+  }
 }
 
 export async function signOut(): Promise<void> {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { signInAnonymously, signOut } from "firebase/auth";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import {
   auth,
   connectFirebaseEmulators,
@@ -8,7 +8,7 @@ import {
   isAuthEmulatorReachable,
   isFirestoreEmulatorReachable,
 } from "@/lib/firebase";
-import { loadDemoSeed } from "@/lib/seed";
+import { DEMO_COLLECTION, loadDemoSeed } from "@/lib/seed";
 import { fictionalSeed } from "@/data/fictional-seed";
 
 /**
@@ -35,7 +35,7 @@ describe("demo seed via Firebase emulators", () => {
     }
   });
 
-  it("writes fictional areas under users/{uid} after Try-demo seed", async () => {
+  it("writes fictional areas under demo/{uid} after Try-demo seed", async () => {
     const cred = await signInAnonymously(auth);
     const uid = cred.user.uid;
     expect(uid).toBeTruthy();
@@ -45,11 +45,24 @@ describe("demo seed via Firebase emulators", () => {
     expect(view.areas.length).toBe(fictionalSeed.areas.length);
     expect(view.taskCount).toBe(fictionalSeed.tasks.length);
 
-    const areasSnap = await getDocs(collection(db, "users", uid, "areas"));
+    const profile = await getDoc(doc(db, DEMO_COLLECTION, uid));
+    expect(profile.exists()).toBe(true);
+    expect(profile.data()?.["mode"]).toBe("demo");
+
+    const areasSnap = await getDocs(
+      collection(db, DEMO_COLLECTION, uid, "areas"),
+    );
     expect(areasSnap.size).toBe(fictionalSeed.areas.length);
 
-    const tasksSnap = await getDocs(collection(db, "users", uid, "tasks"));
+    const tasksSnap = await getDocs(
+      collection(db, DEMO_COLLECTION, uid, "tasks"),
+    );
     expect(tasksSnap.size).toBe(fictionalSeed.tasks.length);
+
+    // Anonymous must not read personal users/{uid} (rules deny).
+    await expect(
+      getDocs(collection(db, "users", uid, "areas")),
+    ).rejects.toMatchObject({ code: "permission-denied" });
 
     const names = areasSnap.docs.map((d) => String(d.data()["name"] ?? ""));
     expect(names).toEqual(
