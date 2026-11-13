@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "work-planner-demo",
+    "default": "samaya-scheduler",
+    "prod": "samaya-scheduler",
     "demo": "work-planner-demo",
     "personal": "work-planner-personal"
   }

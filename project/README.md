@@ -4,7 +4,7 @@ Single-user personal planner: 3-day time grid, energy bands, drag tasks onto blo
 
 **Course:** AI Dev Tools Zoomcamp 2026 — final / certificate project  
 **Stack:** React + TypeScript (Vite) · **Firebase Auth (Google)** · **Cloud Firestore** · Emulators for local/CI  
-**Deploy:** local-first; **Firebase Hosting only after course submission** ([`_docs/plan.md`](_docs/plan.md))
+**Deploy:** local-first + **Firebase Hosting** → **https://samaya-scheduler.web.app** (project `samaya-scheduler`)
 
 ## Problem
 
@@ -69,8 +69,8 @@ Aligned with Zoomcamp project criteria (problem → on-call). Docs in English.
 | FE + BE + DB; one-command local | `npm start` (below) |
 | Unit + integration tests; one command | `npm test` (below) |
 | Full stack via Docker/Compose; one command | `docker compose up --build` (below) |
-| Deployment | Local/Compose for review; Hosting **after** submission ([`_docs/plan.md`](_docs/plan.md)) |
-| CI/CD | [`.github/workflows/work-planner-ci.yml`](../.github/workflows/work-planner-ci.yml) — tests on PR |
+| Deployment | Local/Compose for review; live Hosting **https://samaya-scheduler.web.app** |
+| CI/CD | [`.github/workflows/work-planner-ci.yml`](../.github/workflows/work-planner-ci.yml) — tests on PR; Hosting CD follow-up (manual prod gate) |
 | Observability (metrics + traces + logs, shared trace ID, UI) | Grafana LGTM + [`obs/`](obs/) · [`_docs/observability.md`](_docs/observability.md) |
 | User-impact alert | `DemoSeedUnavailable` |
 | On-call agent | `obs` wakes and remediates (Compose) |
@@ -89,7 +89,7 @@ Aligned with Zoomcamp project criteria (problem → on-call). Docs in English.
 | CI on PR | ☑ |
 | Docker Compose | ☑ |
 | Observability + alert + on-call | ☑ |
-| Hosting URL | ☐ after submission |
+| Hosting URL | ☑ [https://samaya-scheduler.web.app](https://samaya-scheduler.web.app) |
 
 ## Docs layout
 
@@ -101,7 +101,7 @@ project/
 ├── compose.yaml       ← one-command local stack (app + emulators + obs UI)
 ├── Dockerfile
 ├── obs/               ← OTel metrics/traces/logs, alert, on-call agent
-├── firebase.json      ← Auth + Firestore emulators (host npm start)
+├── firebase.json      ← Hosting (dist) + Firestore + Auth/Firestore emulators
 ├── firebase.docker.json ← same emulators bound for Compose
 ├── firestore.rules    ← owner + demo stubs
 ├── src/               ← React UI
@@ -224,6 +224,28 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 1. **Calendar** → three months + markers + upcoming list.
 2. Recurring series expand on read (add / pause / resume).
+
+## Hosting (production)
+
+| | |
+|--|--|
+| **Live URL** | https://samaya-scheduler.web.app |
+| **Firebase project** | `samaya-scheduler` |
+| **Also** | https://samaya-scheduler.firebaseapp.com |
+
+Local/CI still use the emulator placeholder `work-planner-demo` (`VITE_USE_EMULATORS=true`). Production builds use `.env.production.local` (gitignored) with `VITE_USE_EMULATORS=false` and the real web config from Firebase Console → Project settings.
+
+Redeploy from this machine:
+
+```powershell
+cd project
+npm run build
+npx firebase deploy --only hosting,firestore --project samaya-scheduler
+```
+
+**Console (one-time):** Authentication → enable **Google** (+ OAuth consent if prompted) and **Anonymous** (Try demo); confirm authorized domains include `samaya-scheduler.web.app`. Firestore DB + Hosting + rules already provisioned.
+
+CD Action with a manual prod gate is a follow-up (needs a Firebase CI service-account secret in GitHub).
 
 ## Links
 
