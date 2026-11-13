@@ -70,7 +70,7 @@ Aligned with Zoomcamp project criteria (problem → on-call). Docs in English.
 | Unit + integration tests; one command | `npm test` (below) |
 | Full stack via Docker/Compose; one command | `docker compose up --build` (below) |
 | Deployment | Local/Compose for review; live Hosting **https://samaya-scheduler.web.app** |
-| CI/CD | [`.github/workflows/work-planner-ci.yml`](../.github/workflows/work-planner-ci.yml) — tests on PR; Hosting CD follow-up (manual prod gate) |
+| CI/CD | [`.github/workflows/work-planner-ci.yml`](../.github/workflows/work-planner-ci.yml) tests · [`.github/workflows/work-planner-hosting-cd.yml`](../.github/workflows/work-planner-hosting-cd.yml) Hosting CD (`workflow_dispatch` + `confirm_prod=deploy`) |
 | Observability (metrics + traces + logs, shared trace ID, UI) | Grafana LGTM + [`obs/`](obs/) · [`_docs/observability.md`](_docs/observability.md) |
 | User-impact alert | `DemoSeedUnavailable` |
 | On-call agent | `obs` wakes and remediates (Compose) |
@@ -245,7 +245,7 @@ npx firebase deploy --only hosting,firestore --project samaya-scheduler
 
 **Console (one-time):** Authentication → enable **Google** (+ OAuth consent if prompted) and **Anonymous** (Try demo); confirm authorized domains include `samaya-scheduler.web.app`. Firestore DB + Hosting + rules already provisioned.
 
-CD Action with a manual prod gate is a follow-up (needs a Firebase CI service-account secret in GitHub).
+CD: Actions → **work-planner-hosting-cd** → Run workflow with `confirm_prod=deploy`. Needs repo secrets listed in that workflow file (`FIREBASE_SERVICE_ACCOUNT` + `VITE_FIREBASE_*`). Without secrets the run skips deploy and prints setup steps.
 
 ## Links
 

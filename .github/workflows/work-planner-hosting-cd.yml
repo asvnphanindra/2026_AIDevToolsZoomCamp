@@ -1,0 +1,117 @@
+# Manual Firebase Hosting deploy for Work Planner (samaya-scheduler).
+# Manual prod gate: workflow_dispatch only (no auto-deploy on push).
+#
+# Required GitHub Actions secrets (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT  — JSON key for a Firebase/GCP SA with Hosting + Firestore deploy
+#   VITE_FIREBASE_API_KEY
+#   VITE_FIREBASE_AUTH_DOMAIN          (samaya-scheduler.firebaseapp.com)
+#   VITE_FIREBASE_PROJECT_ID           (samaya-scheduler)
+#   VITE_FIREBASE_STORAGE_BUCKET       (samaya-scheduler.firebasestorage.app)
+#   VITE_FIREBASE_MESSAGING_SENDER_ID
+#   VITE_FIREBASE_APP_ID
+#
+# Until secrets exist, this workflow still runs: it prints setup steps and skips deploy.
+
+name: work-planner-hosting-cd
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_prod:
+        description: 'Type deploy to allow production Hosting deploy'
+        required: true
+        default: ''
+      deploy_firestore:
+        description: 'Also deploy Firestore rules/indexes'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: work-planner-hosting-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Hosting (samaya-scheduler)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: project
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: project/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check prod gate + secrets
+        id: gate
+        env:
+          CONFIRM: ${{ inputs.confirm_prod }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ "${CONFIRM}" != "deploy" ]; then
+            echo "::warning::Prod gate closed. Re-run workflow_dispatch with confirm_prod=deploy."
+            missing=1
+          fi
+          for name in FIREBASE_SERVICE_ACCOUNT VITE_FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN \
+            VITE_FIREBASE_PROJECT_ID VITE_FIREBASE_STORAGE_BUCKET \
+            VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID; do
+            eval "val=\${$name:-}"
+            if [ -z "$val" ]; then
+              echo "::warning::Missing secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Skipping deploy. Add the secrets listed in this workflow file header, then re-run with confirm_prod=deploy."
+            echo "Target: https://samaya-scheduler.web.app (project samaya-scheduler)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build production bundle
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_USE_EMULATORS: 'false'
+        run: npm run build
+
+      - name: Deploy Hosting (+ Firestore if selected)
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          ONLY="hosting"
+          if [ "${{ inputs.deploy_firestore }}" = "true" ]; then
+            ONLY="hosting,firestore"
+          fi
+          npx firebase deploy --only "$ONLY" --project samaya-scheduler --non-interactive
+          echo "Deployed https://samaya-scheduler.web.app"
