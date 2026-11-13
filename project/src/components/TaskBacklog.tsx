@@ -124,8 +124,10 @@ export function TaskBacklog({
     const durationMin = Math.max(
       15,
       (() => {
-        const [sh, sm] = block.start.split(":").map(Number);
-        const [eh, em] = block.end.split(":").map(Number);
+        const start = block.start ?? "00:00";
+        const end = block.end ?? "00:00";
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
         return (eh! * 60 + (em ?? 0)) - (sh! * 60 + (sm ?? 0));
       })(),
     );

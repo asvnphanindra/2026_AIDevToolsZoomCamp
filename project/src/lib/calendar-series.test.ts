@@ -45,4 +45,17 @@ describe("calendar series expand-on-read", () => {
     expect(start).toBe("2026-11-01");
     expect(end).toBe("2027-01-31");
   });
+
+  it("skips expand when startDate is missing (Firestore offset-only docs)", () => {
+    const broken = {
+      id: "s-broken",
+      label: "Broken",
+      kind: "series",
+      rule: { freq: "months", interval: 1, dayOfMonth: 1 },
+      paused: false,
+    } as unknown as CalendarSeries;
+    expect(
+      expandSeriesOccurrences(broken, "2026-11-01", "2026-11-30"),
+    ).toEqual([]);
+  });
 });

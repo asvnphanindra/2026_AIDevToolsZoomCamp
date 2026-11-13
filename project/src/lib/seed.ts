@@ -12,7 +12,11 @@ import {
   type FictionalSeed,
   type SeedArea,
 } from "@/data/fictional-seed";
+import { addDaysToDateKey, seedAreaGoals } from "@/lib/area-goals";
+import { seedCalendarEvents } from "@/lib/calendar-events";
+import { seedCalendarSeries } from "@/lib/calendar-series";
 import { db } from "@/lib/firebase";
+import { dateKeyInTz, DEFAULT_TZ } from "@/lib/time";
 
 export type PlannerView = {
   displayName: string;
@@ -114,6 +118,16 @@ export async function loadDemoSeed(uid: string): Promise<PlannerView> {
   };
 }
 
+function omitUndefinedFields(
+  fields: Record<string, unknown>,
+): DocumentData {
+  const out: DocumentData = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
 function setSubcollection(
   batch: ReturnType<typeof writeBatch>,
   root: readonly [string, string],
@@ -131,7 +145,10 @@ function setSubcollection(
           const { id, ...fields } = row;
           return { id, fields };
         })();
-    batch.set(doc(db, root[0], root[1], name, mapped.id), mapped.fields);
+    batch.set(
+      doc(db, root[0], root[1], name, mapped.id),
+      omitUndefinedFields(mapped.fields as Record<string, unknown>),
+    );
   }
 }
 
@@ -150,6 +167,24 @@ async function writeSeedToDemo(
     updatedAt: serverTimestamp(),
   });
 
+  // Materialize offset-based seed rows into absolute YYYY-MM-DD (and HH:mm)
+  // fields the runtime expanders expect — raw startDayOffset/dayOffset alone
+  // made Hosting crash in expandSeriesOccurrences (.split on undefined).
+  const tz = seed.profile.timezone || DEFAULT_TZ;
+  const todayKey = dateKeyInTz(new Date(), tz);
+  const areaColour = new Map(seed.areas.map((a) => [a.id, a.colour]));
+  const placedBlocks = seed.blocks.map((b) => ({
+    id: b.id,
+    taskId: "",
+    title: b.title,
+    areaId: b.areaId,
+    colour: areaColour.get(b.areaId) || "#0F6B4C",
+    date: addDaysToDateKey(todayKey, b.dayOffset),
+    start: b.start,
+    end: b.end,
+    deepWork: b.deepWork,
+  }));
+
   setSubcollection(batch, root, "areas", seed.areas);
   setSubcollection(batch, root, "tasks", seed.tasks);
   setSubcollection(batch, root, "bands", seed.bands);
@@ -157,14 +192,19 @@ async function writeSeedToDemo(
   setSubcollection(batch, root, "scheduleChanges", seed.scheduleChanges ?? []);
   setSubcollection(batch, root, "routines", seed.routines);
   setSubcollection(batch, root, "repeatingTasks", seed.repeatingTasks ?? []);
-  setSubcollection(batch, root, "blocks", seed.blocks);
+  setSubcollection(batch, root, "blocks", placedBlocks);
   setSubcollection(batch, root, "rules", seed.rules);
   setSubcollection(batch, root, "focusItems", seed.focusItems ?? []);
   setSubcollection(batch, root, "goals", seed.goals ?? []);
   setSubcollection(batch, root, "weekHorizon", seed.weekHorizon ?? []);
-  setSubcollection(batch, root, "areaGoals", seed.areaGoals ?? []);
-  setSubcollection(batch, root, "events", seed.events ?? []);
-  setSubcollection(batch, root, "series", seed.series ?? []);
+  setSubcollection(batch, root, "areaGoals", seedAreaGoals(tz));
+  setSubcollection(
+    batch,
+    root,
+    "events",
+    seedCalendarEvents(tz).filter((e) => !e.seriesId),
+  );
+  setSubcollection(batch, root, "series", seedCalendarSeries(tz));
 
   for (const dayType of seed.dayTypes) {
     const dateKey = `offset-${dayType.dayOffset}`;

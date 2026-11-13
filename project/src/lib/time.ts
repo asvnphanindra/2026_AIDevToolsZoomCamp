@@ -102,7 +102,10 @@ export function formatLastUpdated(
 }
 
 /** Minutes from midnight for HH:mm. */
-export function minutesOf(hhmm: string): number {
+export function minutesOf(hhmm: string | undefined | null): number {
+  if (hhmm == null || typeof hhmm !== "string" || !hhmm.includes(":")) {
+    return 0;
+  }
   const [h, m] = hhmm.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }

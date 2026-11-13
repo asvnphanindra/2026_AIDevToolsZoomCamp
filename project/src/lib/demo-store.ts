@@ -6,17 +6,42 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import type { SeedArea } from "@/data/fictional-seed";
-import type { AreaGoal } from "@/lib/area-goals";
+import {
+  addDaysToDateKey,
+  HORIZON_DEFAULT_DAYS,
+  type AreaGoal,
+  type GoalHorizonKind,
+} from "@/lib/area-goals";
 import type { PlacedBlock } from "@/lib/blocks";
 import type { CalendarEvent } from "@/lib/calendar-events";
-import type { CalendarSeries } from "@/lib/calendar-series";
+import type { CalendarSeries, SeriesRule } from "@/lib/calendar-series";
 import type { BlockCheckIn } from "@/lib/checkin";
 import { db } from "@/lib/firebase";
 import type { FocusItem } from "@/lib/focus";
 import type { DailyRule } from "@/lib/rules";
 import { DEMO_COLLECTION } from "@/lib/seed";
 import type { BacklogTask } from "@/lib/tasks";
+import { dateKeyInTz, DEFAULT_TZ } from "@/lib/time";
 import type { WeekHorizonItem } from "@/lib/week-horizon";
+
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isDateKey(value: unknown): value is string {
+  return typeof value === "string" && DATE_KEY_RE.test(value);
+}
+
+/** Prefer absolute YYYY-MM-DD; else resolve dayOffset relative to today. */
+function resolveDateKey(
+  absolute: unknown,
+  offset: unknown,
+  todayKey: string,
+): string | undefined {
+  if (isDateKey(absolute)) return absolute;
+  if (offset != null && offset !== "" && Number.isFinite(Number(offset))) {
+    return addDaysToDateKey(todayKey, Number(offset));
+  }
+  return undefined;
+}
 
 export type DemoPlannerState = {
   areas: SeedArea[];
@@ -117,17 +142,25 @@ function asTasks(rows: Array<DocumentData & { id: string }>): BacklogTask[] {
 }
 
 function asBlocks(rows: Array<DocumentData & { id: string }>): PlacedBlock[] {
-  return rows.map((d) => ({
-    id: d.id,
-    taskId: String(d["taskId"] ?? ""),
-    title: String(d["title"] ?? ""),
-    areaId: String(d["areaId"] ?? ""),
-    colour: String(d["colour"] ?? "#666"),
-    date: String(d["date"] ?? ""),
-    start: String(d["start"] ?? ""),
-    end: String(d["end"] ?? ""),
-    deepWork: d["deepWork"] != null ? Boolean(d["deepWork"]) : undefined,
-  }));
+  const todayKey = dateKeyInTz(new Date(), DEFAULT_TZ);
+  const out: PlacedBlock[] = [];
+  for (const d of rows) {
+    const date = resolveDateKey(d["date"], d["dayOffset"], todayKey);
+    if (!date) continue;
+    const block: PlacedBlock = {
+      id: d.id,
+      taskId: String(d["taskId"] ?? ""),
+      title: String(d["title"] ?? ""),
+      areaId: String(d["areaId"] ?? ""),
+      colour: String(d["colour"] ?? "#666"),
+      date,
+      start: String(d["start"] ?? "09:00"),
+      end: String(d["end"] ?? "10:00"),
+    };
+    if (d["deepWork"] != null) block.deepWork = Boolean(d["deepWork"]);
+    out.push(block);
+  }
+  return out;
 }
 
 function asRules(rows: Array<DocumentData & { id: string }>): DailyRule[] {
@@ -156,32 +189,84 @@ function asWeekHorizon(
 }
 
 function asAreaGoals(rows: Array<DocumentData & { id: string }>): AreaGoal[] {
-  return rows.map((d) => ({
-    id: d.id,
-    areaId: String(d["areaId"] ?? ""),
-    title: String(d["title"] ?? ""),
-    horizon: (d["horizon"] as AreaGoal["horizon"]) ?? "short",
-    startDate: String(d["startDate"] ?? ""),
-    endDate: String(d["endDate"] ?? ""),
-    progress:
-      d["progress"] != null ? Number(d["progress"]) : undefined,
-  }));
+  const todayKey = dateKeyInTz(new Date(), DEFAULT_TZ);
+  const out: AreaGoal[] = [];
+  for (const d of rows) {
+    const horizon = (d["horizon"] as GoalHorizonKind) ?? "short";
+    const startDate = resolveDateKey(
+      d["startDate"],
+      d["startOffsetDays"],
+      todayKey,
+    );
+    const endDate =
+      resolveDateKey(d["endDate"], d["endOffsetDays"], todayKey) ??
+      (startDate
+        ? addDaysToDateKey(
+            startDate,
+            HORIZON_DEFAULT_DAYS[horizon] ?? HORIZON_DEFAULT_DAYS.short,
+          )
+        : undefined);
+    if (!startDate || !endDate) continue;
+    const goal: AreaGoal = {
+      id: d.id,
+      areaId: String(d["areaId"] ?? ""),
+      title: String(d["title"] ?? ""),
+      horizon,
+      startDate,
+      endDate: endDate < startDate ? startDate : endDate,
+    };
+    if (d["progress"] != null) goal.progress = Number(d["progress"]);
+    out.push(goal);
+  }
+  return out;
 }
 
 function asEvents(rows: Array<DocumentData & { id: string }>): CalendarEvent[] {
-  return rows.map((d) => ({
-    ...(d as unknown as CalendarEvent),
-    id: d.id,
-  }));
+  const todayKey = dateKeyInTz(new Date(), DEFAULT_TZ);
+  const out: CalendarEvent[] = [];
+  for (const d of rows) {
+    const date = resolveDateKey(d["date"], d["dayOffset"], todayKey);
+    if (!date) continue;
+    const event: CalendarEvent = {
+      id: d.id,
+      date,
+      kind: (d["kind"] as CalendarEvent["kind"]) ?? "appointment",
+      label: String(d["label"] ?? ""),
+    };
+    const endDate = resolveDateKey(d["endDate"], d["endDayOffset"], todayKey);
+    if (endDate) event.endDate = endDate;
+    if (d["time"] != null) event.time = String(d["time"]);
+    if (d["seriesId"] != null) event.seriesId = String(d["seriesId"]);
+    out.push(event);
+  }
+  return out;
 }
 
 function asSeries(
   rows: Array<DocumentData & { id: string }>,
 ): CalendarSeries[] {
-  return rows.map((d) => ({
-    ...(d as unknown as CalendarSeries),
-    id: d.id,
-  }));
+  const todayKey = dateKeyInTz(new Date(), DEFAULT_TZ);
+  const out: CalendarSeries[] = [];
+  for (const d of rows) {
+    const startDate = resolveDateKey(
+      d["startDate"],
+      d["startDayOffset"],
+      todayKey,
+    );
+    const rule = d["rule"] as SeriesRule | undefined;
+    if (!startDate || !rule || typeof rule !== "object") continue;
+    const series: CalendarSeries = {
+      id: d.id,
+      label: String(d["label"] ?? ""),
+      kind: (d["kind"] as CalendarSeries["kind"]) ?? "series",
+      rule,
+      startDate,
+      paused: Boolean(d["paused"]),
+    };
+    if (d["time"] != null) series.time = String(d["time"]);
+    out.push(series);
+  }
+  return out;
 }
 
 function asCheckIns(

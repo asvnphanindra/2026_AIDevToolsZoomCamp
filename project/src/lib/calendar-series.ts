@@ -32,7 +32,14 @@ export type SeriesOccurrence = {
   seriesId: string;
 };
 
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isDateKey(value: unknown): value is string {
+  return typeof value === "string" && DATE_KEY_RE.test(value);
+}
+
 function addDaysToKey(dateKey: string, offset: number): string {
+  if (!isDateKey(dateKey)) return dateKey || "";
   const [y, m, d] = dateKey.split("-").map(Number);
   const utc = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
   utc.setUTCDate(utc.getUTCDate() + offset);
@@ -54,6 +61,9 @@ function addMonthsClamped(
 }
 
 function parseKey(dateKey: string): { y: number; m: number; d: number } {
+  if (!isDateKey(dateKey)) {
+    return { y: 1970, m: 0, d: 1 };
+  }
   const [y, m, d] = dateKey.split("-").map(Number);
   return { y: y!, m: m! - 1, d: d! };
 }
@@ -149,6 +159,9 @@ export function expandSeriesOccurrences(
   rangeEnd: string,
 ): SeriesOccurrence[] {
   if (series.paused) return [];
+  // Seed/Firestore may still carry startDayOffset without startDate — never crash.
+  if (!isDateKey(series.startDate) || !series.rule) return [];
+  if (!isDateKey(rangeStart) || !isDateKey(rangeEnd)) return [];
   if (series.startDate > rangeEnd) return [];
 
   const out: SeriesOccurrence[] = [];
