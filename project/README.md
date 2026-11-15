@@ -235,16 +235,16 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 #### Bot setup (shared workspace)
 
-Bot is a normal Firebase **Email/Password** user with profile `role: "bot"`. Teaching plan + activity live under the **human** `workspaceOwnerUid`.
+Bot is a normal Firebase **Email/Password** user with profile `role: "bot"`. Teaching plan + activity live under the **human** `workspaceOwnerUid`. Never commit bot passwords.
 
-1. In [Firebase Console](https://console.firebase.google.com/) → project **`samaya-scheduler`** → **Authentication** → add a user (email/password) for the bot.
-2. Sign in once as the **human** owner (Create account / Sign in) so `users/{ownerUid}` exists with `workspaceOwnerUid = ownerUid` and `role = "owner"`.
-3. In **Firestore**, set the bot’s user doc `users/{botUid}`:
-   - `role`: `"bot"`
-   - `workspaceOwnerUid`: the human owner uid
-   - `displayName`: e.g. `PlanBot`
-4. Allowlist the bot under the owner: create `users/{ownerUid}/bots/{botUid}` with `{ "label": "PlanBot", "role": "bot" }`.
-5. Sign in to the app with the bot email/password → Teaching Plan / Activity use the human workspace; Activity Log records `actorRole: bot`.
+**Prod (`samaya-scheduler`):** Auth user `workassistbuddy@grok.bot` is provisioned. After the human owner has signed in once (so `users/{ownerUid}` exists):
+
+1. Auth → copy **bot uid** for `workassistbuddy@grok.bot` and **owner uid** for your human account.
+2. Firestore `users/{botUid}` fields: `role: "bot"`, `workspaceOwnerUid: "<ownerUid>"`, `displayName: "PlanBot"`.
+3. Firestore `users/{ownerUid}/bots/{botUid}`: `{ "label": "PlanBot", "role": "bot" }` (allowlist).
+4. Sign in to https://samaya-scheduler.web.app with the bot email/password → Teaching Plan / Activity use the human workspace; Activity Log shows `actorRole: bot`.
+
+Generic (new project): create the Auth user in Console → human signs in once → set the two Firestore docs above.
 
 Demo mode (`demo/{uid}`) seeds a Job teaching plan but does **not** use bot allowlisting.
 
