@@ -5,7 +5,7 @@
 | Layer | Choice |
 |-------|--------|
 | UI | React + TypeScript (SPA) |
-| Auth | Firebase Authentication — Google (demo may use Anonymous) |
+| Auth | Firebase Authentication — Email/Password (demo may use Anonymous) |
 | DB | Cloud Firestore (`users/{uid}/…`) |
 | Host (later) | Firebase Hosting — **after course submission** only |
 | Local | Firebase Emulator Suite (+ Docker Compose for reviewers) |

@@ -3,7 +3,7 @@
 Single-user personal planner: 3-day time grid, energy bands, drag tasks onto blocks, daily minimums, Done / Partly / Not done check-ins, and weekly → longer horizons. Demo uses fictional seed only.
 
 **Course:** AI Dev Tools Zoomcamp 2026 — final / certificate project  
-**Stack:** React + TypeScript (Vite) · **Firebase Auth (Google)** · **Cloud Firestore** · Emulators for local/CI  
+**Stack:** React + TypeScript (Vite) · **Firebase Auth (Email/Password)** · **Cloud Firestore** · Emulators for local/CI  
 **Deploy:** local-first + **Firebase Hosting** → **https://samaya-scheduler.web.app** (project `samaya-scheduler`)
 
 ## Problem
@@ -27,7 +27,7 @@ Public tracker: Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDev
 
 ## Expected behavior
 
-1. Google sign-in (or Try demo → anonymous Auth + Firestore `demo/{uid}` sample data).
+1. Email/password sign-in or create account (or Try demo → anonymous Auth + Firestore `demo/{uid}` sample data).
 2. See today + next 2 days with routines, fixed schedule, and blocks.
 3. Add a task → drag onto the grid → move/resize; conflicts warn.
 4. After a block ends → Done / Partly / Not done; unfinished returns to Tasks to Focus.
@@ -138,12 +138,12 @@ npm start                # Auth + Firestore + Emulator UI + Vite
 | Auth emulator | **9099** | `:9100+` if busy; see `.env.local` |
 | Firestore emulator | **8080** | `:8081+` if busy; see `.env.local` |
 
-Without JDK: `npm start` falls back to Auth-only (Try demo needs Firestore — install JDK 21+). UI-only: `npm run dev` (Google/demo need Auth). Emulators only: `npm run emulators`.
+Without JDK: `npm start` falls back to Auth-only (Try demo needs Firestore — install JDK 21+). UI-only: `npm run dev` (email/demo need Auth). Emulators only: `npm run emulators`.
 
 ### Browse data (Firestore)
 
 1. `npm start` → **Try demo** (anonymous Auth).
-2. Emulator UI [http://127.0.0.1:4000](http://127.0.0.1:4000) → **Firestore** → `demo/{uid}/…` for all demo load/mutations (personal Google data stays under `users/{uid}/…`; demo never uses localStorage).
+2. Emulator UI [http://127.0.0.1:4000](http://127.0.0.1:4000) → **Firestore** → `demo/{uid}/…` for all demo load/mutations (personal email/password data stays under `users/{uid}/…`; demo never uses localStorage).
 3. Emulator placeholder project id: `work-planner-demo`. Keep personal seeds out of git.
 
 ## Tests (one command)
@@ -205,7 +205,7 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 ### US-A1 / US-A2 (#23 / #24)
 
-1. `npm start` → **Sign in with Google** (emulator fake user → `users/{uid}/…`) or **Try demo** (anonymous → `demo/{uid}/…`).
+1. `npm start` → **Sign in** / **Create account** with email + password (→ `users/{uid}/…`) or **Try demo** (anonymous → `demo/{uid}/…`).
 2. Emulator UI :4000 → Firestore `demo/{uid}/…` for Try demo. Sign-out clears the view.
 
 ### Week grid / layers
@@ -243,7 +243,7 @@ npm run build
 npx firebase deploy --only hosting,firestore --project samaya-scheduler
 ```
 
-**Console:** Authentication → **Google** + **Anonymous** (Try demo) enabled on `samaya-scheduler`; confirm authorized domains include `samaya-scheduler.web.app`. Firestore DB + Hosting + rules provisioned.
+**Console:** Authentication → **Email/Password** + **Anonymous** (Try demo) enabled on `samaya-scheduler`; confirm authorized domains include `samaya-scheduler.web.app`. Firestore DB + Hosting + rules provisioned.
 
 CD: Actions → **work-planner-hosting-cd** → Run workflow with `confirm_prod=deploy`. Needs repo secrets listed in that workflow file (`FIREBASE_SERVICE_ACCOUNT` + `VITE_FIREBASE_*`). Without secrets the run skips deploy and prints setup steps.
 

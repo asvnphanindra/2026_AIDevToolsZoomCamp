@@ -25,7 +25,7 @@ export type PlannerView = {
   source: "firestore" | "local-seed";
 };
 
-/** Anonymous Try-demo root. Personal Google data stays under `users/{uid}/…`. */
+/** Anonymous Try-demo root. Personal email/password data stays under `users/{uid}/…`. */
 export const DEMO_COLLECTION = "demo" as const;
 
 const DEMO_SUBCOLLECTIONS = [

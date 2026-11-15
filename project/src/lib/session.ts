@@ -3,7 +3,7 @@ export type AppUser = {
   email: string | null;
   displayName: string | null;
   isAnonymous: boolean;
-  /** firebase = Auth emulator/cloud; local = rare Google emulator-down fallback */
+  /** firebase = Auth emulator/cloud; local = rare offline owner fallback */
   backend: "firebase" | "local";
 };
 

@@ -48,9 +48,9 @@ Format: *As a … I want … so that …*, followed by acceptance criteria (AC).
 ### Epic A: Account and privacy
 
 **US-A1 (MVP): Sign in**
-As a user, I want to sign in with my Google account so that my plan is private and available on any device.
-- AC1: Sign-in uses Firebase Authentication.
-- AC2: Firestore security rules allow reads and writes only to documents under the signed-in user's id.
+As a user, I want to sign in with email and password so that my plan is private and available on any device.
+- AC1: Sign-in / create account uses Firebase Authentication (Email/Password).
+- AC2: Firestore security rules allow reads and writes only to documents under the signed-in user's id (`users/{uid}` for non-anonymous).
 - AC3: Signing out clears the view.
 
 **US-A2 (MVP): Demo mode**

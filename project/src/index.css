@@ -137,6 +137,31 @@ body {
   gap: 0.75rem;
 }
 
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 22rem;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-field input {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--ink);
+  padding: var(--control-pad-y) var(--control-pad-x);
+  font: inherit;
+}
+
 button {
   appearance: none;
   border: 1px solid transparent;

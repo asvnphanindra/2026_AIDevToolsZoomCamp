@@ -25,7 +25,7 @@ _docs/                    # all other markdown (this folder)
 
 Read [product-spec.md](product-spec.md) and [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) before changing behavior. MVP = US-A1, A2, B1–B5, C1–C3, D1, D2, E1–E3, F1, F2.
 
-- Firebase Auth (Google) + Firestore; local emulators first (Hosting after submission — [plan.md](plan.md))
+- Firebase Auth (Email/Password) + Firestore; local emulators first (Hosting after submission — [plan.md](plan.md))
 - 3-day grid, energy bands, seeded fixed schedule, day types, drag tasks, daily minimums, check-in/replan, focus + weekly goals, 3-week view, calendar/series
 - Demo seed only in public paths
 

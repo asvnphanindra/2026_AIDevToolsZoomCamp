@@ -17,7 +17,7 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    // Google / non-anonymous owners — never anonymous Try-demo sessions.
+    // Email/password (and other non-anonymous) owners — never anonymous Try-demo.
     match /users/{userId} {
       allow read, write: if isUid(userId) && !isAnonymous();
     }

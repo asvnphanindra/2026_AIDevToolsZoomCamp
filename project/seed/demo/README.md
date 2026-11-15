@@ -10,7 +10,7 @@ demo/{uid}/checkIns/…       ← runtime check-ins
 
 All demo load + mutations go through Firestore (`src/lib/demo-store.ts`). There is no offline / localStorage demo path.
 
-Personal Google sign-in data stays under `users/{uid}/…`. Rules: anonymous only own `demo/{uid}`; non-anonymous only own `users/{uid}`.
+Personal email/password sign-in data stays under `users/{uid}/…`. Rules: anonymous only own `demo/{uid}`; non-anonymous only own `users/{uid}`.
 
 Local: `npm start` (Auth + Firestore emulators, JDK 21+). Prod: Anonymous Auth enabled on the Firebase project.
 

@@ -1,10 +1,5 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import {
-  connectAuthEmulator,
-  getAuth,
-  GoogleAuthProvider,
-  type Auth,
-} from "firebase/auth";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
 import {
   connectFirestoreEmulator,
   getFirestore,
@@ -36,7 +31,6 @@ export const FIRESTORE_EMULATOR_PORT = Number(
 export const app: FirebaseApp = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
 
 export const useEmulators =
   (import.meta.env.VITE_USE_EMULATORS ?? "true").toLowerCase() !== "false";

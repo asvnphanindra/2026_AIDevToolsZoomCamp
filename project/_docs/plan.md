@@ -12,7 +12,7 @@
 
 - Fresh folder under course `project/` (not overwrite `module_2`).
 - Copy/adapt Weekslot UI patterns where they fit.
-- Firebase Auth (Google) + Firestore; Hosting is post-submission.
+- Firebase Auth (Email/Password) + Firestore; Hosting is post-submission.
 - Commit and push regularly. All project files stay under `project/`.
 
 ## Sections
@@ -31,4 +31,4 @@ Firebase Hosting (demo project) if a public URL is desired · personal project s
 
 ## Out of scope until asked
 
-- Native mobile · non-Google auth beyond Firebase needs · full PNG-parity before MVP.
+- Native mobile · OAuth providers beyond Email/Password · full PNG-parity before MVP.

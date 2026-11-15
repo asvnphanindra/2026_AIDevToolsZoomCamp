@@ -19,7 +19,7 @@ Each issue body includes **acceptance criteria**. Full AC detail: [FUNCTIONAL_SP
 
 | US-* | # | Title | Short AC (full AC in issue body) |
 |------|---|--------|----------------------------------|
-| US-A1 | [#23](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/23) | Sign in (Google + owner rules) | Firebase Google sign-in; Firestore only under `uid`; sign-out clears view |
+| US-A1 | [#23](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/23) | Sign in (Email/Password + owner rules) | Firebase email/password sign-in; Firestore only under `uid`; sign-out clears view |
 | US-A2 | [#24](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/24) | Demo mode (anonymous + seed) | Try demo + fictional seed; no personal data/keys in repo |
 | US-B1 | [#25](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/25) | 3-day hourly grid | Today+2; default 06:00–23:00; colours; last-updated TZ |
 | US-B2 | [#26](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues/26) | Energy bands | Configurable strips; warn deep-work in low band |

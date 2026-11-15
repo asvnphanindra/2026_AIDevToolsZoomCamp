@@ -2,7 +2,7 @@
 
 **Status:** Synced to [FUNCTIONAL_SPEC_grok_bot.md](FUNCTIONAL_SPEC_grok_bot.md) v1.0 (user stories)  
 **Public tracker (with AC):** GitHub Issues [`work-planner` #23–#39](https://github.com/asvnphanindra/2026_AIDevToolsZoomCamp/issues?q=is%3Aissue+label%3Awork-planner) (US-A1…US-F2); map in [task-tracker.md](task-tracker.md); #13–#22 closed  
-**Stack (locked):** Firebase Authentication (Google) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** is the intended production host, but deploy is **after course submission** (local run/test first — [plan.md](plan.md)).
+**Stack (locked):** Firebase Authentication (Email/Password) · Cloud Firestore · React + TypeScript · Emulator Suite for local/CI. **Firebase Hosting** is the intended production host, but deploy is **after course submission** (local run/test first — [plan.md](plan.md)).
 
 ## 1. Problem
 
@@ -28,7 +28,7 @@ Agents implement **MVP** only unless a Phase 2 item is explicitly prioritized. F
 
 | ID | Title (short) |
 |----|----------------|
-| US-A1 | Sign in (Google / Firebase Auth; owner-only rules) |
+| US-A1 | Sign in (Email/Password / Firebase Auth; owner-only rules) |
 | US-A2 | Demo mode (anonymous + fictional seed) |
 | US-B1 | 3-day hourly grid |
 | US-B2 | Energy bands + deep-work warning |

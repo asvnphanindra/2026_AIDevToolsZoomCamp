@@ -88,7 +88,8 @@ export function AuthShell() {
     error,
     busy,
     isDemo,
-    signInWithGoogle,
+    signInWithEmail,
+    createAccountWithEmail,
     signInDemo,
     signOut,
   } = useAuth();
@@ -96,6 +97,8 @@ export function AuthShell() {
   const [appView, setAppView] = useState<AppView>("scheduler");
   const [demoReady, setDemoReady] = useState(false);
   const [demoLoadError, setDemoLoadError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const demoUidRef = useRef<string | null>(null);
 
   const [tasks, setTasks] = useState<BacklogTask[]>([]);
@@ -370,22 +373,64 @@ export function AuthShell() {
         <header className="brand">
           <h1>Work Planner</h1>
           <p className="lede">
-            Sign in to keep your plan private, or try the fictional demo.
+            Sign in with email to keep your plan private, or try the fictional
+            demo.
           </p>
         </header>
-        <div className="actions">
-          <button type="button" disabled={busy} onClick={signInWithGoogle}>
-            Sign in with Google
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            onClick={signInDemo}
-          >
-            Try demo
-          </button>
-        </div>
+        <form
+          className="auth-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void signInWithEmail(email, password);
+          }}
+        >
+          <label className="auth-field">
+            <span>Email</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              value={email}
+              disabled={busy}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
+          <label className="auth-field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              disabled={busy}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              minLength={6}
+            />
+          </label>
+          <div className="actions">
+            <button type="submit" disabled={busy}>
+              Sign in
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => void createAccountWithEmail(email, password)}
+            >
+              Create account
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={signInDemo}
+            >
+              Try demo
+            </button>
+          </div>
+        </form>
         {error ? <p className="error">{error}</p> : null}
         <p className="hint">
           Local: <code>npm start</code> runs Auth + Firestore + Emulator UI +

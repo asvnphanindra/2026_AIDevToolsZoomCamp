@@ -1,23 +1,19 @@
 import {
-  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInAnonymously,
-  signInWithCredential,
-  signInWithPopup,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
 import {
   auth,
-  googleProvider,
   isAuthEmulatorReachable,
   isFirestoreEmulatorReachable,
   useEmulators,
 } from "@/lib/firebase";
 import {
   clearLocalSession,
-  localOwnerUser,
-  readLocalSession,
   type AppUser,
 } from "@/lib/session";
 import {
@@ -50,87 +46,134 @@ function emitLocal(user: AppUser | null): void {
   for (const listener of localListeners) listener(user);
 }
 
-function isNetworkAuthError(err: unknown): boolean {
+/** Map Firebase Auth codes to short, actionable UI messages. */
+export function authErrorMessage(err: unknown): string {
   const code =
     err && typeof err === "object" && "code" in err
       ? String((err as { code: string }).code)
       : "";
-  const message = err instanceof Error ? err.message : String(err);
-  return (
-    code.includes("network-request-failed") ||
-    code.includes("unavailable") ||
-    /network|Failed to fetch|ERR_CONNECTION/i.test(message)
-  );
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "That email already has an account. Sign in instead.";
+    case "auth/invalid-email":
+      return "Enter a valid email address.";
+    case "auth/missing-email":
+      return "Email is required.";
+    case "auth/missing-password":
+      return "Password is required.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+    case "auth/invalid-login-credentials":
+      return "Wrong email or password.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Network error. Check your connection and try again.";
+    case "auth/operation-not-allowed":
+      return "Email/password sign-in is not enabled for this project.";
+    default: {
+      if (err instanceof Error && err.message) return err.message;
+      return "Authentication failed";
+    }
+  }
 }
 
-/** US-A1 — Google via Auth emulator when up; else local owner session. */
-export async function signInWithGoogle(): Promise<AuthSession> {
-  const traceId = newTraceId();
-  const emulatorUp = await isAuthEmulatorReachable();
-  if (useEmulators && emulatorUp) {
-    try {
-      const credential = GoogleAuthProvider.credential(
-        JSON.stringify({
-          sub: "emulator-google-owner",
-          email: "owner@example.com",
-          email_verified: true,
-          name: "Planner Owner",
-        }),
-      );
-      const user = (await signInWithCredential(auth, credential)).user;
-      clearLocalSession();
-      const view = await ensureOwnerProfile(
-        user.uid,
-        user.displayName || user.email || "Planner Owner",
-      );
-      void reportTelemetry({
-        name: "signInWithGoogle",
-        kind: "auth",
-        ok: true,
-        traceId,
-        attributes: { backend: "emulator", source: view.source },
-      });
-      return { user: toAppUser(user), view, isDemo: false };
-    } catch (err) {
-      if (!isNetworkAuthError(err)) {
-        void reportTelemetry({
-          name: "signInWithGoogle",
-          kind: "auth",
-          ok: false,
-          status: "error",
-          reason: "auth_failed",
-          traceId,
-        });
-        throw err;
-      }
-    }
-  } else if (!useEmulators) {
-    const user = (await signInWithPopup(auth, googleProvider)).user;
-    const view = await ensureOwnerProfile(
-      user.uid,
-      user.displayName || user.email || "Planner Owner",
+async function requireAuthBackend(action: string): Promise<void> {
+  if (!useEmulators) return;
+  const up = await isAuthEmulatorReachable();
+  if (!up) {
+    throw new Error(
+      `${action} needs the Auth emulator. Run npm start, then try again.`,
     );
-    void reportTelemetry({
-      name: "signInWithGoogle",
-      kind: "auth",
-      ok: true,
-      traceId,
-      attributes: { backend: "firebase", source: view.source },
-    });
-    return { user: toAppUser(user), view, isDemo: false };
   }
+}
 
-  const user = localOwnerUser();
-  emitLocal(user);
-  const view = await ensureOwnerProfile(user.uid, user.displayName || "Planner Owner");
+async function completeOwnerSignIn(
+  user: User,
+  telemetryName: string,
+  traceId: string,
+): Promise<AuthSession> {
+  clearLocalSession();
+  const view = await ensureOwnerProfile(
+    user.uid,
+    user.displayName || user.email || "Planner Owner",
+  );
   void reportTelemetry({
-    name: "signInWithGoogle",
+    name: telemetryName,
     kind: "auth",
     ok: true,
     traceId,
-    attributes: { backend: "local", source: view.source },
+    attributes: {
+      backend: useEmulators ? "emulator" : "firebase",
+      source: view.source,
+      provider: "password",
+    },
   });
-  return { user, view, isDemo: false };
+  return { user: toAppUser(user), view, isDemo: false };
+}
+
+/** US-A1 — email/password sign-in (non-anonymous → users/{uid}). */
+export async function signInWithEmail(
+  email: string,
+  password: string,
+): Promise<AuthSession> {
+  const traceId = newTraceId();
+  const trimmed = email.trim();
+  if (!trimmed) throw new Error("Email is required.");
+  if (!password) throw new Error("Password is required.");
+
+  try {
+    await requireAuthBackend("Sign in");
+    const user = (
+      await signInWithEmailAndPassword(auth, trimmed, password)
+    ).user;
+    return completeOwnerSignIn(user, "signInWithEmail", traceId);
+  } catch (err) {
+    void reportTelemetry({
+      name: "signInWithEmail",
+      kind: "auth",
+      ok: false,
+      status: "error",
+      reason: "auth_failed",
+      traceId,
+    });
+    throw new Error(authErrorMessage(err));
+  }
+}
+
+/** US-A1 — create email/password account (non-anonymous → users/{uid}). */
+export async function createAccountWithEmail(
+  email: string,
+  password: string,
+): Promise<AuthSession> {
+  const traceId = newTraceId();
+  const trimmed = email.trim();
+  if (!trimmed) throw new Error("Email is required.");
+  if (!password) throw new Error("Password is required.");
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+
+  try {
+    await requireAuthBackend("Create account");
+    const user = (
+      await createUserWithEmailAndPassword(auth, trimmed, password)
+    ).user;
+    return completeOwnerSignIn(user, "createAccountWithEmail", traceId);
+  } catch (err) {
+    void reportTelemetry({
+      name: "createAccountWithEmail",
+      kind: "auth",
+      ok: false,
+      status: "error",
+      reason: "auth_failed",
+      traceId,
+    });
+    throw new Error(authErrorMessage(err));
+  }
 }
 
 /**
@@ -208,7 +251,7 @@ export function subscribeAuth(listener: AuthListener): () => void {
       listener(toAppUser(firebaseUser));
       return;
     }
-    listener(readLocalSession());
+    listener(null);
   });
   return () => {
     localListeners.delete(listener);

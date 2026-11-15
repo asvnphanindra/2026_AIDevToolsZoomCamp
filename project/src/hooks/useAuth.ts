@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  createAccountWithEmail,
   signInDemo,
-  signInWithGoogle,
+  signInWithEmail,
   signOut,
   subscribeAuth,
   type AuthSession,
@@ -78,7 +79,10 @@ export function useAuth() {
     error,
     busy,
     isDemo,
-    signInWithGoogle: () => run(signInWithGoogle),
+    signInWithEmail: (email: string, password: string) =>
+      run(() => signInWithEmail(email, password)),
+    createAccountWithEmail: (email: string, password: string) =>
+      run(() => createAccountWithEmail(email, password)),
     signInDemo: () => run(signInDemo),
     signOut: () => run(signOut),
   };
