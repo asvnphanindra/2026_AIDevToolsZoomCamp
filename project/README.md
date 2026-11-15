@@ -229,7 +229,7 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 ### Teaching Plan (Job) + Activity Log + bot
 
-1. **Planner** → select area **Job** in the Goals Gantt dropdown → **Teaching Plan** appears (topics panel, coverage grid, semester dates, timetable versions).
+1. **Planner** → click **Teaching Plan** (top-right of the Planner header), or select area **Job** / **Work** in the Goals Gantt dropdown. The Teaching Plan panel appears above Goals (topics, coverage grid, semester, timetables).
 2. Set a coverage cell to **100%** → later topics for that section get derived planned dates from the active timetable (mappings are never deleted).
 3. **Activity** nav → reverse-chronological append-only log (actor, action, summary).
 

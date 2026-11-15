@@ -71,10 +71,26 @@ export type TeachingPlanState = TeachingPlanDoc & {
   timetables: TimetableVersion[];
 };
 
-/** Job area: seed name Job (id often `work`) or explicit `job` id. */
+/**
+ * Job / teaching area. Seed id is historically `work` (display name Job);
+ * also accept id/name `job`, and legacy display name `Work`.
+ */
 export function isJobArea(area: Pick<SeedArea, "id" | "name">): boolean {
+  const id = area.id.trim().toLowerCase();
   const name = area.name.trim().toLowerCase();
-  return area.id === "job" || name === "job";
+  return id === "job" || id === "work" || name === "job" || name === "work";
+}
+
+/** Prefer Job-named area, else first matching isJobArea. */
+export function findJobArea(
+  areas: ReadonlyArray<Pick<SeedArea, "id" | "name" | "order">>,
+): (Pick<SeedArea, "id" | "name" | "order">) | undefined {
+  const matches = areas.filter(isJobArea);
+  if (!matches.length) return undefined;
+  const namedJob = matches.find(
+    (a) => a.name.trim().toLowerCase() === "job" || a.id === "job",
+  );
+  return namedJob ?? matches[0];
 }
 
 export function mappingId(topicId: string, sectionId: string): string {

@@ -21,12 +21,32 @@ export function writeAreas(areas: SeedArea[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(areas));
 }
 
+/** Rename legacy seed area Work → Job (id stays `work`). */
+export function migrateJobAreaName(areas: SeedArea[]): SeedArea[] {
+  let changed = false;
+  const next = areas.map((a) => {
+    if (a.id === "work" && a.name.trim().toLowerCase() === "work") {
+      changed = true;
+      return { ...a, name: "Job" };
+    }
+    return a;
+  });
+  return changed ? next : areas;
+}
+
 export function loadAreas(fallback?: SeedArea[]): SeedArea[] {
   const stored = typeof localStorage !== "undefined" ? readAreas() : null;
-  if (stored && stored.length) return stored;
+  if (stored && stored.length) {
+    const migrated = migrateJobAreaName(stored);
+    if (migrated !== stored && typeof localStorage !== "undefined") {
+      writeAreas(migrated);
+    }
+    return migrated;
+  }
   const seeded = fallback?.length ? fallback.map((a) => ({ ...a })) : seedAreas();
-  if (typeof localStorage !== "undefined") writeAreas(seeded);
-  return seeded;
+  const migrated = migrateJobAreaName(seeded);
+  if (typeof localStorage !== "undefined") writeAreas(migrated);
+  return migrated;
 }
 
 export function nextAreaId(areas: SeedArea[]): string {

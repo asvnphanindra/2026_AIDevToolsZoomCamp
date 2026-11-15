@@ -2,10 +2,29 @@ import { describe, expect, it } from "vitest";
 import {
   activeTimetable,
   coverageFor,
+  findJobArea,
+  isJobArea,
   seedTeachingPlan,
   setCoverageAndCascade,
   type TimetableVersion,
 } from "@/lib/teaching-plan";
+
+describe("isJobArea", () => {
+  it("matches seed id work, name Job, and legacy Work", () => {
+    expect(isJobArea({ id: "work", name: "Job" })).toBe(true);
+    expect(isJobArea({ id: "work", name: "Work" })).toBe(true);
+    expect(isJobArea({ id: "job", name: "Teaching" })).toBe(true);
+    expect(isJobArea({ id: "study", name: "Study" })).toBe(false);
+  });
+
+  it("findJobArea prefers Job-named match", () => {
+    const hit = findJobArea([
+      { id: "work", name: "Work", order: 1 },
+      { id: "study", name: "Study", order: 2 },
+    ]);
+    expect(hit?.id).toBe("work");
+  });
+});
 
 describe("activeTimetable", () => {
   const versions: TimetableVersion[] = [

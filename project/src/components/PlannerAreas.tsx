@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { GoalsGantt } from "@/components/GoalsGantt";
 import { PlannerWeekBacklog } from "@/components/PlannerWeekBacklog";
 import { TeachingPlan } from "@/components/TeachingPlan";
@@ -12,6 +12,7 @@ import type { FocusItem } from "@/lib/focus";
 import type { DailyRule } from "@/lib/rules";
 import type { BacklogTask } from "@/lib/tasks";
 import {
+  findJobArea,
   isJobArea,
   type TeachingPlanState,
 } from "@/lib/teaching-plan";
@@ -59,17 +60,24 @@ export function PlannerAreas({
   const [name, setName] = useState("");
   const [colour, setColour] = useState(DEFAULT_AREA_COLOURS[0]!);
   const [configAreaId, setConfigAreaId] = useState<string | null>(null);
+  const teachingPlanRef = useRef<HTMLDivElement | null>(null);
   const orderedForGantt = useMemo(
     () => [...areas].sort((a, b) => a.order - b.order),
     [areas],
   );
+  const jobArea = useMemo(() => findJobArea(orderedForGantt), [orderedForGantt]);
   const [ganttAreaId, setGanttAreaId] = useState(
-    () => [...areas].sort((a, b) => a.order - b.order)[0]?.id ?? "",
+    () =>
+      findJobArea([...areas].sort((a, b) => a.order - b.order))?.id ??
+      [...areas].sort((a, b) => a.order - b.order)[0]?.id ??
+      "",
   );
 
   useEffect(() => {
     if (!orderedForGantt.some((a) => a.id === ganttAreaId)) {
-      setGanttAreaId(orderedForGantt[0]?.id ?? "");
+      setGanttAreaId(
+        findJobArea(orderedForGantt)?.id ?? orderedForGantt[0]?.id ?? "",
+      );
     }
   }, [orderedForGantt, ganttAreaId]);
 
@@ -154,19 +162,44 @@ export function PlannerAreas({
     : [];
   const selectedGanttArea =
     orderedForGantt.find((a) => a.id === ganttAreaId) ?? null;
+  const jobSelected = Boolean(
+    selectedGanttArea && isJobArea(selectedGanttArea),
+  );
   const showTeachingPlan =
-    Boolean(teachingPlan && onTeachingPlanChange) &&
-    Boolean(selectedGanttArea && isJobArea(selectedGanttArea));
+    Boolean(onTeachingPlanChange) && jobSelected;
+
+  function openTeachingPlan() {
+    if (!jobArea) return;
+    setGanttAreaId(jobArea.id);
+    requestAnimationFrame(() => {
+      teachingPlanRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
 
   return (
     <section className="planner-areas" aria-label="Planner areas">
-      <div className="day-grid-meta">
-        <h2>Planner</h2>
-        <p className="muted">
-          Life areas at a glance. Open the config icon for daily minimums —
-          soft targets for weekly retrospective (allocated vs min), not
-          scheduling blockers.
-        </p>
+      <div className="day-grid-meta planner-areas-head">
+        <div>
+          <h2>Planner</h2>
+          <p className="muted">
+            Life areas at a glance. Open the config icon for daily minimums —
+            soft targets for weekly retrospective (allocated vs min), not
+            scheduling blockers.
+          </p>
+        </div>
+        {jobArea && onTeachingPlanChange ? (
+          <button
+            type="button"
+            className={jobSelected ? "nav-active" : "secondary"}
+            onClick={openTeachingPlan}
+            aria-controls="teaching-plan-panel"
+          >
+            Teaching Plan
+          </button>
+        ) : null}
       </div>
 
       <ul className="planner-area-row">
@@ -332,6 +365,34 @@ export function PlannerAreas({
         </div>
       ) : null}
 
+      {showTeachingPlan ? (
+        <div
+          id="teaching-plan-panel"
+          ref={teachingPlanRef}
+          className="teaching-plan-anchor"
+        >
+          {teachingPlan && onTeachingPlanChange ? (
+            <TeachingPlan
+              plan={teachingPlan}
+              onPlanChange={onTeachingPlanChange}
+            />
+          ) : (
+            <section className="teaching-plan" aria-label="Teaching plan">
+              <h3>Teaching Plan</h3>
+              <p className="muted">Loading Job teaching plan…</p>
+            </section>
+          )}
+        </div>
+      ) : jobArea && onTeachingPlanChange ? (
+        <p className="muted teaching-plan-hint">
+          Select area <strong>{jobArea.name}</strong> (or use{" "}
+          <button type="button" className="linkish" onClick={openTeachingPlan}>
+            Teaching Plan
+          </button>
+          ) to open topics, coverage, and timetables.
+        </p>
+      ) : null}
+
       <GoalsGantt
         areas={areas}
         goals={areaGoals}
@@ -342,13 +403,6 @@ export function PlannerAreas({
         areaId={ganttAreaId}
         onAreaIdChange={setGanttAreaId}
       />
-
-      {showTeachingPlan && teachingPlan && onTeachingPlanChange ? (
-        <TeachingPlan
-          plan={teachingPlan}
-          onPlanChange={onTeachingPlanChange}
-        />
-      ) : null}
 
       <PlannerWeekBacklog
         areas={areas}

@@ -15,7 +15,7 @@ import {
   type ActivityActor,
   type ActivityEntry,
 } from "@/lib/activity-log";
-import { loadAreas, writeAreas } from "@/lib/areas";
+import { loadAreas, migrateJobAreaName, writeAreas } from "@/lib/areas";
 import {
   readPlacedBlocks,
   writePlacedBlocks,
@@ -265,7 +265,11 @@ export function AuthShell() {
       try {
         const state = await loadDemoPlannerState(user.uid);
         if (cancelled || demoUidRef.current !== user.uid) return;
-        setAreas(state.areas);
+        const areasMigrated = migrateJobAreaName(state.areas);
+        setAreas(areasMigrated);
+        if (areasMigrated !== state.areas) {
+          void replaceDemoCollection(user.uid, "areas", areasMigrated);
+        }
         setTasks(state.tasks);
         setBlocks(state.blocks);
         setRules(state.rules);
