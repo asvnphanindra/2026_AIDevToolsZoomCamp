@@ -2,6 +2,7 @@ rules_version = '2';
 
 // Personal data: users/{uid}/… (non-anonymous only).
 // Try demo: demo/{uid}/… (anonymous only; isolated per Auth uid).
+// Workspace: teaching plan + activity under owner; allowlisted bots may R/W.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -17,12 +18,53 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    // Email/password (and other non-anonymous) owners — never anonymous Try-demo.
-    match /users/{userId} {
-      allow read, write: if isUid(userId) && !isAnonymous();
+    function isOwner(userId) {
+      return isUid(userId) && !isAnonymous();
     }
-    match /users/{userId}/{document=**} {
-      allow read, write: if isUid(userId) && !isAnonymous();
+
+    function isAllowlistedBot(ownerUid) {
+      return signedIn()
+        && !isAnonymous()
+        && exists(/databases/$(database)/documents/users/$(ownerUid)/bots/$(request.auth.uid));
+    }
+
+    function canAccessWorkspace(ownerUid) {
+      return isOwner(ownerUid) || isAllowlistedBot(ownerUid);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow read: if isAllowlistedBot(userId);
+    }
+
+    match /users/{userId}/bots/{botUid} {
+      allow read, write: if isOwner(userId);
+      allow read: if isAllowlistedBot(userId) && botUid == request.auth.uid;
+    }
+
+    match /users/{userId}/teachingPlans/{planId} {
+      allow read, write: if canAccessWorkspace(userId);
+    }
+    match /users/{userId}/teachingPlans/{planId}/{document=**} {
+      allow read, write: if canAccessWorkspace(userId);
+    }
+
+    // Activity log: append-only for owner + allowlisted bot.
+    match /users/{userId}/activityLog/{entryId} {
+      allow read: if canAccessWorkspace(userId);
+      allow create: if canAccessWorkspace(userId)
+        && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Other personal subcollections (not activityLog).
+    match /users/{userId}/{subcollection}/{docId} {
+      allow read, write: if isOwner(userId)
+        && subcollection != 'activityLog';
+    }
+    match /users/{userId}/{subcollection}/{docId}/{document=**} {
+      allow read, write: if isOwner(userId)
+        && subcollection != 'activityLog';
     }
 
     // Anonymous Try-demo — only own demo/{uid} tree; no users/{…} access.

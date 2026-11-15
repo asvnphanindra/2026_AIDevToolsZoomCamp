@@ -18,8 +18,10 @@ Public tracker: Issues **[#23–#39](https://github.com/asvnphanindra/2026_AIDev
 - 5-day grid with layer modes (Combined / Availability / Recurring / Scheduled / Focus); availability/energy chunks, seeded schedule
 - **Scheduler** (calendar layers) and **Planner** (area cards + config icon for daily mins used in weekly retrospective, US-C3); right-click placed cards to edit / unschedule / check-in
 - Planner **Goals Gantt** only (no separate Goals nav): area dropdown; short (~3w) / mid (~3m) / long (~3q) bars; **→ This week** fills the **Backlog** under the Gantt; 3-week overview shows spanning goals + cross-area clash
+- Planner **Teaching Plan** (Job area only): floating topics, section coverage %, semester dates, versioned timetables, coverage cascade
 - Planner **Backlog** owns Focus: weekly cards + standing focus columns (US-E1); no separate Focus nav
 - Scheduler **Focus** layer: **Tasks to Focus** = same backlog queue until drag-drop onto the calendar; **Combined** is grid-only
+- **Activity** nav: append-only log of who changed what (owner / bot)
 - Tasks, drag/move/resize (US-C1–C2)
 - Check-in + replan (US-D1, D2)
 - 3-week goals overview via Planner (US-E3)
@@ -224,6 +226,27 @@ Alert **`DemoSeedUnavailable`**: Try demo seed path broken for users. On-call cl
 
 1. **Calendar** → three months + markers + upcoming list.
 2. Recurring series expand on read (add / pause / resume).
+
+### Teaching Plan (Job) + Activity Log + bot
+
+1. **Planner** → select area **Job** in the Goals Gantt dropdown → **Teaching Plan** appears (topics panel, coverage grid, semester dates, timetable versions).
+2. Set a coverage cell to **100%** → later topics for that section get derived planned dates from the active timetable (mappings are never deleted).
+3. **Activity** nav → reverse-chronological append-only log (actor, action, summary).
+
+#### Bot setup (shared workspace)
+
+Bot is a normal Firebase **Email/Password** user with profile `role: "bot"`. Teaching plan + activity live under the **human** `workspaceOwnerUid`.
+
+1. In [Firebase Console](https://console.firebase.google.com/) → project **`samaya-scheduler`** → **Authentication** → add a user (email/password) for the bot.
+2. Sign in once as the **human** owner (Create account / Sign in) so `users/{ownerUid}` exists with `workspaceOwnerUid = ownerUid` and `role = "owner"`.
+3. In **Firestore**, set the bot’s user doc `users/{botUid}`:
+   - `role`: `"bot"`
+   - `workspaceOwnerUid`: the human owner uid
+   - `displayName`: e.g. `PlanBot`
+4. Allowlist the bot under the owner: create `users/{ownerUid}/bots/{botUid}` with `{ "label": "PlanBot", "role": "bot" }`.
+5. Sign in to the app with the bot email/password → Teaching Plan / Activity use the human workspace; Activity Log records `actorRole: bot`.
+
+Demo mode (`demo/{uid}`) seeds a Job teaching plan but does **not** use bot allowlisting.
 
 ## Hosting (production)
 

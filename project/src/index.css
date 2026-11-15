@@ -2066,3 +2066,220 @@ button.nav-active {
     gap: 0.4rem 0.75rem;
   }
 }
+
+/* Teaching Plan (Job area) */
+.teaching-plan {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--panel) 92%, #d9efe4);
+}
+
+.teaching-plan-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.teaching-plan-header h3 {
+  margin: 0 0 var(--space-1);
+}
+
+.teaching-semester {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.teaching-semester label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.teaching-plan-body {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.teaching-topics-panel {
+  position: sticky;
+  top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.teaching-topics-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.teaching-topic-list {
+  margin: 0 0 var(--space-3);
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.teaching-topic-list li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.teaching-topic-order {
+  display: inline-flex;
+  min-width: 1.25rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.teaching-topic-add,
+.teaching-tt-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.teaching-topic-add input {
+  flex: 1 1 8rem;
+}
+
+.teaching-grid-wrap {
+  overflow: auto;
+}
+
+.teaching-coverage-grid {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+}
+
+.teaching-coverage-grid th,
+.teaching-coverage-grid td {
+  border: 1px solid var(--line);
+  padding: var(--space-2);
+  vertical-align: top;
+  text-align: left;
+}
+
+.teaching-coverage-grid thead th {
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  font-weight: 600;
+}
+
+.teaching-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.teaching-cell input[type="number"] {
+  width: 4.5rem;
+}
+
+.teaching-cell-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.teaching-timetables {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.teaching-timetables-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.teaching-tt-list {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.teaching-tt-list > li {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.teaching-tt-slots {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.teaching-tt-add label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+/* Activity Log */
+.activity-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.activity-log-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.activity-log-row time {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.activity-log-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+@media (max-width: 800px) {
+  .teaching-plan-body {
+    grid-template-columns: 1fr;
+  }
+
+  .teaching-topics-panel {
+    position: static;
+  }
+
+  .activity-log-row {
+    grid-template-columns: 1fr;
+  }
+}

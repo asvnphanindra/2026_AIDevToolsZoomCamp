@@ -62,10 +62,27 @@ export async function ensureOwnerProfile(
         timezone: "Asia/Kolkata",
         settings: fictionalSeed.profile.settings,
         mode: "owner",
+        role: "owner",
+        workspaceOwnerUid: uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
       await batch.commit();
+    } else {
+      const data = snap.data();
+      if (data["workspaceOwnerUid"] == null && data["role"] !== "bot") {
+        const batch = writeBatch(db);
+        batch.set(
+          ref,
+          {
+            workspaceOwnerUid: uid,
+            role: data["role"] ?? "owner",
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        );
+        await batch.commit();
+      }
     }
 
     const areas = await readAreas(["users", uid]);

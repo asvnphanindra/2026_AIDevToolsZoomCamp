@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityLog } from "@/components/ActivityLog";
 import { DayGrid } from "@/components/DayGrid";
 import { LiveClock } from "@/components/LiveClock";
 import { MonthCalendarView } from "@/components/MonthCalendarView";
@@ -8,6 +9,12 @@ import { ThreeWeekView } from "@/components/ThreeWeekView";
 import { useAuth } from "@/hooks/useAuth";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
 import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
+import {
+  appendActivity,
+  loadActivityLog,
+  type ActivityActor,
+  type ActivityEntry,
+} from "@/lib/activity-log";
 import { loadAreas, writeAreas } from "@/lib/areas";
 import {
   readPlacedBlocks,
@@ -57,12 +64,23 @@ import {
   type BacklogTask,
 } from "@/lib/tasks";
 import {
+  JOB_AREA_ID,
+  loadOrSeedTeachingPlan,
+  persistTeachingPlan,
+  type TeachingPlanState,
+} from "@/lib/teaching-plan";
+import {
   loadWeekHorizon,
   writeWeekHorizon,
   type WeekHorizonItem,
 } from "@/lib/week-horizon";
+import {
+  actorRoleFromProfile,
+  ensureWorkspaceOwner,
+  type WorkspaceProfile,
+} from "@/lib/workspace";
 
-type AppView = "scheduler" | "planner" | "weeks" | "calendar";
+type AppView = "scheduler" | "planner" | "weeks" | "calendar" | "activity";
 
 function emptyDemoBootstrap() {
   return {
@@ -112,6 +130,63 @@ export function AuthShell() {
   const [areaGoals, setAreaGoals] = useState<AreaGoal[]>([]);
   const [checkIns, setCheckIns] = useState<Record<string, BlockCheckIn>>({});
   const [layerMode, setLayerMode] = useState<SchedulerLayerMode>("combined");
+  const [teachingPlan, setTeachingPlan] = useState<TeachingPlanState | null>(
+    null,
+  );
+  const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
+  const [workspace, setWorkspace] = useState<WorkspaceProfile | null>(null);
+
+  const workspaceOwnerUid = workspace?.workspaceOwnerUid || user?.uid || "";
+
+  const activityActor = useMemo((): ActivityActor | null => {
+    if (!user) return null;
+    if (isDemo) {
+      return {
+        uid: user.uid,
+        label: view?.displayName || "Demo",
+        role: "human",
+      };
+    }
+    if (workspace) {
+      return {
+        uid: user.uid,
+        label:
+          workspace.displayName ||
+          user.displayName ||
+          user.email ||
+          user.uid,
+        role: actorRoleFromProfile(workspace),
+      };
+    }
+    return {
+      uid: user.uid,
+      label: user.displayName || user.email || user.uid,
+      role: "owner",
+    };
+  }, [user, isDemo, view?.displayName, workspace]);
+
+  const logActivity = useCallback(
+    async (input: {
+      action: string;
+      entityType: string;
+      entityId: string;
+      summary: string;
+    }) => {
+      if (!activityActor || !workspaceOwnerUid) return;
+      try {
+        const entry = await appendActivity({
+          ownerUid: workspaceOwnerUid,
+          isDemo,
+          actor: activityActor,
+          ...input,
+        });
+        setActivityEntries((prev) => [entry, ...prev].slice(0, 100));
+      } catch {
+        // Non-blocking for planner UX.
+      }
+    },
+    [activityActor, workspaceOwnerUid, isDemo],
+  );
 
   // Personal (non-demo): hydrate from localStorage once signed in.
   useEffect(() => {
@@ -130,6 +205,41 @@ export function AuthShell() {
     setLayerMode(loadSchedulerLayerMode());
     setDemoReady(true);
     setDemoLoadError(null);
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const profile = await ensureWorkspaceOwner(
+          user.uid,
+          user.displayName || user.email || "Planner Owner",
+        );
+        if (cancelled) return;
+        setWorkspace(profile);
+        const ownerUid = profile.workspaceOwnerUid || user.uid;
+        const [plan, activity] = await Promise.all([
+          loadOrSeedTeachingPlan({
+            ownerUid,
+            isDemo: false,
+            areaId: JOB_AREA_ID,
+          }),
+          loadActivityLog({ ownerUid, isDemo: false }),
+        ]);
+        if (cancelled) return;
+        setTeachingPlan(plan);
+        setActivityEntries(activity);
+      } catch {
+        if (cancelled) return;
+        const plan = await loadOrSeedTeachingPlan({
+          ownerUid: user.uid,
+          isDemo: false,
+          areaId: JOB_AREA_ID,
+        });
+        setTeachingPlan(plan);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [ready, user, isDemo, view?.areas]);
 
   // Demo: load everything from demo/{uid}/… (no localStorage).
@@ -165,6 +275,34 @@ export function AuthShell() {
         setCalendarSeries(state.series);
         setAreaGoals(state.areaGoals);
         setCheckIns(state.checkIns);
+        setWorkspace({
+          uid: user.uid,
+          displayName: fictionalSeed.profile.displayName,
+          role: "human",
+          workspaceOwnerUid: user.uid,
+        });
+        try {
+          const [plan, activity] = await Promise.all([
+            loadOrSeedTeachingPlan({
+              ownerUid: user.uid,
+              isDemo: true,
+              areaId: JOB_AREA_ID,
+            }),
+            loadActivityLog({ ownerUid: user.uid, isDemo: true }),
+          ]);
+          if (cancelled || demoUidRef.current !== user.uid) return;
+          setTeachingPlan(plan);
+          setActivityEntries(activity);
+        } catch {
+          if (cancelled) return;
+          setTeachingPlan(
+            await loadOrSeedTeachingPlan({
+              ownerUid: user.uid,
+              isDemo: true,
+              areaId: JOB_AREA_ID,
+            }),
+          );
+        }
         setDemoReady(true);
       } catch (err) {
         if (cancelled) return;
@@ -194,11 +332,17 @@ export function AuthShell() {
       setTasks(next);
       if (isDemo) {
         void persistDemo("tasks", next);
-        return;
+      } else {
+        writeBacklog(next);
       }
-      writeBacklog(next);
+      void logActivity({
+        action: "update",
+        entityType: "tasks",
+        entityId: "backlog",
+        summary: `Updated backlog (${next.length} tasks)`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onBlocksChange = useCallback(
@@ -206,11 +350,17 @@ export function AuthShell() {
       setBlocks(next);
       if (isDemo) {
         void persistDemo("blocks", next);
-        return;
+      } else {
+        writePlacedBlocks(next);
       }
-      writePlacedBlocks(next);
+      void logActivity({
+        action: "update",
+        entityType: "blocks",
+        entityId: "placed",
+        summary: `Updated placed blocks (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onAreasChange = useCallback(
@@ -218,11 +368,17 @@ export function AuthShell() {
       setAreas(next);
       if (isDemo) {
         void persistDemo("areas", next);
-        return;
+      } else {
+        writeAreas(next);
       }
-      writeAreas(next);
+      void logActivity({
+        action: "update",
+        entityType: "areas",
+        entityId: "list",
+        summary: `Updated areas (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onRulesChange = useCallback(
@@ -230,11 +386,17 @@ export function AuthShell() {
       setRules(next);
       if (isDemo) {
         void persistDemo("rules", next);
-        return;
+      } else {
+        writeRules(next);
       }
-      writeRules(next);
+      void logActivity({
+        action: "update",
+        entityType: "rules",
+        entityId: "daily",
+        summary: `Updated daily minimums (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onFocusItemsChange = useCallback(
@@ -242,11 +404,17 @@ export function AuthShell() {
       setFocusItems(next);
       if (isDemo) {
         void persistDemo("focusItems", next);
-        return;
+      } else {
+        writeFocusItems(next);
       }
-      writeFocusItems(next);
+      void logActivity({
+        action: "update",
+        entityType: "focusItems",
+        entityId: "list",
+        summary: `Updated standing focus (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onWeekHorizonChange = useCallback(
@@ -254,11 +422,17 @@ export function AuthShell() {
       setWeekHorizon(next);
       if (isDemo) {
         void persistDemo("weekHorizon", next);
-        return;
+      } else {
+        writeWeekHorizon(next);
       }
-      writeWeekHorizon(next);
+      void logActivity({
+        action: "update",
+        entityType: "weekHorizon",
+        entityId: "list",
+        summary: `Updated week horizon (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onAreaGoalsChange = useCallback(
@@ -266,11 +440,38 @@ export function AuthShell() {
       setAreaGoals(next);
       if (isDemo) {
         void persistDemo("areaGoals", next);
-        return;
+      } else {
+        writeAreaGoals(next);
       }
-      writeAreaGoals(next);
+      void logActivity({
+        action: "update",
+        entityType: "areaGoals",
+        entityId: "list",
+        summary: `Updated area goals (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
+  );
+
+  const onTeachingPlanChange = useCallback(
+    (next: TeachingPlanState) => {
+      setTeachingPlan(next);
+      if (!workspaceOwnerUid) return;
+      void (async () => {
+        await persistTeachingPlan({
+          ownerUid: workspaceOwnerUid,
+          isDemo,
+          state: next,
+        });
+        await logActivity({
+          action: "update",
+          entityType: "teachingPlan",
+          entityId: next.id,
+          summary: `Updated teaching plan (${next.topics.length} topics)`,
+        });
+      })();
+    },
+    [workspaceOwnerUid, isDemo, logActivity],
   );
 
   const onLayerModeChange = useCallback(
@@ -288,12 +489,21 @@ export function AuthShell() {
     (next: CalendarSeries[]) => {
       setCalendarSeries(next);
       if (isDemo) {
-        void persistDemo("series", next as Array<Record<string, unknown> & { id: string }>);
-        return;
+        void persistDemo(
+          "series",
+          next as Array<Record<string, unknown> & { id: string }>,
+        );
+      } else {
+        writeCalendarSeries(next);
       }
-      writeCalendarSeries(next);
+      void logActivity({
+        action: "update",
+        entityType: "series",
+        entityId: "calendar",
+        summary: `Updated calendar series (${next.length})`,
+      });
     },
-    [isDemo, persistDemo],
+    [isDemo, persistDemo, logActivity],
   );
 
   const onCheckInsChange = useCallback(
@@ -432,14 +642,6 @@ export function AuthShell() {
           </div>
         </form>
         {error ? <p className="error">{error}</p> : null}
-        <p className="hint">
-          Local: <code>npm start</code> runs Auth + Firestore + Emulator UI +
-          Vite (JDK 21+). <strong>Try demo</strong> signs in anonymously and
-          loads/saves all planner data under <code>{"demo/{uid}/…"}</code>{" "}
-          (isolated from personal <code>{"users/{uid}/…"}</code>) — browse{" "}
-          <a href="http://127.0.0.1:4000/firestore">:4000 → Firestore</a>.
-          Auth + Firestore must be up; demo never uses localStorage.
-        </p>
       </main>
     );
   }
@@ -503,6 +705,15 @@ export function AuthShell() {
               >
                 Calendar
               </button>
+              <button
+                type="button"
+                className={
+                  appView === "activity" ? "nav-active" : "secondary"
+                }
+                onClick={() => setAppView("activity")}
+              >
+                Activity
+              </button>
             </nav>
             <div className="header-session">
               <button
@@ -535,6 +746,8 @@ export function AuthShell() {
             focusItems={focusItems}
             onFocusItemsChange={onFocusItemsChange}
             onOpenSchedulerFocus={openSchedulerFocus}
+            teachingPlan={teachingPlan}
+            onTeachingPlanChange={onTeachingPlanChange}
           />
         ) : appView === "weeks" ? (
           <ThreeWeekView
@@ -550,6 +763,8 @@ export function AuthShell() {
             series={calendarSeries}
             onSeriesChange={onCalendarSeriesChange}
           />
+        ) : appView === "activity" ? (
+          <ActivityLog entries={activityEntries} />
         ) : (
           <div
             className={

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { GoalsGantt } from "@/components/GoalsGantt";
 import { PlannerWeekBacklog } from "@/components/PlannerWeekBacklog";
+import { TeachingPlan } from "@/components/TeachingPlan";
 import type { SeedArea } from "@/data/fictional-seed";
 import type { AreaGoal } from "@/lib/area-goals";
 import {
@@ -10,6 +11,10 @@ import {
 import type { FocusItem } from "@/lib/focus";
 import type { DailyRule } from "@/lib/rules";
 import type { BacklogTask } from "@/lib/tasks";
+import {
+  isJobArea,
+  type TeachingPlanState,
+} from "@/lib/teaching-plan";
 
 type Props = {
   areas: SeedArea[];
@@ -27,6 +32,8 @@ type Props = {
   focusItems: FocusItem[];
   onFocusItemsChange: (items: FocusItem[]) => void;
   onOpenSchedulerFocus?: () => void;
+  teachingPlan?: TeachingPlanState | null;
+  onTeachingPlanChange?: (plan: TeachingPlanState) => void;
 };
 
 /** Planner surface: area cards in one row; gear opens config (US-C3). */
@@ -46,6 +53,8 @@ export function PlannerAreas({
   focusItems,
   onFocusItemsChange,
   onOpenSchedulerFocus,
+  teachingPlan,
+  onTeachingPlanChange,
 }: Props) {
   const [name, setName] = useState("");
   const [colour, setColour] = useState(DEFAULT_AREA_COLOURS[0]!);
@@ -143,6 +152,11 @@ export function PlannerAreas({
   const configRules = configArea
     ? rules.filter((r) => r.areaId === configArea.id)
     : [];
+  const selectedGanttArea =
+    orderedForGantt.find((a) => a.id === ganttAreaId) ?? null;
+  const showTeachingPlan =
+    Boolean(teachingPlan && onTeachingPlanChange) &&
+    Boolean(selectedGanttArea && isJobArea(selectedGanttArea));
 
   return (
     <section className="planner-areas" aria-label="Planner areas">
@@ -328,6 +342,13 @@ export function PlannerAreas({
         areaId={ganttAreaId}
         onAreaIdChange={setGanttAreaId}
       />
+
+      {showTeachingPlan && teachingPlan && onTeachingPlanChange ? (
+        <TeachingPlan
+          plan={teachingPlan}
+          onPlanChange={onTeachingPlanChange}
+        />
+      ) : null}
 
       <PlannerWeekBacklog
         areas={areas}
