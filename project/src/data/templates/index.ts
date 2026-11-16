@@ -17,6 +17,8 @@ import {
   saveUserSettings,
   type UserSettings,
 } from "@/lib/config";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import {
   replaceCollection,
   type PlannerRoot,
@@ -103,10 +105,6 @@ export async function applyTemplate(
   if (root[0] === "users") {
     await saveUserSettings(root[1], settings);
   } else {
-    const { doc, setDoc, serverTimestamp } = await import(
-      "firebase/firestore"
-    );
-    const { db } = await import("@/lib/firebase");
     await setDoc(
       doc(db, root[0], root[1]),
       {

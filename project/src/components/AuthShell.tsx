@@ -884,8 +884,6 @@ export function AuthShell() {
     );
   }
 
-  const plannerNavActive =
-    appView === "planner" || appView === "weeks" || appView === "settings";
   const showFocusSide = showsTasksToFocus(layerMode) && !isPhone;
   const tz = userSettings.timezone || "Asia/Kolkata";
   const plannerRoot = user
