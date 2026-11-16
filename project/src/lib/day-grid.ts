@@ -5,15 +5,17 @@ import {
   type SeedArea,
   type SeedBand,
   type SeedBlock,
-  type SeedDayType,
   type SeedRoutine,
+  type SeedSchedule,
 } from "@/data/fictional-seed";
 import type { PlacedBlock } from "@/lib/blocks";
+import type { ConfigDayType } from "@/lib/config";
 import {
-  dayTypeForOffset,
+  dayTypeForDay,
   expandFixedSchedule,
   hidesCommute,
   SCHEDULE_COLOUR,
+  type DayTypeLike,
 } from "@/lib/schedule";
 import {
   DEFAULT_TZ,
@@ -60,13 +62,17 @@ export type DayGridModel = {
   items: GridItem[];
   areas: SeedArea[];
   bands: SeedBand[];
-  dayTypes: SeedDayType[];
+  dayTypes: DayTypeLike[];
   scheduleFromSeed: number;
   warnings: DeepWorkWarning[];
   updatedAt: Date;
 };
 
-/** Build today−3…today+3 grid. Fixed schedule always from seed (US-B3/B4). */
+/**
+ * Build today−2…today+2 grid.
+ * Demo falls back to fictionalSeed when config inputs omitted.
+ * Personal empty config → empty schedule/bands/routines (no demo paint).
+ */
 export function buildDayGrid(opts: {
   isDemo: boolean;
   areas: SeedArea[];
@@ -74,28 +80,44 @@ export function buildDayGrid(opts: {
   startHour?: number;
   endHour?: number;
   now?: Date;
-  /** Seed day types (labels / fixed-schedule rules); no UI overrides. */
-  dayTypes?: SeedDayType[];
+  bands?: SeedBand[];
+  routines?: SeedRoutine[];
+  schedules?: SeedSchedule[];
+  dayTypes?: DayTypeLike[];
   /** User-placed blocks from backlog drag (US-C2). */
   placedBlocks?: PlacedBlock[];
 }): DayGridModel {
   const timezone = opts.timezone || DEFAULT_TZ;
   const startHour =
-    opts.startHour ?? fictionalSeed.profile.settings.gridStartHour;
-  const endHour = opts.endHour ?? fictionalSeed.profile.settings.gridEndHour;
+    opts.startHour ??
+    (opts.isDemo ? fictionalSeed.profile.settings.gridStartHour : 6);
+  const endHour =
+    opts.endHour ??
+    (opts.isDemo ? fictionalSeed.profile.settings.gridEndHour : 22);
   const now = opts.now ?? new Date();
   const { keys: dayKeys, todayIndex } = weekCenteredDayKeys(timezone, now);
   const todayKey = dayKeys[todayIndex]!;
-  const areas = opts.areas.length ? opts.areas : fictionalSeed.areas;
-  const bands = fictionalSeed.bands;
-  const dayTypes = opts.dayTypes ?? fictionalSeed.dayTypes;
+  const areas =
+    opts.areas.length > 0
+      ? opts.areas
+      : opts.isDemo
+        ? fictionalSeed.areas
+        : [];
+  const bands =
+    opts.bands ?? (opts.isDemo ? fictionalSeed.bands : []);
+  const schedules =
+    opts.schedules ?? (opts.isDemo ? fictionalSeed.schedule : []);
+  const dayTypes =
+    opts.dayTypes ?? (opts.isDemo ? fictionalSeed.dayTypes : []);
+  const routines =
+    opts.routines ?? (opts.isDemo ? fictionalSeed.routines : []);
   const areaColour = new Map(areas.map((a) => [a.id, a.colour]));
 
   const scheduleItems: GridItem[] = expandFixedSchedule(
     dayKeys,
     timezone,
     todayIndex,
-    fictionalSeed.schedule,
+    schedules,
     dayTypes,
   ).map((item) => ({
     id: item.id,
@@ -107,7 +129,14 @@ export function buildDayGrid(opts: {
     colour: item.colour,
   }));
   const demoItems = opts.isDemo
-    ? expandDemoExtras(dayKeys, todayIndex, timezone, areaColour, dayTypes)
+    ? expandDemoExtras(
+        dayKeys,
+        todayIndex,
+        timezone,
+        areaColour,
+        dayTypes,
+        routines,
+      )
     : [];
   const placedItems: GridItem[] = (opts.placedBlocks ?? []).map((b) => ({
     id: b.id,
@@ -135,19 +164,20 @@ export function buildDayGrid(opts: {
     areas,
     bands,
     dayTypes,
-    scheduleFromSeed: fictionalSeed.schedule.length,
+    scheduleFromSeed: schedules.length,
     warnings: findDeepWorkInLowBand(items, bands, timezone),
     updatedAt: now,
   };
 }
 
-/** Routines + task blocks for demo; commute hidden when day type hides fixed. */
+/** Routines + seed task blocks for demo; commute hidden when day type hides fixed. */
 function expandDemoExtras(
   dayKeys: string[],
   todayIndex: number,
   timezone: string,
   areaColour: Map<string, string>,
-  dayTypes: SeedDayType[],
+  dayTypes: DayTypeLike[],
+  routines: SeedRoutine[],
 ): GridItem[] {
   const items: GridItem[] = [];
 
@@ -155,9 +185,9 @@ function expandDemoExtras(
     const relative = index - todayIndex;
     const wd = weekdaySun0(dayKey, timezone);
     const hideCommute = hidesCommute(
-      dayTypeForOffset(relative, dayTypes)?.type,
+      dayTypeForDay(dayKey, relative, dayTypes)?.type,
     );
-    for (const routine of fictionalSeed.routines as SeedRoutine[]) {
+    for (const routine of routines) {
       if (!routine.weekdays.includes(wd)) continue;
       if (hideCommute && /commute/i.test(routine.label)) continue;
       items.push({
@@ -267,3 +297,5 @@ export function itemPlacement(
   const rowSpan = Math.max(1, Math.ceil((end - start) / 30));
   return { rowStart, rowSpan };
 }
+
+export type { ConfigDayType };

@@ -12,7 +12,12 @@ import {
 } from "@/components/BlockContextMenu";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
 import { NowIndicator } from "@/components/NowIndicator";
-import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
+import type {
+  SeedArea,
+  SeedBand,
+  SeedRoutine,
+  SeedSchedule,
+} from "@/data/fictional-seed";
 import {
   addMinutes,
   BLOCK_DRAG_MIME,
@@ -40,7 +45,7 @@ import {
   slotBandLevel,
   type GridItem,
 } from "@/lib/day-grid";
-import { dayTypeForOffset } from "@/lib/schedule";
+import { dayTypeForDay, type DayTypeLike } from "@/lib/schedule";
 import {
   layerStateForMode,
   SCHEDULER_LAYER_MODE_LABELS,
@@ -67,7 +72,12 @@ type Props = {
   /** Combined or a single exclusive layer (controlled by AuthShell). */
   layerMode: SchedulerLayerMode;
   onLayerModeChange: (mode: SchedulerLayerMode) => void;
-  /** When set (demo Firestore), check-ins are controlled; no localStorage. */
+  /** From user config (personal) or seed (demo). */
+  bands?: SeedBand[];
+  routines?: SeedRoutine[];
+  schedules?: SeedSchedule[];
+  dayTypes?: DayTypeLike[];
+  /** When set, check-ins are controlled (Firestore); no localStorage. */
   checkIns?: Record<string, BlockCheckIn>;
   onCheckInsChange?: (next: Record<string, BlockCheckIn>) => void;
 };
@@ -126,6 +136,10 @@ export function DayGrid({
   onPlacedBlocksChange,
   layerMode,
   onLayerModeChange,
+  bands,
+  routines,
+  schedules,
+  dayTypes,
   checkIns: checkInsProp,
   onCheckInsChange,
 }: Props) {
@@ -156,10 +170,22 @@ export function DayGrid({
         isDemo,
         areas,
         timezone,
-        dayTypes: fictionalSeed.dayTypes,
+        bands,
+        routines,
+        schedules,
+        dayTypes,
         placedBlocks,
       }),
-    [isDemo, areas, timezone, placedBlocks],
+    [
+      isDemo,
+      areas,
+      timezone,
+      bands,
+      routines,
+      schedules,
+      dayTypes,
+      placedBlocks,
+    ],
   );
   const slots = useMemo(
     () => buildHalfHourSlots(model.startHour, model.endHour),
@@ -831,7 +857,7 @@ export function DayGrid({
           const relative = dayIdx - model.todayIndex;
           const isPast = relative < 0;
           const isToday = relative === 0;
-          const dt = dayTypeForOffset(relative, model.dayTypes);
+          const dt = dayTypeForDay(key, relative, model.dayTypes);
           const headCol = layers.availability ? dayIdx + 3 : dayIdx + 2;
           return (
             <div

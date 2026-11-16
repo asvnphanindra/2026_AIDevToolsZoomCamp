@@ -1,12 +1,13 @@
 import {
   DAY_TYPE_LABELS,
-  fictionalSeed,
   type DayTypeKind,
+  type OnlineSlot,
+  type ScheduleChangeKind,
   type SeedDayType,
   type SeedSchedule,
   type SeedScheduleChange,
-  type ScheduleChangeKind,
 } from "@/data/fictional-seed";
+import type { ConfigDayType, ConfigScheduleChange } from "@/lib/config";
 import { minutesOf, weekdaySun0 } from "@/lib/time";
 
 export const SCHEDULE_COLOUR = "#C45C26";
@@ -27,6 +28,15 @@ export type ScheduleGridItem = {
   oneOff?: ScheduleChangeKind;
 };
 
+/** Day type with optional absolute date or relative offset. */
+export type DayTypeLike = {
+  type: DayTypeKind;
+  label: string;
+  onlineSlots?: OnlineSlot[];
+  dayOffset?: number;
+  date?: string;
+};
+
 export function hidesFixedSchedule(type: DayTypeKind | undefined): boolean {
   return type === "holiday" || type === "no-fixed-schedule";
 }
@@ -45,9 +55,19 @@ export function isOnlineDay(type: DayTypeKind | undefined): boolean {
 
 export function dayTypeForOffset(
   relativeOffset: number,
-  dayTypes: SeedDayType[] = fictionalSeed.dayTypes,
-): SeedDayType | undefined {
+  dayTypes: DayTypeLike[] = [],
+): DayTypeLike | undefined {
   return dayTypes.find((d) => d.dayOffset === relativeOffset);
+}
+
+export function dayTypeForDay(
+  dayKey: string,
+  relativeOffset: number,
+  dayTypes: DayTypeLike[] = [],
+): DayTypeLike | undefined {
+  const byDate = dayTypes.find((d) => d.date === dayKey);
+  if (byDate) return byDate;
+  return dayTypeForOffset(relativeOffset, dayTypes);
 }
 
 export function rangesOverlap(
@@ -62,19 +82,20 @@ export function rangesOverlap(
 }
 
 /**
- * Expand seeded weekly schedule + online slots (US-B3/B4).
+ * Expand weekly schedule + online slots (US-B3/B4).
+ * Pass empty schedule/dayTypes for personal accounts with no config.
  */
 export function expandFixedSchedule(
   dayKeys: string[],
   timezone: string,
   todayIndex: number,
-  schedule: SeedSchedule[] = fictionalSeed.schedule,
-  dayTypes: SeedDayType[] = fictionalSeed.dayTypes,
+  schedule: SeedSchedule[] = [],
+  dayTypes: DayTypeLike[] = [],
 ): ScheduleGridItem[] {
   const items: ScheduleGridItem[] = [];
   dayKeys.forEach((dayKey, index) => {
     const relative = index - todayIndex;
-    const dayType = dayTypeForOffset(relative, dayTypes);
+    const dayType = dayTypeForDay(dayKey, relative, dayTypes);
     const kind = dayType?.type;
 
     if (hidesFixedSchedule(kind)) return;
@@ -118,11 +139,17 @@ export function applyScheduleChanges(
   items: ScheduleGridItem[],
   dayKeys: string[],
   todayIndex: number,
-  changes: SeedScheduleChange[],
+  changes: Array<SeedScheduleChange | ConfigScheduleChange>,
 ): ScheduleGridItem[] {
   let next = [...items];
   for (const change of changes) {
-    const date = dayKeys[todayIndex + change.dayOffset];
+    const date =
+      "date" in change && change.date
+        ? change.date
+        : dayKeys[
+            todayIndex +
+              ("dayOffset" in change ? Number(change.dayOffset) : NaN)
+          ];
     if (!date) continue;
 
     if (change.kind === "cancel" || change.kind === "substitute") {
@@ -174,8 +201,8 @@ export function findOverlappingSchedule(
     }));
 }
 
-export function seededScheduleCount(): number {
-  return fictionalSeed.schedule.length;
+export function seededScheduleCount(schedule: SeedSchedule[] = []): number {
+  return schedule.length;
 }
 
 export function mergeDayTypes(
@@ -189,6 +216,19 @@ export function mergeDayTypes(
     else map.set(d.dayOffset, d);
   }
   return [...map.values()].sort((a, b) => a.dayOffset - b.dayOffset);
+}
+
+export function mergeConfigDayTypes(
+  base: ConfigDayType[],
+  overrides: ConfigDayType[],
+): ConfigDayType[] {
+  const map = new Map<string, ConfigDayType>();
+  for (const d of base) map.set(d.date, d);
+  for (const d of overrides) {
+    if (d.type === "normal") map.delete(d.date);
+    else map.set(d.date, d);
+  }
+  return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function defaultLabelFor(type: DayTypeKind): string {

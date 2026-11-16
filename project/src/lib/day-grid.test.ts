@@ -17,6 +17,23 @@ describe("day grid planner model", () => {
     expect(model.items.some((i) => i.kind === "block")).toBe(true);
   });
 
+  it("personal empty config renders no demo schedule or routines", () => {
+    const model = buildDayGrid({
+      isDemo: false,
+      areas: [],
+      bands: [],
+      routines: [],
+      schedules: [],
+      dayTypes: [],
+      now: new Date("2026-11-11T12:00:00+05:30"),
+      timezone: "Asia/Kolkata",
+    });
+    expect(model.items.some((i) => i.kind === "schedule")).toBe(false);
+    expect(model.items.some((i) => i.kind === "routine")).toBe(false);
+    expect(model.bands).toEqual([]);
+    expect(model.scheduleFromSeed).toBe(0);
+  });
+
   it("flags deep-work blocks overlapping a low energy band", () => {
     const warnings = findDeepWorkInLowBand(
       [

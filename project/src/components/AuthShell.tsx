@@ -8,48 +8,47 @@ import { TaskBacklog } from "@/components/TaskBacklog";
 import { ThreeWeekView } from "@/components/ThreeWeekView";
 import { useAuth } from "@/hooks/useAuth";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
-import { fictionalSeed, type SeedArea } from "@/data/fictional-seed";
+import {
+  fictionalSeed,
+  type SeedArea,
+  type SeedBand,
+  type SeedRoutine,
+  type SeedSchedule,
+} from "@/data/fictional-seed";
 import {
   appendActivity,
   loadActivityLog,
   type ActivityActor,
   type ActivityEntry,
 } from "@/lib/activity-log";
-import { loadAreas, migrateJobAreaName, writeAreas } from "@/lib/areas";
+import { migrateJobAreaName } from "@/lib/areas";
+import { type PlacedBlock } from "@/lib/blocks";
 import {
-  readPlacedBlocks,
-  writePlacedBlocks,
-  type PlacedBlock,
-} from "@/lib/blocks";
-import {
-  loadCalendarEvents,
   mergeCalendarEvents,
   type CalendarEvent,
 } from "@/lib/calendar-events";
 import {
   expandAllSeries,
-  loadCalendarSeries,
-  writeCalendarSeries,
   type CalendarSeries,
 } from "@/lib/calendar-series";
 import type { BlockCheckIn } from "@/lib/checkin";
+import { loadUserConfig, type ConfigDayType } from "@/lib/config";
 import {
   loadDemoPlannerState,
   replaceDemoCheckIns,
   replaceDemoCollection,
 } from "@/lib/demo-store";
-import {
-  loadFocusItems,
-  writeFocusItems,
-  type FocusItem,
-} from "@/lib/focus";
-import {
-  loadAreaGoals,
-  writeAreaGoals,
-  type AreaGoal,
-} from "@/lib/area-goals";
+import { type FocusItem } from "@/lib/focus";
+import { type AreaGoal } from "@/lib/area-goals";
 import { isoWeekPeriod } from "@/lib/goals";
-import { loadRules, writeRules, type DailyRule } from "@/lib/rules";
+import { migrateLocalToUsers } from "@/lib/migrate-local";
+import {
+  loadPlannerState,
+  replaceCheckIns,
+  replaceCollection,
+  usersRoot,
+} from "@/lib/planner-store";
+import { type DailyRule } from "@/lib/rules";
 import {
   loadSchedulerLayerMode,
   showsTasksToFocus,
@@ -58,9 +57,7 @@ import {
 } from "@/lib/scheduler-layers";
 import {
   backlogTaskFromAreaGoal,
-  loadBacklog,
   openBacklogForGoalWeek,
-  writeBacklog,
   type BacklogTask,
 } from "@/lib/tasks";
 import {
@@ -69,11 +66,7 @@ import {
   persistTeachingPlan,
   type TeachingPlanState,
 } from "@/lib/teaching-plan";
-import {
-  loadWeekHorizon,
-  writeWeekHorizon,
-  type WeekHorizonItem,
-} from "@/lib/week-horizon";
+import { type WeekHorizonItem } from "@/lib/week-horizon";
 import {
   actorRoleFromProfile,
   ensureWorkspaceOwner,
@@ -113,11 +106,11 @@ export function AuthShell() {
   } = useAuth();
 
   const [appView, setAppView] = useState<AppView>("scheduler");
-  const [demoReady, setDemoReady] = useState(false);
-  const [demoLoadError, setDemoLoadError] = useState<string | null>(null);
+  const [dataReady, setDataReady] = useState(false);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const demoUidRef = useRef<string | null>(null);
+  const plannerUidRef = useRef<string | null>(null);
 
   const [tasks, setTasks] = useState<BacklogTask[]>([]);
   const [blocks, setBlocks] = useState<PlacedBlock[]>([]);
@@ -129,12 +122,17 @@ export function AuthShell() {
   const [calendarSeries, setCalendarSeries] = useState<CalendarSeries[]>([]);
   const [areaGoals, setAreaGoals] = useState<AreaGoal[]>([]);
   const [checkIns, setCheckIns] = useState<Record<string, BlockCheckIn>>({});
+  const [bands, setBands] = useState<SeedBand[]>([]);
+  const [routines, setRoutines] = useState<SeedRoutine[]>([]);
+  const [schedules, setSchedules] = useState<SeedSchedule[]>([]);
+  const [dayTypes, setDayTypes] = useState<ConfigDayType[]>([]);
   const [layerMode, setLayerMode] = useState<SchedulerLayerMode>("combined");
   const [teachingPlan, setTeachingPlan] = useState<TeachingPlanState | null>(
     null,
   );
   const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceProfile | null>(null);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   const workspaceOwnerUid = workspace?.workspaceOwnerUid || user?.uid || "";
 
@@ -188,67 +186,14 @@ export function AuthShell() {
     [activityActor, workspaceOwnerUid, isDemo],
   );
 
-  // Personal (non-demo): hydrate from localStorage once signed in.
+  // Personal: users/{uid}/… via planner-store (+ one-time localStorage migrate).
   useEffect(() => {
     if (!ready || !user || isDemo) return;
-    setTasks(loadBacklog());
-    setBlocks(readPlacedBlocks());
-    setAreas(
-      loadAreas(view?.areas?.length ? view.areas : fictionalSeed.areas),
-    );
-    setRules(loadRules());
-    setFocusItems(loadFocusItems());
-    setWeekHorizon(loadWeekHorizon());
-    setOneOffEvents(loadCalendarEvents());
-    setCalendarSeries(loadCalendarSeries());
-    setAreaGoals(loadAreaGoals());
-    setLayerMode(loadSchedulerLayerMode());
-    setDemoReady(true);
-    setDemoLoadError(null);
-
     let cancelled = false;
-    void (async () => {
-      try {
-        const profile = await ensureWorkspaceOwner(
-          user.uid,
-          user.displayName || user.email || "Planner Owner",
-        );
-        if (cancelled) return;
-        setWorkspace(profile);
-        const ownerUid = profile.workspaceOwnerUid || user.uid;
-        const [plan, activity] = await Promise.all([
-          loadOrSeedTeachingPlan({
-            ownerUid,
-            isDemo: false,
-            areaId: JOB_AREA_ID,
-          }),
-          loadActivityLog({ ownerUid, isDemo: false }),
-        ]);
-        if (cancelled) return;
-        setTeachingPlan(plan);
-        setActivityEntries(activity);
-      } catch {
-        if (cancelled) return;
-        const plan = await loadOrSeedTeachingPlan({
-          ownerUid: user.uid,
-          isDemo: false,
-          areaId: JOB_AREA_ID,
-        });
-        setTeachingPlan(plan);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, user, isDemo, view?.areas]);
-
-  // Demo: load everything from demo/{uid}/… (no localStorage).
-  useEffect(() => {
-    if (!ready || !user || !isDemo) return;
-    let cancelled = false;
-    demoUidRef.current = user.uid;
-    setDemoReady(false);
-    setDemoLoadError(null);
+    plannerUidRef.current = user.uid;
+    setDataReady(false);
+    setDataLoadError(null);
+    setNeedsSetup(false);
     const boot = emptyDemoBootstrap();
     setTasks(boot.tasks);
     setBlocks(boot.blocks);
@@ -260,11 +205,107 @@ export function AuthShell() {
     setCalendarSeries(boot.calendarSeries);
     setAreaGoals(boot.areaGoals);
     setCheckIns(boot.checkIns);
+    setBands([]);
+    setRoutines([]);
+    setSchedules([]);
+    setDayTypes([]);
+    setLayerMode(loadSchedulerLayerMode());
+
+    void (async () => {
+      try {
+        const profile = await ensureWorkspaceOwner(
+          user.uid,
+          user.displayName || user.email || "Planner Owner",
+        );
+        if (cancelled || plannerUidRef.current !== user.uid) return;
+        setWorkspace(profile);
+        const ownerUid = profile.workspaceOwnerUid || user.uid;
+        await migrateLocalToUsers(ownerUid);
+        if (cancelled || plannerUidRef.current !== user.uid) return;
+
+        const root = usersRoot(ownerUid);
+        const [state, config, plan, activity] = await Promise.all([
+          loadPlannerState(root),
+          loadUserConfig(root),
+          loadOrSeedTeachingPlan({
+            ownerUid,
+            isDemo: false,
+            areaId: JOB_AREA_ID,
+          }),
+          loadActivityLog({ ownerUid, isDemo: false }),
+        ]);
+        if (cancelled || plannerUidRef.current !== user.uid) return;
+
+        const areasMigrated = migrateJobAreaName(state.areas);
+        setAreas(areasMigrated);
+        if (areasMigrated !== state.areas) {
+          void replaceCollection(root, "areas", areasMigrated);
+        }
+        setTasks(state.tasks);
+        setBlocks(state.blocks);
+        setRules(state.rules);
+        setFocusItems(state.focusItems);
+        setWeekHorizon(state.weekHorizon);
+        setOneOffEvents(state.events.filter((e) => !e.seriesId));
+        setCalendarSeries(state.series);
+        setAreaGoals(state.areaGoals);
+        setCheckIns(state.checkIns);
+        setBands(config.bands);
+        setRoutines(config.routines);
+        setSchedules(config.schedules);
+        setDayTypes(config.dayTypes);
+        setTeachingPlan(plan);
+        setActivityEntries(activity);
+        setNeedsSetup(
+          areasMigrated.length === 0 &&
+            config.schedules.length === 0 &&
+            config.bands.length === 0,
+        );
+        setDataReady(true);
+      } catch (err) {
+        if (cancelled) return;
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Failed to load personal plan from Firestore";
+        setDataLoadError(message);
+        setDataReady(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user, isDemo]);
+
+  // Demo: load everything from demo/{uid}/… (no localStorage).
+  useEffect(() => {
+    if (!ready || !user || !isDemo) return;
+    let cancelled = false;
+    plannerUidRef.current = user.uid;
+    setDataReady(false);
+    setDataLoadError(null);
+    setNeedsSetup(false);
+    const boot = emptyDemoBootstrap();
+    setTasks(boot.tasks);
+    setBlocks(boot.blocks);
+    setAreas(boot.areas);
+    setRules(boot.rules);
+    setFocusItems(boot.focusItems);
+    setWeekHorizon(boot.weekHorizon);
+    setOneOffEvents(boot.oneOffEvents);
+    setCalendarSeries(boot.calendarSeries);
+    setAreaGoals(boot.areaGoals);
+    setCheckIns(boot.checkIns);
+    setBands(fictionalSeed.bands);
+    setRoutines(fictionalSeed.routines);
+    setSchedules(fictionalSeed.schedule);
+    setDayTypes([]);
 
     void (async () => {
       try {
         const state = await loadDemoPlannerState(user.uid);
-        if (cancelled || demoUidRef.current !== user.uid) return;
+        if (cancelled || plannerUidRef.current !== user.uid) return;
         const areasMigrated = migrateJobAreaName(state.areas);
         setAreas(areasMigrated);
         if (areasMigrated !== state.areas) {
@@ -279,6 +320,9 @@ export function AuthShell() {
         setCalendarSeries(state.series);
         setAreaGoals(state.areaGoals);
         setCheckIns(state.checkIns);
+        setBands(fictionalSeed.bands);
+        setRoutines(fictionalSeed.routines);
+        setSchedules(fictionalSeed.schedule);
         setWorkspace({
           uid: user.uid,
           displayName: fictionalSeed.profile.displayName,
@@ -294,7 +338,7 @@ export function AuthShell() {
             }),
             loadActivityLog({ ownerUid: user.uid, isDemo: true }),
           ]);
-          if (cancelled || demoUidRef.current !== user.uid) return;
+          if (cancelled || plannerUidRef.current !== user.uid) return;
           setTeachingPlan(plan);
           setActivityEntries(activity);
         } catch {
@@ -307,13 +351,13 @@ export function AuthShell() {
             }),
           );
         }
-        setDemoReady(true);
+        setDataReady(true);
       } catch (err) {
         if (cancelled) return;
         const message =
           err instanceof Error ? err.message : "Failed to load demo from Firestore";
-        setDemoLoadError(message);
-        setDemoReady(false);
+        setDataLoadError(message);
+        setDataReady(false);
       }
     })();
 
@@ -322,23 +366,23 @@ export function AuthShell() {
     };
   }, [ready, user, isDemo]);
 
-  const persistDemo = useCallback(
+  const persistPlanner = useCallback(
     async (name: string, rows: Array<Record<string, unknown> & { id: string }>) => {
-      const uid = demoUidRef.current;
+      const uid = plannerUidRef.current;
       if (!uid) return;
-      await replaceDemoCollection(uid, name, rows);
+      if (isDemo) {
+        await replaceDemoCollection(uid, name, rows);
+        return;
+      }
+      await replaceCollection(usersRoot(uid), name, rows);
     },
-    [],
+    [isDemo],
   );
 
   const onTasksChange = useCallback(
     (next: BacklogTask[]) => {
       setTasks(next);
-      if (isDemo) {
-        void persistDemo("tasks", next);
-      } else {
-        writeBacklog(next);
-      }
+      void persistPlanner("tasks", next);
       void logActivity({
         action: "update",
         entityType: "tasks",
@@ -346,17 +390,13 @@ export function AuthShell() {
         summary: `Updated backlog (${next.length} tasks)`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onBlocksChange = useCallback(
     (next: PlacedBlock[]) => {
       setBlocks(next);
-      if (isDemo) {
-        void persistDemo("blocks", next);
-      } else {
-        writePlacedBlocks(next);
-      }
+      void persistPlanner("blocks", next);
       void logActivity({
         action: "update",
         entityType: "blocks",
@@ -364,17 +404,13 @@ export function AuthShell() {
         summary: `Updated placed blocks (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onAreasChange = useCallback(
     (next: SeedArea[]) => {
       setAreas(next);
-      if (isDemo) {
-        void persistDemo("areas", next);
-      } else {
-        writeAreas(next);
-      }
+      void persistPlanner("areas", next);
       void logActivity({
         action: "update",
         entityType: "areas",
@@ -382,17 +418,13 @@ export function AuthShell() {
         summary: `Updated areas (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onRulesChange = useCallback(
     (next: DailyRule[]) => {
       setRules(next);
-      if (isDemo) {
-        void persistDemo("rules", next);
-      } else {
-        writeRules(next);
-      }
+      void persistPlanner("rules", next);
       void logActivity({
         action: "update",
         entityType: "rules",
@@ -400,17 +432,13 @@ export function AuthShell() {
         summary: `Updated daily minimums (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onFocusItemsChange = useCallback(
     (next: FocusItem[]) => {
       setFocusItems(next);
-      if (isDemo) {
-        void persistDemo("focusItems", next);
-      } else {
-        writeFocusItems(next);
-      }
+      void persistPlanner("focusItems", next);
       void logActivity({
         action: "update",
         entityType: "focusItems",
@@ -418,17 +446,16 @@ export function AuthShell() {
         summary: `Updated standing focus (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onWeekHorizonChange = useCallback(
     (next: WeekHorizonItem[]) => {
       setWeekHorizon(next);
-      if (isDemo) {
-        void persistDemo("weekHorizon", next);
-      } else {
-        writeWeekHorizon(next);
-      }
+      void persistPlanner(
+        "weekHorizon",
+        next as Array<Record<string, unknown> & { id: string }>,
+      );
       void logActivity({
         action: "update",
         entityType: "weekHorizon",
@@ -436,17 +463,13 @@ export function AuthShell() {
         summary: `Updated week horizon (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onAreaGoalsChange = useCallback(
     (next: AreaGoal[]) => {
       setAreaGoals(next);
-      if (isDemo) {
-        void persistDemo("areaGoals", next);
-      } else {
-        writeAreaGoals(next);
-      }
+      void persistPlanner("areaGoals", next);
       void logActivity({
         action: "update",
         entityType: "areaGoals",
@@ -454,7 +477,7 @@ export function AuthShell() {
         summary: `Updated area goals (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onTeachingPlanChange = useCallback(
@@ -492,14 +515,10 @@ export function AuthShell() {
   const onCalendarSeriesChange = useCallback(
     (next: CalendarSeries[]) => {
       setCalendarSeries(next);
-      if (isDemo) {
-        void persistDemo(
-          "series",
-          next as Array<Record<string, unknown> & { id: string }>,
-        );
-      } else {
-        writeCalendarSeries(next);
-      }
+      void persistPlanner(
+        "series",
+        next as Array<Record<string, unknown> & { id: string }>,
+      );
       void logActivity({
         action: "update",
         entityType: "series",
@@ -507,14 +526,19 @@ export function AuthShell() {
         summary: `Updated calendar series (${next.length})`,
       });
     },
-    [isDemo, persistDemo, logActivity],
+    [persistPlanner, logActivity],
   );
 
   const onCheckInsChange = useCallback(
     (next: Record<string, BlockCheckIn>) => {
       setCheckIns(next);
-      const uid = demoUidRef.current;
-      if (isDemo && uid) void replaceDemoCheckIns(uid, next);
+      const uid = plannerUidRef.current;
+      if (!uid) return;
+      if (isDemo) {
+        void replaceDemoCheckIns(uid, next);
+      } else {
+        void replaceCheckIns(usersRoot(uid), next);
+      }
     },
     [isDemo],
   );
@@ -650,15 +674,17 @@ export function AuthShell() {
     );
   }
 
-  if (isDemo && !demoReady) {
+  if (!dataReady) {
     return (
       <main className="shell">
         <p className="muted">
-          {demoLoadError
-            ? `Demo Firestore error: ${demoLoadError}`
-            : "Loading demo from Firestore…"}
+          {dataLoadError
+            ? `${isDemo ? "Demo" : "Personal"} Firestore error: ${dataLoadError}`
+            : isDemo
+              ? "Loading demo from Firestore…"
+              : "Loading your plan from Firestore…"}
         </p>
-        {demoLoadError ? (
+        {dataLoadError ? (
           <button type="button" className="secondary" onClick={signOut}>
             Sign out
           </button>
@@ -679,7 +705,9 @@ export function AuthShell() {
             <p className="lede">
               {isDemo ? "Demo mode · " : ""}
               {view?.displayName || user.email || user.uid}
-              {isDemo ? " · Firestore demo/{uid}" : ""}
+              {isDemo
+                ? " · Firestore demo/{uid}"
+                : " · Firestore users/{uid}"}
             </p>
           </div>
           <div className="header-actions">
@@ -778,6 +806,12 @@ export function AuthShell() {
             }
           >
             <div className="scheduler-main">
+              {needsSetup ? (
+                <p className="muted" role="status">
+                  Empty plan — add areas in Planner, or run setup when available.
+                  Demo classes are not shown on personal accounts.
+                </p>
+              ) : null}
               <DayGrid
                 isDemo={isDemo}
                 areas={areas}
@@ -788,12 +822,14 @@ export function AuthShell() {
                 onPlacedBlocksChange={onBlocksChange}
                 layerMode={layerMode}
                 onLayerModeChange={onLayerModeChange}
-                {...(isDemo
-                  ? {
-                      checkIns,
-                      onCheckInsChange,
-                    }
-                  : {})}
+                bands={bands}
+                routines={routines}
+                schedules={schedules}
+                dayTypes={
+                  isDemo ? fictionalSeed.dayTypes : dayTypes
+                }
+                checkIns={checkIns}
+                onCheckInsChange={onCheckInsChange}
               />
             </div>
             {showFocusSide ? (
