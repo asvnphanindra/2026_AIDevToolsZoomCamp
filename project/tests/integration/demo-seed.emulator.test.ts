@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { signInAnonymously, signOut } from "firebase/auth";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import {
@@ -22,7 +22,7 @@ import { demoRoot } from "@/lib/planner-store";
  * Run via `npm test` / `firebase emulators:exec` (not alone).
  */
 describe("demo seed via Firebase emulators", () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     connectFirebaseEmulators();
     const authUp = await isAuthEmulatorReachable();
     const fsUp = await isFirestoreEmulatorReachable();
@@ -30,6 +30,14 @@ describe("demo seed via Firebase emulators", () => {
       throw new Error(
         "Auth/Firestore emulators not reachable. Use npm test (emulators:exec).",
       );
+    }
+    // Fresh anonymous uid per test — avoids stacking student applyTemplate on
+    // a prior teacher-phd seed (parallel subcollection replaces + shared
+    // Listen stream → RESOURCE_EXHAUSTED in CI).
+    try {
+      await signOut(auth);
+    } catch {
+      /* ignore */
     }
   });
 
@@ -85,6 +93,11 @@ describe("demo seed via Firebase emulators", () => {
     const uid = cred.user.uid;
     await loadDemoSeed(uid);
     await applyTemplate(demoRoot(uid), "student", { setupDone: true });
+
+    const profile = await getDoc(doc(db, DEMO_COLLECTION, uid));
+    expect(profile.data()?.["templateId"]).toBe("student");
+    expect(profile.data()?.["awaitingTemplate"]).toBe(false);
+
     const areasSnap = await getDocs(
       collection(db, DEMO_COLLECTION, uid, "areas"),
     );

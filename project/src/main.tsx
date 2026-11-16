@@ -7,7 +7,12 @@ import "./index.css";
 
 connectFirebaseEmulators();
 
-registerSW({ immediate: true });
+// Best-effort: never block first paint if SW registration throws.
+try {
+  registerSW({ immediate: true });
+} catch {
+  /* PWA optional */
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

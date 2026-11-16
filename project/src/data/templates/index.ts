@@ -89,28 +89,50 @@ export async function applyTemplate(
     templateId,
   });
 
-  await Promise.all([
-    replaceCollection(root, "areas", template.areas.map((a) => ({ ...a }))),
-    saveBands(root, template.bands.map((b) => ({ ...b }))),
-    saveRoutines(root, template.routines.map((r) => ({ ...r }))),
-    saveSchedules(root, template.schedule.map((s) => ({ ...s }))),
-    replaceCollection(root, "rules", template.rules.map((r) => ({ ...r }))),
-    replaceCollection(
-      root,
-      "series",
-      materializeTemplateSeries(template.series, todayKey),
-    ),
-  ]);
+  // Sequential writes: parallel replaceCollection races on the Firestore
+  // emulator (and can poison the shared client Listen stream with
+  // RESOURCE_EXHAUSTED / multi-GB bogus payloads in CI).
+  await replaceCollection(
+    root,
+    "areas",
+    template.areas.map((a) => ({ ...a })),
+  );
+  await saveBands(
+    root,
+    template.bands.map((b) => ({ ...b })),
+  );
+  await saveRoutines(
+    root,
+    template.routines.map((r) => ({ ...r })),
+  );
+  await saveSchedules(
+    root,
+    template.schedule.map((s) => ({ ...s })),
+  );
+  await replaceCollection(
+    root,
+    "rules",
+    template.rules.map((r) => ({ ...r })),
+  );
+  await replaceCollection(
+    root,
+    "series",
+    materializeTemplateSeries(template.series, todayKey),
+  );
 
   if (root[0] === "users") {
     await saveUserSettings(root[1], settings);
   } else {
+    const plain = Object.fromEntries(
+      Object.entries(settings).filter(([, v]) => v !== undefined),
+    );
     await setDoc(
       doc(db, root[0], root[1]),
       {
         timezone: settings.timezone,
-        settings: { ...settings },
+        settings: plain,
         templateId,
+        awaitingTemplate: false,
         updatedAt: serverTimestamp(),
       },
       { merge: true },
