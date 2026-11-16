@@ -680,6 +680,12 @@ export function AuthShell() {
     setAppView("scheduler");
   }, [onLayerModeChange]);
 
+  // Must stay above early returns — conditional hooks blank the post-login tree.
+  const versionedSchedules = useMemo(
+    () => (teachingPlan ? [scheduleFromTeachingPlan(teachingPlan)] : []),
+    [teachingPlan],
+  );
+
   if (!ready) {
     return (
       <main className="shell">
@@ -887,10 +893,6 @@ export function AuthShell() {
 
   const showFocusSide = showsTasksToFocus(layerMode) && !isPhone;
   const tz = userSettings.timezone || "Asia/Kolkata";
-  const versionedSchedules = useMemo(
-    () => (teachingPlan ? [scheduleFromTeachingPlan(teachingPlan)] : []),
-    [teachingPlan],
-  );
   const plannerRoot = user
     ? isDemo
       ? demoRoot(user.uid)
