@@ -1,8 +1,8 @@
-import { useEffect, useState, type DragEvent, type FormEvent } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import type { SeedArea } from "@/data/fictional-seed";
+import { TaskEditor } from "@/components/TaskEditor";
 import { BLOCK_DRAG_MIME, type PlacedBlock } from "@/lib/blocks";
 import {
-  emptyTask,
   loadBacklog,
   TASK_DRAG_MIME,
   writeBacklog,
@@ -18,8 +18,6 @@ type Props = {
   onPlacedBlocksChange: (blocks: PlacedBlock[]) => void;
 };
 
-const PRIORITIES = ["low", "med", "high"] as const;
-
 /** Scheduler “Tasks to Focus” panel (US-C1) + accept placed blocks from grid. */
 export function TaskBacklog({
   isDemo,
@@ -29,8 +27,6 @@ export function TaskBacklog({
   placedBlocks,
   onPlacedBlocksChange,
 }: Props) {
-  const defaultArea = areas[0]?.id ?? "work";
-  const [draft, setDraft] = useState<BacklogTask>(() => emptyTask(defaultArea));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [booted, setBooted] = useState(false);
   const [dropReady, setDropReady] = useState(false);
@@ -48,14 +44,6 @@ export function TaskBacklog({
     setBooted(true);
   }, [booted, isDemo, onTasksChange, tasks.length]);
 
-  useEffect(() => {
-    setDraft((d) =>
-      d.areaId && areas.some((a) => a.id === d.areaId)
-        ? d
-        : { ...d, areaId: defaultArea },
-    );
-  }, [areas, defaultArea]);
-
   function persist(next: BacklogTask[]) {
     onTasksChange(next);
     if (!isDemo) writeBacklog(next);
@@ -63,40 +51,10 @@ export function TaskBacklog({
 
   function startEdit(task: BacklogTask) {
     setEditingId(task.id);
-    setDraft({ ...task, due: task.due ?? "" });
   }
 
   function resetForm() {
     setEditingId(null);
-    setDraft(emptyTask(defaultArea));
-  }
-
-  function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    const title = draft.title.trim();
-    if (!title || !draft.areaId) return;
-
-    const payload: BacklogTask = {
-      ...draft,
-      title,
-      status: "backlog",
-      horizon: draft.horizon || "day",
-      durationMin: Math.max(5, Number(draft.durationMin) || 30),
-      due: draft.due?.trim() || undefined,
-      replan: editingId
-        ? tasks.find((t) => t.id === editingId)?.replan
-        : undefined,
-    };
-
-    if (editingId) {
-      persist(
-        tasks.map((t) => (t.id === editingId ? { ...payload, id: editingId } : t)),
-      );
-    } else {
-      const id = `task-${Date.now()}`;
-      persist([{ ...payload, id }, ...tasks]);
-    }
-    resetForm();
   }
 
   function remove(id: string) {
@@ -163,6 +121,9 @@ export function TaskBacklog({
 
   const openTasks = tasks.filter((t) => t.status === "backlog");
   const listAreas = areas.length ? areas : [];
+  const editing = editingId
+    ? tasks.find((t) => t.id === editingId) ?? null
+    : null;
 
   return (
     <section
@@ -181,85 +142,24 @@ export function TaskBacklog({
         </p>
       </div>
 
-      <form className="task-form" onSubmit={onSubmit}>
-        <div className="one-off-row">
-          <label>
-            Title
-            <input
-              value={draft.title}
-              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              placeholder="What needs doing?"
-              required
-            />
-          </label>
-          <label>
-            Area
-            <select
-              value={draft.areaId}
-              onChange={(e) => setDraft((d) => ({ ...d, areaId: e.target.value }))}
-              required
-            >
-              {listAreas.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Minutes
-            <input
-              type="number"
-              min={5}
-              step={5}
-              value={draft.durationMin}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, durationMin: Number(e.target.value) }))
-              }
-              required
-            />
-          </label>
-          <label>
-            Priority
-            <select
-              value={draft.priority}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, priority: e.target.value }))
-              }
-            >
-              {PRIORITIES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Due
-            <input
-              type="date"
-              value={draft.due ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, due: e.target.value }))}
-            />
-          </label>
-          <label className="task-check">
-            <input
-              type="checkbox"
-              checked={Boolean(draft.deepWork)}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, deepWork: e.target.checked }))
-              }
-            />
-            Deep work
-          </label>
-          <button type="submit">{editingId ? "Save" : "Add"}</button>
-          {editingId ? (
-            <button type="button" className="secondary" onClick={resetForm}>
-              Cancel
-            </button>
-          ) : null}
-        </div>
-      </form>
+      <TaskEditor
+        areas={areas}
+        initial={editing}
+        submitLabel={editingId ? "Save" : "Add"}
+        onCancel={editingId ? resetForm : undefined}
+        onSave={({ task }) => {
+          if (editingId) {
+            persist(
+              tasks.map((t) =>
+                t.id === editingId ? { ...task, id: editingId } : t,
+              ),
+            );
+          } else {
+            persist([{ ...task, id: task.id || `task-${Date.now()}` }, ...tasks]);
+          }
+          resetForm();
+        }}
+      />
 
       {openTasks.length === 0 ? (
         <p className="muted">

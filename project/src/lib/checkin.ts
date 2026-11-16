@@ -126,6 +126,24 @@ export function isBlockEnded(
   return minutesOf(end) <= minutes;
 }
 
+/**
+ * True when the block ended within the last `withinMin` minutes (same day).
+ * Older unchecked blocks do not qualify (calm check-in auto-open).
+ */
+export function endedWithinMinutes(
+  date: string,
+  end: string,
+  withinMin: number,
+  timeZone = DEFAULT_TZ,
+  now = new Date(),
+): boolean {
+  if (!isBlockEnded(date, end, timeZone, now)) return false;
+  const { date: today, minutes } = nowParts(timeZone, now);
+  if (date !== today) return false;
+  const ago = minutes - minutesOf(end);
+  return ago >= 0 && ago <= withinMin;
+}
+
 export function outcomeLabel(outcome: CheckInOutcome): string {
   if (outcome === "done") return "Done";
   if (outcome === "partly") return "Partly";

@@ -44,12 +44,12 @@ export function CheckInPrompt({
             />
           </label>
           <div className="actions">
-            <button type="button" onClick={submitPartly}>
+            <button type="button" className="tap-target" onClick={submitPartly}>
               Save partly done
             </button>
             <button
               type="button"
-              className="secondary"
+              className="secondary tap-target"
               onClick={() => setPartlyOpen(false)}
             >
               Back
@@ -58,24 +58,32 @@ export function CheckInPrompt({
         </div>
       ) : (
         <div className="actions">
-          <button type="button" onClick={() => onSubmit("done")}>
+          <button
+            type="button"
+            className="tap-target"
+            onClick={() => onSubmit("done")}
+          >
             Done
           </button>
           <button
             type="button"
-            className="secondary"
+            className="secondary tap-target"
             onClick={() => setPartlyOpen(true)}
           >
-            Partly done
+            Partly
           </button>
           <button
             type="button"
-            className="secondary"
+            className="secondary tap-target"
             onClick={() => onSubmit("not-done")}
           >
             Not done
           </button>
-          <button type="button" className="secondary" onClick={onLater}>
+          <button
+            type="button"
+            className="secondary tap-target"
+            onClick={onLater}
+          >
             Later
           </button>
         </div>

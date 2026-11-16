@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityLog } from "@/components/ActivityLog";
+import { BottomSheet } from "@/components/BottomSheet";
+import { DayAgenda } from "@/components/DayAgenda";
 import { DayGrid } from "@/components/DayGrid";
 import { LiveClock } from "@/components/LiveClock";
 import { MonthCalendarView } from "@/components/MonthCalendarView";
 import { PlannerAreas } from "@/components/PlannerAreas";
 import { TaskBacklog } from "@/components/TaskBacklog";
+import {
+  placedBlockFromSchedule,
+  TaskEditor,
+} from "@/components/TaskEditor";
 import { ThreeWeekView } from "@/components/ThreeWeekView";
 import { useAuth } from "@/hooks/useAuth";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
+import { dateKeyInTz } from "@/lib/time";
 import {
   fictionalSeed,
   type SeedArea,
@@ -73,7 +81,13 @@ import {
   type WorkspaceProfile,
 } from "@/lib/workspace";
 
-type AppView = "scheduler" | "planner" | "weeks" | "calendar" | "activity";
+type AppView =
+  | "scheduler"
+  | "planner"
+  | "weeks"
+  | "calendar"
+  | "activity"
+  | "more";
 
 function emptyDemoBootstrap() {
   return {
@@ -106,6 +120,9 @@ export function AuthShell() {
   } = useAuth();
 
   const [appView, setAppView] = useState<AppView>("scheduler");
+  const [fabOpen, setFabOpen] = useState(false);
+  const breakpoint = useBreakpoint();
+  const isPhone = breakpoint === "phone";
   const [dataReady, setDataReady] = useState(false);
   const [dataLoadError, setDataLoadError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -694,14 +711,24 @@ export function AuthShell() {
   }
 
   const plannerNavActive = appView === "planner" || appView === "weeks";
-  const showFocusSide = showsTasksToFocus(layerMode);
+  const showFocusSide = showsTasksToFocus(layerMode) && !isPhone;
+  const tz = "Asia/Kolkata";
+
+  const navButtons: { id: AppView; label: string }[] = [
+    { id: "scheduler", label: isPhone ? "Today" : "Scheduler" },
+    { id: "planner", label: "Planner" },
+    { id: "calendar", label: "Calendar" },
+    { id: "activity", label: "Activity" },
+  ];
 
   return (
     <SecondClockProvider>
-      <main className="shell shell-wide">
+      <main
+        className={`shell shell-wide${isPhone ? " shell-phone" : ""}`}
+      >
         <header className="brand brand-row">
           <div>
-            <h1>Work Planner</h1>
+            <h1>Samaya Scheduler</h1>
             <p className="lede">
               {isDemo ? "Demo mode · " : ""}
               {view?.displayName || user.email || user.uid}
@@ -711,52 +738,36 @@ export function AuthShell() {
             </p>
           </div>
           <div className="header-actions">
-            <nav className="app-nav" aria-label="App views">
-              <button
-                type="button"
-                className={
-                  appView === "scheduler" ? "nav-active" : "secondary"
-                }
-                onClick={() => setAppView("scheduler")}
-              >
-                Scheduler
-              </button>
-              <button
-                type="button"
-                className={plannerNavActive ? "nav-active" : "secondary"}
-                onClick={() => setAppView("planner")}
-              >
-                Planner
-              </button>
-              <button
-                type="button"
-                className={
-                  appView === "calendar" ? "nav-active" : "secondary"
-                }
-                onClick={() => setAppView("calendar")}
-              >
-                Calendar
-              </button>
-              <button
-                type="button"
-                className={
-                  appView === "activity" ? "nav-active" : "secondary"
-                }
-                onClick={() => setAppView("activity")}
-              >
-                Activity
-              </button>
-            </nav>
+            {!isPhone ? (
+              <nav className="app-nav" aria-label="App views">
+                {navButtons.map((btn) => (
+                  <button
+                    key={btn.id}
+                    type="button"
+                    className={
+                      (btn.id === "planner" ? plannerNavActive : appView === btn.id)
+                        ? "nav-active"
+                        : "secondary"
+                    }
+                    onClick={() => setAppView(btn.id)}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </nav>
+            ) : null}
             <div className="header-session">
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy}
-                onClick={signOut}
-              >
-                Sign out
-              </button>
-              <LiveClock timeZone="Asia/Kolkata" />
+              {!isPhone ? (
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={signOut}
+                >
+                  Sign out
+                </button>
+              ) : null}
+              <LiveClock timeZone={tz} />
             </div>
           </div>
         </header>
@@ -797,6 +808,27 @@ export function AuthShell() {
           />
         ) : appView === "activity" ? (
           <ActivityLog entries={activityEntries} />
+        ) : appView === "more" ? (
+          <section className="more-panel" aria-label="More">
+            <h2>More</h2>
+            <div className="sheet-actions">
+              <button
+                type="button"
+                className="tap-target"
+                onClick={() => setAppView("weeks")}
+              >
+                Week overview
+              </button>
+              <button
+                type="button"
+                className="secondary tap-target"
+                disabled={busy}
+                onClick={signOut}
+              >
+                Sign out
+              </button>
+            </div>
+          </section>
         ) : (
           <div
             className={
@@ -812,25 +844,45 @@ export function AuthShell() {
                   Demo classes are not shown on personal accounts.
                 </p>
               ) : null}
-              <DayGrid
-                isDemo={isDemo}
-                areas={areas}
-                timezone="Asia/Kolkata"
-                tasks={tasks}
-                onTasksChange={onTasksChange}
-                placedBlocks={blocks}
-                onPlacedBlocksChange={onBlocksChange}
-                layerMode={layerMode}
-                onLayerModeChange={onLayerModeChange}
-                bands={bands}
-                routines={routines}
-                schedules={schedules}
-                dayTypes={
-                  isDemo ? fictionalSeed.dayTypes : dayTypes
-                }
-                checkIns={checkIns}
-                onCheckInsChange={onCheckInsChange}
-              />
+              {isPhone ? (
+                <DayAgenda
+                  isDemo={isDemo}
+                  areas={areas}
+                  timezone={tz}
+                  tasks={tasks}
+                  onTasksChange={onTasksChange}
+                  placedBlocks={blocks}
+                  onPlacedBlocksChange={onBlocksChange}
+                  bands={bands}
+                  routines={routines}
+                  schedules={schedules}
+                  dayTypes={
+                    isDemo ? fictionalSeed.dayTypes : dayTypes
+                  }
+                  checkIns={checkIns}
+                  onCheckInsChange={onCheckInsChange}
+                />
+              ) : (
+                <DayGrid
+                  isDemo={isDemo}
+                  areas={areas}
+                  timezone={tz}
+                  tasks={tasks}
+                  onTasksChange={onTasksChange}
+                  placedBlocks={blocks}
+                  onPlacedBlocksChange={onBlocksChange}
+                  layerMode={layerMode}
+                  onLayerModeChange={onLayerModeChange}
+                  bands={bands}
+                  routines={routines}
+                  schedules={schedules}
+                  dayTypes={
+                    isDemo ? fictionalSeed.dayTypes : dayTypes
+                  }
+                  checkIns={checkIns}
+                  onCheckInsChange={onCheckInsChange}
+                />
+              )}
             </div>
             {showFocusSide ? (
               <aside className="scheduler-side">
@@ -846,6 +898,74 @@ export function AuthShell() {
             ) : null}
           </div>
         )}
+
+        {isPhone ? (
+          <>
+            <button
+              type="button"
+              className="fab-add tap-target"
+              aria-label="Add task"
+              onClick={() => setFabOpen(true)}
+            >
+              +
+            </button>
+            <nav className="tab-bar" aria-label="App tabs">
+              {[
+                ...navButtons,
+                { id: "more" as AppView, label: "More" },
+              ].map((btn) => (
+                <button
+                  key={btn.id}
+                  type="button"
+                  className={
+                    (btn.id === "planner"
+                      ? plannerNavActive
+                      : appView === btn.id) ||
+                    (btn.id === "more" && appView === "weeks")
+                      ? "nav-active"
+                      : "secondary"
+                  }
+                  onClick={() => setAppView(btn.id)}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </nav>
+            <BottomSheet
+              open={fabOpen}
+              title="Add task"
+              onClose={() => setFabOpen(false)}
+            >
+              <TaskEditor
+                areas={areas}
+                showSchedule
+                defaultScheduleDate={dateKeyInTz(new Date(), tz)}
+                submitLabel="Add"
+                onCancel={() => setFabOpen(false)}
+                onSave={({ task, schedule }) => {
+                  let nextTasks = [
+                    { ...task, id: task.id || `task-${Date.now()}` },
+                    ...tasks,
+                  ];
+                  if (schedule) {
+                    const block = placedBlockFromSchedule(
+                      nextTasks[0]!,
+                      schedule,
+                      areas,
+                    );
+                    nextTasks = nextTasks.map((t, i) =>
+                      i === 0 ? { ...t, status: "scheduled" } : t,
+                    );
+                    onBlocksChange([...blocks, block]);
+                  }
+                  onTasksChange(nextTasks);
+                  setFabOpen(false);
+                  setAppView("scheduler");
+                }}
+              />
+            </BottomSheet>
+          </>
+        ) : null}
 
         {error ? <p className="error">{error}</p> : null}
       </main>

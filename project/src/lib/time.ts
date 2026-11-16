@@ -90,6 +90,23 @@ export function formatDayLabel(dateKey: string, timeZone = DEFAULT_TZ): string {
   }).format(utcGuess);
 }
 
+/** Shift a YYYY-MM-DD key by whole calendar days (noon UTC anchor). */
+export function shiftDateKey(dateKey: string, deltaDays: number): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const utc = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
+  utc.setUTCDate(utc.getUTCDate() + deltaDays);
+  const yy = utc.getUTCFullYear();
+  const mm = String(utc.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(utc.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+/** Date at local noon for a YYYY-MM-DD (for buildDayGrid centering). */
+export function dateFromKey(dateKey: string): Date {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(y!, m! - 1, d!, 12, 0, 0);
+}
+
 export function formatLastUpdated(
   date: Date,
   timeZone = DEFAULT_TZ,

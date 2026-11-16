@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  endedWithinMinutes,
   isBlockEnded,
   replanUnfinishedTask,
 } from "@/lib/checkin";
@@ -54,5 +55,18 @@ describe("check-in + replan", () => {
     expect(isBlockEnded("2026-11-11", "10:00", "Asia/Kolkata", now)).toBe(true);
     expect(isBlockEnded("2026-11-11", "10:15", "Asia/Kolkata", now)).toBe(false);
     expect(isBlockEnded("2026-11-10", "23:00", "Asia/Kolkata", now)).toBe(true);
+  });
+
+  it("treats only recent endings as calm auto-open candidates", () => {
+    const now = new Date("2026-11-11T10:10:00+05:30");
+    expect(
+      endedWithinMinutes("2026-11-11", "10:00", 15, "Asia/Kolkata", now),
+    ).toBe(true);
+    expect(
+      endedWithinMinutes("2026-11-11", "09:00", 15, "Asia/Kolkata", now),
+    ).toBe(false);
+    expect(
+      endedWithinMinutes("2026-11-10", "23:50", 15, "Asia/Kolkata", now),
+    ).toBe(false);
   });
 });

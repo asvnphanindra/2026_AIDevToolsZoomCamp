@@ -5,11 +5,18 @@ import {
   useState,
   type DragEvent,
   type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  BlockActionSheet,
+  applyBlockSheetAction,
+  type BlockSheetAction,
+} from "@/components/BlockActionSheet";
 import {
   BlockContextMenu,
   type BlockMenuAction,
 } from "@/components/BlockContextMenu";
+import { BottomSheet } from "@/components/BottomSheet";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
 import { NowIndicator } from "@/components/NowIndicator";
 import type {
@@ -28,6 +35,7 @@ import {
   type TimedItem,
 } from "@/lib/blocks";
 import {
+  endedWithinMinutes,
   isBlockEnded,
   loadCheckIns,
   outcomeLabel,
@@ -157,7 +165,10 @@ export function DayGrid({
     ? (checkInsProp ?? {})
     : checkInsLocal;
   const [checkInTarget, setCheckInTarget] = useState<GridItem | null>(null);
+  const [checkInListOpen, setCheckInListOpen] = useState(false);
+  const [touchSheetItem, setTouchSheetItem] = useState<GridItem | null>(null);
   const [snoozedIds, setSnoozedIds] = useState<Set<string>>(() => new Set());
+  const longPressRef = useRef<number | null>(null);
   const [clock, setClock] = useState(() => Date.now());
   const [dropHl, setDropHl] = useState<{ dayKey: string; slot: string } | null>(
     null,
@@ -287,10 +298,26 @@ export function DayGrid({
       );
   }, [model.items, model.timezone, checkIns, snoozedIds, clock]);
 
+  /** Calm check-ins: auto-open only for a block that ended in the last 15 minutes. */
   useEffect(() => {
-    if (checkInTarget || overlap || ctx) return;
-    if (dueCheckIns[0]) setCheckInTarget(dueCheckIns[0]);
-  }, [dueCheckIns, checkInTarget, overlap, ctx]);
+    if (checkInTarget || checkInListOpen || overlap || ctx || touchSheetItem) {
+      return;
+    }
+    const now = new Date(clock);
+    const recent = dueCheckIns.find((item) =>
+      endedWithinMinutes(item.date, item.end, 15, model.timezone, now),
+    );
+    if (recent) setCheckInTarget(recent);
+  }, [
+    dueCheckIns,
+    checkInTarget,
+    checkInListOpen,
+    overlap,
+    ctx,
+    touchSheetItem,
+    clock,
+    model.timezone,
+  ]);
 
   function submitCheckIn(outcome: CheckInOutcome, remainingMin?: number) {
     if (!checkInTarget) return;
@@ -631,6 +658,47 @@ export function DayGrid({
     }
   }
 
+  function onTouchSheetAction(action: BlockSheetAction) {
+    if (!touchSheetItem) return;
+    if (action.type === "check-in") {
+      setCheckInTarget(touchSheetItem);
+      setTouchSheetItem(null);
+      return;
+    }
+    if (action.type === "unschedule") {
+      returnPlacedToBacklog(touchSheetItem);
+      setTouchSheetItem(null);
+      return;
+    }
+    const next = applyBlockSheetAction(touchSheetItem, action, placedBlocks);
+    if (next) onPlacedBlocksChange(next);
+    setTouchSheetItem(null);
+  }
+
+  function clearLongPress() {
+    if (longPressRef.current != null) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  }
+
+  function onBlockPointerDown(item: GridItem, e: ReactPointerEvent) {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    clearLongPress();
+    longPressRef.current = window.setTimeout(() => {
+      setTouchSheetItem(item);
+      longPressRef.current = null;
+    }, 420);
+  }
+
+  function onBlockPointerUp(item: GridItem, e: ReactPointerEvent) {
+    const wasLong = longPressRef.current == null;
+    clearLongPress();
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (wasLong) return;
+    setTouchSheetItem(item);
+  }
+
   function onBodyMove(event: MouseEvent<HTMLDivElement>) {
     const el = bodyRef.current;
     if (!el) return;
@@ -781,6 +849,15 @@ export function DayGrid({
             </label>
           ))}
         </fieldset>
+        {dueCheckIns.length > 0 ? (
+          <button
+            type="button"
+            className="checkin-chip tap-target"
+            onClick={() => setCheckInListOpen(true)}
+          >
+            {dueCheckIns.length} to check in
+          </button>
+        ) : null}
       </div>
 
       {overlap ? (
@@ -824,14 +901,53 @@ export function DayGrid({
         </div>
       ) : null}
 
+      <BottomSheet
+        open={checkInListOpen}
+        title="Check-ins"
+        onClose={() => setCheckInListOpen(false)}
+      >
+        {dueCheckIns.length === 0 ? (
+          <p className="muted">Nothing pending.</p>
+        ) : (
+          <ul className="checkin-due-list">
+            {dueCheckIns.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className="tap-target checkin-due-row"
+                  onClick={() => {
+                    setCheckInListOpen(false);
+                    setCheckInTarget(item);
+                  }}
+                >
+                  <strong>{item.title}</strong>
+                  <span className="muted">
+                    {item.date} · {item.start}–{item.end}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </BottomSheet>
+
+      <BlockActionSheet
+        item={touchSheetItem}
+        open={Boolean(touchSheetItem)}
+        onClose={() => setTouchSheetItem(null)}
+        onAction={onTouchSheetAction}
+      />
+
       {checkInTarget ? (
-        <CheckInPrompt
-          title={checkInTarget.title}
-          start={checkInTarget.start}
-          end={checkInTarget.end}
-          onSubmit={submitCheckIn}
-          onLater={snoozeCheckIn}
-        />
+        <BottomSheet open title="Check in" onClose={snoozeCheckIn}>
+          <CheckInPrompt
+            title={checkInTarget.title}
+            start={checkInTarget.start}
+            end={checkInTarget.end}
+            onSubmit={submitCheckIn}
+            onLater={snoozeCheckIn}
+          />
+        </BottomSheet>
       ) : null}
 
       <div
@@ -991,6 +1107,10 @@ export function DayGrid({
                           e.dataTransfer.effectAllowed = "move";
                         }}
                         onContextMenu={(e) => onBlockContext(item, e)}
+                        onPointerDown={(e) => onBlockPointerDown(item, e)}
+                        onPointerUp={(e) => onBlockPointerUp(item, e)}
+                        onPointerCancel={clearLongPress}
+                        onPointerLeave={clearLongPress}
                       >
                         <span className="day-grid-item-title">
                           {warned || clashing ? "! " : ""}

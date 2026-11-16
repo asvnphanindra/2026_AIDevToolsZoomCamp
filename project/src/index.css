@@ -18,6 +18,11 @@
   --radius-lg: 0.75rem;
   --control-pad-y: 0.45rem;
   --control-pad-x: 0.85rem;
+  --tap: 44px;
+  --bp-phone: 639px;
+  --bp-tablet: 1023px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tab-bar-height: calc(var(--tap) + 0.75rem + var(--safe-bottom));
   --focus: 0 0 0 3px rgba(15, 107, 76, 0.28);
   font-family: "Segoe UI", "Helvetica Neue", sans-serif;
   line-height: 1.5;
@@ -53,6 +58,17 @@ body {
   padding-inline: clamp(1rem, 2vw, 1.75rem);
 }
 
+.shell-phone {
+  padding-bottom: calc(var(--tab-bar-height) + 4.5rem);
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.tap-target {
+  min-height: var(--tap);
+  min-width: var(--tap);
+}
+
 .scheduler-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.9fr);
@@ -80,7 +96,7 @@ body {
   margin-bottom: 0;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   .scheduler-layout {
     grid-template-columns: 1fr;
     gap: var(--space-4);
@@ -596,7 +612,7 @@ button.nav-active {
   white-space: nowrap;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .brand-row {
     flex-direction: column;
     align-items: stretch;
@@ -615,6 +631,217 @@ button.nav-active {
   .live-clock {
     text-align: left;
   }
+
+  .brand h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Phone bottom tab bar */
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.15rem;
+  padding: 0.35rem 0.35rem calc(0.35rem + var(--safe-bottom));
+  background: color-mix(in srgb, var(--panel) 92%, #fff);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -4px 18px rgba(28, 36, 32, 0.06);
+}
+
+.tab-bar button {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0.35rem 0.2rem;
+  font-size: 0.78rem;
+  line-height: 1.15;
+  border-radius: var(--radius);
+}
+
+.fab-add {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--tab-bar-height) + 0.75rem);
+  z-index: 41;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  box-shadow: 0 6px 18px rgba(15, 107, 76, 0.28);
+}
+
+/* Bottom sheet */
+.bottom-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bottom-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(28, 36, 32, 0.42);
+  cursor: pointer;
+}
+
+.bottom-sheet {
+  position: relative;
+  width: min(32rem, 100%);
+  max-height: min(88vh, 40rem);
+  overflow: auto;
+  background: var(--panel);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 0.5rem 1rem calc(1rem + var(--safe-bottom));
+  box-shadow: 0 -8px 28px rgba(28, 36, 32, 0.16);
+}
+
+.bottom-sheet-handle {
+  width: 2.5rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--line);
+  margin: 0.25rem auto 0.75rem;
+}
+
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.bottom-sheet-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.bottom-sheet-body,
+.bottom-sheet-footer {
+  min-width: 0;
+}
+
+.sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sheet-actions > button,
+.stepper-row button {
+  width: 100%;
+}
+
+.stepper-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.checkin-chip {
+  margin-top: var(--space-2);
+  background: #fff7e8;
+  border: 1px solid #e4c78a;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.checkin-due-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.checkin-due-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  text-align: left;
+}
+
+.checkin-banner .actions button,
+.checkin-partly .actions button {
+  min-height: var(--tap);
+}
+
+/* Day agenda (phone) */
+.day-agenda {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.day-agenda-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.day-agenda-header h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 1.25rem;
+}
+
+.day-agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  touch-action: pan-y;
+}
+
+.agenda-item {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: #fff;
+  min-height: var(--tap);
+}
+
+.agenda-item-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.agenda-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.agenda-item-body strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.more-panel h2 {
+  margin-top: 0;
 }
 
 .planner-areas .day-grid-meta {

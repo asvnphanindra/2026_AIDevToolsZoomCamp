@@ -4,6 +4,7 @@ import {
   dateKeyInTz,
   formatHhmm,
   minutesOf,
+  shiftDateKey,
   weekCenteredDayKeys,
   weekdaySun0,
 } from "@/lib/time";
@@ -30,5 +31,10 @@ describe("time helpers", () => {
     expect(keys).toHaveLength(5);
     expect(keys[todayIndex]).toBe(dateKeyInTz(from, "Asia/Kolkata"));
     expect(weekdaySun0("2026-11-11", "Asia/Kolkata")).toBe(3); // Wed
+  });
+
+  it("shifts YYYY-MM-DD by whole days", () => {
+    expect(shiftDateKey("2026-11-11", 1)).toBe("2026-11-12");
+    expect(shiftDateKey("2026-11-01", -1)).toBe("2026-10-31");
   });
 });
