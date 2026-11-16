@@ -784,6 +784,73 @@ button.nav-active {
   min-height: var(--tap);
 }
 
+/* Phone Today: Agenda | Grid toggle */
+.phone-day-surface {
+  min-width: 0;
+}
+
+.phone-day-view-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.phone-day-view-toggle button.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.day-grid-board.has-energy.week-1 {
+  grid-template-columns: 3rem 0.7rem minmax(0, 1fr);
+  overflow-x: hidden;
+}
+
+.day-grid-board.week-1.no-availability {
+  grid-template-columns: 3rem minmax(0, 1fr);
+  overflow-x: hidden;
+}
+
+.day-grid-board.has-energy.week-3 {
+  grid-template-columns: 3rem 0.7rem repeat(3, minmax(0, 1fr));
+}
+
+.day-grid-board.week-3.no-availability {
+  grid-template-columns: 3rem repeat(3, minmax(0, 1fr));
+}
+
+.day-grid-compact .scheduler-layers {
+  gap: 0.35rem 0.55rem;
+  padding: 0.4rem 0.55rem;
+}
+
+.day-grid-compact .scheduler-layer-toggle {
+  font-size: 0.8rem;
+}
+
+.day-grid-compact .day-grid-item-title {
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 480px) {
+  .day-grid-board.has-energy.week-1,
+  .day-grid-board.week-1.no-availability {
+    padding: 0.4rem;
+    column-gap: 0.25rem;
+  }
+
+  .day-grid-compact .day-grid-time {
+    font-size: 0.7rem;
+  }
+
+  .day-grid-compact .day-grid-item {
+    min-height: var(--tap);
+    padding: 0.2rem 0.3rem;
+  }
+}
+
 /* Day agenda (phone) */
 .day-agenda {
   min-width: 0;

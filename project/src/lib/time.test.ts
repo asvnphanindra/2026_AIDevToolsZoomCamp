@@ -33,6 +33,21 @@ describe("time helpers", () => {
     expect(weekdaySun0("2026-11-11", "Asia/Kolkata")).toBe(3); // Wed
   });
 
+  it("supports 1, 3, 5 and 7 centered day counts", () => {
+    const from = new Date("2026-11-11T12:00:00+05:30");
+    const today = dateKeyInTz(from, "Asia/Kolkata");
+    for (const count of [1, 3, 5, 7] as const) {
+      const { keys, todayIndex } = weekCenteredDayKeys(
+        "Asia/Kolkata",
+        from,
+        count,
+      );
+      expect(keys).toHaveLength(count);
+      expect(todayIndex).toBe(Math.floor((count - 1) / 2));
+      expect(keys[todayIndex]).toBe(today);
+    }
+  });
+
   it("shifts YYYY-MM-DD by whole days", () => {
     expect(shiftDateKey("2026-11-11", 1)).toBe("2026-11-12");
     expect(shiftDateKey("2026-11-01", -1)).toBe("2026-10-31");

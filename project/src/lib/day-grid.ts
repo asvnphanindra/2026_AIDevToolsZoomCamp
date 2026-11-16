@@ -69,7 +69,7 @@ export type DayGridModel = {
 };
 
 /**
- * Build today−2…today+2 grid.
+ * Build a centered day grid (default today−2…today+2).
  * Demo falls back to fictionalSeed when config inputs omitted.
  * Personal empty config → empty schedule/bands/routines (no demo paint).
  */
@@ -80,6 +80,8 @@ export function buildDayGrid(opts: {
   startHour?: number;
   endHour?: number;
   now?: Date;
+  /** Visible day columns (1 / 3 / 5 / 7). Default 5. */
+  daysVisible?: number;
   bands?: SeedBand[];
   routines?: SeedRoutine[];
   schedules?: SeedSchedule[];
@@ -95,7 +97,11 @@ export function buildDayGrid(opts: {
     opts.endHour ??
     (opts.isDemo ? fictionalSeed.profile.settings.gridEndHour : 22);
   const now = opts.now ?? new Date();
-  const { keys: dayKeys, todayIndex } = weekCenteredDayKeys(timezone, now);
+  const { keys: dayKeys, todayIndex } = weekCenteredDayKeys(
+    timezone,
+    now,
+    opts.daysVisible ?? 5,
+  );
   const todayKey = dayKeys[todayIndex]!;
   const areas =
     opts.areas.length > 0

@@ -11,26 +11,27 @@ export function dateKeyInTz(date: Date, timeZone = DEFAULT_TZ): string {
 }
 
 /**
- * Five day keys centered on today: today−2 … today … today+2.
- * Returns `{ keys, todayIndex }` where todayIndex is always 2.
+ * Day keys centered on `from`: default five (today−2 … today+2).
+ * Pass an odd `dayCount` (1 / 3 / 5 / 7) so today stays in the middle.
  */
 export function weekCenteredDayKeys(
   timeZone = DEFAULT_TZ,
   from = new Date(),
+  dayCount = 5,
 ): { keys: string[]; todayIndex: number } {
-  const todayIndex = 2;
-  const dayCount = todayIndex * 2 + 1;
+  const count = Math.max(1, Math.floor(dayCount));
+  const todayIndex = Math.floor((count - 1) / 2);
   const keys: string[] = [];
   for (let offset = -todayIndex; offset <= todayIndex; offset++) {
     const d = new Date(from.getTime() + offset * 86_400_000);
     keys.push(dateKeyInTz(d, timeZone));
   }
   // DST safety: rebuild by walking calendar days if duplicates.
-  if (new Set(keys).size === dayCount) return { keys, todayIndex };
+  if (new Set(keys).size === count) return { keys, todayIndex };
 
   const out: string[] = [];
   let cursor = new Date(from.getTime() - todayIndex * 86_400_000);
-  while (out.length < dayCount) {
+  while (out.length < count) {
     const key = dateKeyInTz(cursor, timeZone);
     if (!out.includes(key)) out.push(key);
     cursor = new Date(cursor.getTime() + 86_400_000);

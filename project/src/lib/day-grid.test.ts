@@ -17,6 +17,19 @@ describe("day grid planner model", () => {
     expect(model.items.some((i) => i.kind === "block")).toBe(true);
   });
 
+  it("builds a single-day grid when daysVisible is 1", () => {
+    const model = buildDayGrid({
+      isDemo: true,
+      areas: fictionalSeed.areas,
+      now: new Date("2026-11-11T12:00:00+05:30"),
+      timezone: "Asia/Kolkata",
+      daysVisible: 1,
+    });
+    expect(model.dayKeys).toHaveLength(1);
+    expect(model.todayIndex).toBe(0);
+    expect(model.dayKeys[0]).toBe("2026-11-11");
+  });
+
   it("personal empty config renders no demo schedule or routines", () => {
     const model = buildDayGrid({
       isDemo: false,

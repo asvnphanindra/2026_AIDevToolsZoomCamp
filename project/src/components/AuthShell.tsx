@@ -58,6 +58,11 @@ import {
 } from "@/lib/planner-store";
 import { type DailyRule } from "@/lib/rules";
 import {
+  loadPhoneDayView,
+  writePhoneDayView,
+  type PhoneDayView,
+} from "@/lib/phone-day-view";
+import {
   loadSchedulerLayerMode,
   showsTasksToFocus,
   writeSchedulerLayerMode,
@@ -124,6 +129,9 @@ export function AuthShell() {
   const [anchorDate, setAnchorDate] = useState<string | undefined>(undefined);
   const [fabScheduleDate, setFabScheduleDate] = useState<string | undefined>(
     undefined,
+  );
+  const [phoneDayView, setPhoneDayView] = useState<PhoneDayView>(() =>
+    loadPhoneDayView(),
   );
   const breakpoint = useBreakpoint();
   const isPhone = breakpoint === "phone";
@@ -231,6 +239,7 @@ export function AuthShell() {
     setSchedules([]);
     setDayTypes([]);
     setLayerMode(loadSchedulerLayerMode());
+    setPhoneDayView(loadPhoneDayView());
 
     void (async () => {
       try {
@@ -528,6 +537,16 @@ export function AuthShell() {
       // UI chrome only — never localStorage in demo.
       if (!isDemo && typeof localStorage !== "undefined") {
         writeSchedulerLayerMode(mode);
+      }
+    },
+    [isDemo],
+  );
+
+  const onPhoneDayViewChange = useCallback(
+    (next: PhoneDayView) => {
+      setPhoneDayView(next);
+      if (!isDemo && typeof localStorage !== "undefined") {
+        writePhoneDayView(next);
       }
     },
     [isDemo],
@@ -860,24 +879,73 @@ export function AuthShell() {
                 </p>
               ) : null}
               {isPhone ? (
-                <DayAgenda
-                  isDemo={isDemo}
-                  areas={areas}
-                  timezone={tz}
-                  anchorDate={anchorDate}
-                  tasks={tasks}
-                  onTasksChange={onTasksChange}
-                  placedBlocks={blocks}
-                  onPlacedBlocksChange={onBlocksChange}
-                  bands={bands}
-                  routines={routines}
-                  schedules={schedules}
-                  dayTypes={
-                    isDemo ? fictionalSeed.dayTypes : dayTypes
-                  }
-                  checkIns={checkIns}
-                  onCheckInsChange={onCheckInsChange}
-                />
+                <div className="phone-day-surface">
+                  <div
+                    className="phone-day-view-toggle"
+                    role="group"
+                    aria-label="Day view"
+                  >
+                    <button
+                      type="button"
+                      className={`tap-target${phoneDayView === "agenda" ? " is-active" : " secondary"}`}
+                      aria-pressed={phoneDayView === "agenda"}
+                      onClick={() => onPhoneDayViewChange("agenda")}
+                    >
+                      Agenda
+                    </button>
+                    <button
+                      type="button"
+                      className={`tap-target${phoneDayView === "grid" ? " is-active" : " secondary"}`}
+                      aria-pressed={phoneDayView === "grid"}
+                      onClick={() => onPhoneDayViewChange("grid")}
+                    >
+                      Grid
+                    </button>
+                  </div>
+                  {phoneDayView === "agenda" ? (
+                    <DayAgenda
+                      isDemo={isDemo}
+                      areas={areas}
+                      timezone={tz}
+                      anchorDate={anchorDate}
+                      tasks={tasks}
+                      onTasksChange={onTasksChange}
+                      placedBlocks={blocks}
+                      onPlacedBlocksChange={onBlocksChange}
+                      bands={bands}
+                      routines={routines}
+                      schedules={schedules}
+                      dayTypes={
+                        isDemo ? fictionalSeed.dayTypes : dayTypes
+                      }
+                      checkIns={checkIns}
+                      onCheckInsChange={onCheckInsChange}
+                    />
+                  ) : (
+                    <DayGrid
+                      isDemo={isDemo}
+                      areas={areas}
+                      timezone={tz}
+                      anchorDate={anchorDate}
+                      daysVisible={1}
+                      compact
+                      tasks={tasks}
+                      onTasksChange={onTasksChange}
+                      placedBlocks={blocks}
+                      onPlacedBlocksChange={onBlocksChange}
+                      layerMode={layerMode}
+                      onLayerModeChange={onLayerModeChange}
+                      bands={bands}
+                      routines={routines}
+                      schedules={schedules}
+                      dayTypes={
+                        isDemo ? fictionalSeed.dayTypes : dayTypes
+                      }
+                      checkIns={checkIns}
+                      onCheckInsChange={onCheckInsChange}
+                    />
+                  )}
+                </div>
               ) : (
                 <DayGrid
                   isDemo={isDemo}

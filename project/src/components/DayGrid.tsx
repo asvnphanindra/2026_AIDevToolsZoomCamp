@@ -64,9 +64,11 @@ import {
 import {
   buildHalfHourSlots,
   dateFromKey,
+  dateKeyInTz,
   formatDayLabel,
   formatHhmm,
   minutesOf,
+  shiftDateKey,
   weekdaySun0,
 } from "@/lib/time";
 
@@ -74,8 +76,12 @@ type Props = {
   isDemo: boolean;
   areas: SeedArea[];
   timezone?: string;
-  /** Centre the 5-day window on this YYYY-MM-DD (calendar Open day). */
+  /** Centre the day window on this YYYY-MM-DD (calendar Open day). */
   anchorDate?: string;
+  /** Visible day columns (1 on phone; 5 desktop default). */
+  daysVisible?: number;
+  /** Phone chrome: day nav + shorter copy. */
+  compact?: boolean;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
   placedBlocks: PlacedBlock[];
@@ -140,8 +146,10 @@ function rangesClash(
 export function DayGrid({
   isDemo,
   areas,
-  timezone,
+  timezone = "Asia/Kolkata",
   anchorDate,
+  daysVisible = 5,
+  compact = false,
   tasks,
   onTasksChange,
   placedBlocks,
@@ -156,6 +164,12 @@ export function DayGrid({
   onCheckInsChange,
 }: Props) {
   const checkInsControlled = typeof onCheckInsChange === "function";
+  const singleDay = daysVisible === 1;
+  const todayKey = dateKeyInTz(new Date(), timezone);
+  const [dayKey, setDayKey] = useState(anchorDate || todayKey);
+  useEffect(() => {
+    if (anchorDate) setDayKey(anchorDate);
+  }, [anchorDate]);
   const [overlap, setOverlap] = useState<OverlapPrompt | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
   const [checkInsLocal, setCheckInsLocal] = useState<
@@ -178,6 +192,9 @@ export function DayGrid({
     null,
   );
   const layers = layerStateForMode(layerMode);
+  const centerKey = singleDay ? dayKey : anchorDate;
+  const weekClass =
+    daysVisible <= 1 ? "week-1" : daysVisible <= 3 ? "week-3" : "week-5";
 
   const model = useMemo(
     () =>
@@ -185,7 +202,8 @@ export function DayGrid({
         isDemo,
         areas,
         timezone,
-        now: anchorDate ? dateFromKey(anchorDate) : undefined,
+        now: centerKey ? dateFromKey(centerKey) : undefined,
+        daysVisible,
         bands,
         routines,
         schedules,
@@ -196,7 +214,8 @@ export function DayGrid({
       isDemo,
       areas,
       timezone,
-      anchorDate,
+      centerKey,
+      daysVisible,
       bands,
       routines,
       schedules,
@@ -857,13 +876,41 @@ export function DayGrid({
   }
 
   return (
-    <section className="day-grid" aria-label="Five-day hourly grid">
+    <section
+      className={`day-grid${compact ? " day-grid-compact" : ""}`}
+      aria-label={singleDay ? "Hourly day grid" : "Five-day hourly grid"}
+    >
+      {singleDay ? (
+        <div className="day-agenda-toolbar day-grid-toolbar">
+          <button
+            type="button"
+            className="secondary tap-target"
+            onClick={() => setDayKey((k) => shiftDateKey(k, -1))}
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            className="secondary tap-target"
+            onClick={() => setDayKey(todayKey)}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            className="tap-target"
+            onClick={() => setDayKey((k) => shiftDateKey(k, 1))}
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
       <div className="day-grid-meta">
-        <h2>This week</h2>
+        <h2>{singleDay ? formatDayLabel(dayKey, timezone) : "This week"}</h2>
         <p className="muted">
-          Combined = full grid · Focus = Tasks to Focus until you drag onto the
-          calendar · drag a placed block back to unschedule · right-click for
-          more
+          {compact || singleDay
+            ? `${dayKey === todayKey ? "Today" : dayKey} · tap a block for actions · long-press for more`
+            : "Combined = full grid · Focus = Tasks to Focus until you drag onto the calendar · drag a placed block back to unschedule · right-click for more"}
         </p>
         <fieldset className="scheduler-layers" aria-label="Calendar layers">
           <legend>Layers</legend>
@@ -985,8 +1032,8 @@ export function DayGrid({
       <div
         className={
           layers.availability
-            ? "day-grid-board has-energy week-5"
-            : "day-grid-board week-5 no-availability"
+            ? `day-grid-board has-energy ${weekClass}`
+            : `day-grid-board ${weekClass} no-availability`
         }
         style={{
           gridTemplateRows: `auto repeat(${slots.length}, minmax(${ROW_PX}rem, auto))`,
@@ -1070,6 +1117,7 @@ export function DayGrid({
               ? `3 / span ${model.dayKeys.length}`
               : `2 / span ${model.dayKeys.length}`,
             gridRow: `2 / span ${slots.length}`,
+            gridTemplateColumns: `repeat(${model.dayKeys.length}, minmax(0, 1fr))`,
           }}
           onMouseMove={onBodyMove}
           onMouseLeave={() => setHover(null)}
