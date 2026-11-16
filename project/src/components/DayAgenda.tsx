@@ -18,7 +18,12 @@ import type {
   SeedRoutine,
   SeedSchedule,
 } from "@/data/fictional-seed";
-import { type PlacedBlock } from "@/lib/blocks";
+import {
+  durationMinutes,
+  findConflicts,
+  type PlacedBlock,
+  type TimedItem,
+} from "@/lib/blocks";
 import {
   endedWithinMinutes,
   isBlockEnded,
@@ -47,6 +52,8 @@ type Props = {
   isDemo: boolean;
   areas: SeedArea[];
   timezone?: string;
+  /** Jump agenda to this YYYY-MM-DD (calendar Open day). */
+  anchorDate?: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
   placedBlocks: PlacedBlock[];
@@ -59,6 +66,13 @@ type Props = {
   onCheckInsChange: (next: Record<string, BlockCheckIn>) => void;
 };
 
+function rangesClash(
+  a: { start: string; end: string },
+  b: { start: string; end: string },
+): boolean {
+  return minutesOf(a.start) < minutesOf(b.end) && minutesOf(a.end) > minutesOf(b.start);
+}
+
 const SWIPE_MIN = 48;
 const RECENT_END_MIN = 15;
 
@@ -67,6 +81,7 @@ export function DayAgenda({
   isDemo,
   areas,
   timezone = DEFAULT_TZ,
+  anchorDate,
   tasks,
   onTasksChange,
   placedBlocks,
@@ -79,11 +94,19 @@ export function DayAgenda({
   onCheckInsChange,
 }: Props) {
   const todayKey = dateKeyInTz(new Date(), timezone);
-  const [dayKey, setDayKey] = useState(todayKey);
+  const [dayKey, setDayKey] = useState(anchorDate || todayKey);
+
+  useEffect(() => {
+    if (anchorDate) setDayKey(anchorDate);
+  }, [anchorDate]);
   const [clock, setClock] = useState(() => Date.now());
   const [sheetItem, setSheetItem] = useState<GridItem | null>(null);
   const [checkInTarget, setCheckInTarget] = useState<GridItem | null>(null);
   const [checkInListOpen, setCheckInListOpen] = useState(false);
+  const [overlap, setOverlap] = useState<{
+    candidate: PlacedBlock;
+    conflicts: TimedItem[];
+  } | null>(null);
   const [snoozedIds, setSnoozedIds] = useState<Set<string>>(() => new Set());
   const pointerRef = useRef<{ x: number; y: number; id: number } | null>(null);
   const longPressRef = useRef<number | null>(null);
@@ -127,6 +150,20 @@ export function DayAgenda({
         .sort((a, b) => minutesOf(a.start) - minutesOf(b.start)),
     [model.items, dayKey],
   );
+
+  const clashIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i]!;
+        const b = items[j]!;
+        if (!rangesClash(a, b)) continue;
+        ids.add(a.id);
+        ids.add(b.id);
+      }
+    }
+    return ids;
+  }, [items]);
 
   const dueCheckIns = useMemo(() => {
     const now = new Date(clock);
@@ -217,8 +254,84 @@ export function DayAgenda({
     ]);
   }
 
+  function openClashResolve(item: GridItem) {
+    const candidate =
+      placedBlocks.find((b) => b.id === item.id) ??
+      placedBlocks.find(
+        (b) => b.date === item.date && rangesClash(b, item) && b.id !== item.id,
+      );
+    if (!candidate) return;
+    const universe: TimedItem[] = model.items
+      .filter((i) => i.id !== candidate.id)
+      .map((i) => ({
+        id: i.id,
+        date: i.date,
+        start: i.start,
+        end: i.end,
+        title: i.title,
+        kind: i.kind,
+      }));
+    const conflicts = findConflicts(candidate, universe);
+    if (!conflicts.length) return;
+    setSheetItem(null);
+    setOverlap({ candidate, conflicts });
+  }
+
+  function resolveOverlap(action: "shorten-mine" | "shorten-other" | "cancel") {
+    if (!overlap) return;
+    if (action === "cancel") {
+      setOverlap(null);
+      return;
+    }
+    let candidate = { ...overlap.candidate };
+    const first = overlap.conflicts[0]!;
+    if (action === "shorten-mine") {
+      if (minutesOf(first.start) <= minutesOf(candidate.start)) {
+        setOverlap(null);
+        return;
+      }
+      candidate = { ...candidate, end: first.start };
+      if (durationMinutes(candidate.start, candidate.end) < 15) {
+        setOverlap(null);
+        return;
+      }
+      onPlacedBlocksChange(
+        placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+      );
+      setOverlap(null);
+      return;
+    }
+    const otherPlaced = placedBlocks.find((b) => b.id === first.id);
+    if (!otherPlaced) {
+      if (minutesOf(first.start) > minutesOf(candidate.start)) {
+        candidate = { ...candidate, end: first.start };
+        if (durationMinutes(candidate.start, candidate.end) >= 15) {
+          onPlacedBlocksChange(
+            placedBlocks.map((b) => (b.id === candidate.id ? candidate : b)),
+          );
+        }
+      }
+      setOverlap(null);
+      return;
+    }
+    if (durationMinutes(otherPlaced.start, candidate.start) < 15) {
+      setOverlap(null);
+      return;
+    }
+    onPlacedBlocksChange(
+      placedBlocks.map((b) =>
+        b.id === first.id ? { ...b, end: candidate.start } : b,
+      ),
+    );
+    setOverlap(null);
+  }
+
   function onSheetAction(action: BlockSheetAction) {
     if (!sheetItem) return;
+    if (action.type === "resolve-clash") {
+      openClashResolve(sheetItem);
+      return;
+    }
     if (action.type === "check-in") {
       setCheckInTarget(sheetItem);
       setSheetItem(null);
@@ -373,10 +486,11 @@ export function DayAgenda({
         ) : (
           items.map((item) => {
             const checkIn = checkIns[item.id];
+            const clashing = clashIds.has(item.id);
             return (
               <article
                 key={item.id}
-                className={`agenda-item kind-${item.kind}${item.placed ? " is-placed" : ""}${checkIn ? ` checkin-${checkIn.outcome}` : ""}`}
+                className={`agenda-item kind-${item.kind}${item.placed ? " is-placed" : ""}${checkIn ? ` checkin-${checkIn.outcome}` : ""}${clashing ? " is-clash" : ""}`}
                 style={{ borderLeftColor: item.colour }}
                 onPointerDown={(e) => onPointerDown(item, e)}
                 onPointerUp={(e) => onPointerUp(item, e)}
@@ -397,15 +511,60 @@ export function DayAgenda({
                     {checkIn ? ` · ${outcomeLabel(checkIn.outcome)}` : ""}
                   </span>
                 </div>
+                {clashing ? (
+                  <button
+                    type="button"
+                    className="clash-badge tap-target"
+                    aria-label={`Resolve clash for ${item.title}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openClashResolve(item);
+                    }}
+                  >
+                    ⚠
+                  </button>
+                ) : null}
               </article>
             );
           })
         )}
       </div>
 
+      {overlap ? (
+        <div className="overlap-banner" role="alertdialog">
+          <p>
+            Overlap with{" "}
+            {overlap.conflicts
+              .map((c) => `${c.title} (${c.start}–${c.end})`)
+              .join("; ")}
+            .
+          </p>
+          <div className="actions">
+            <button type="button" onClick={() => resolveOverlap("shorten-mine")}>
+              Shorten this
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => resolveOverlap("shorten-other")}
+            >
+              Shorten other
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => resolveOverlap("cancel")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <BlockActionSheet
         item={sheetItem}
         open={Boolean(sheetItem)}
+        clashing={sheetItem ? clashIds.has(sheetItem.id) : false}
         onClose={() => setSheetItem(null)}
         onAction={onSheetAction}
       />

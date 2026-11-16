@@ -9,17 +9,25 @@ export type BlockSheetAction =
   | { type: "move"; date: string; start: string; end: string }
   | { type: "resize"; end: string }
   | { type: "unschedule" }
-  | { type: "check-in" };
+  | { type: "check-in" }
+  | { type: "resolve-clash" };
 
 type Props = {
   item: GridItem | null;
   open: boolean;
+  clashing?: boolean;
   onClose: () => void;
   onAction: (action: BlockSheetAction) => void;
 };
 
-/** Touch action sheet: edit / move / resize / unschedule / check-in. */
-export function BlockActionSheet({ item, open, onClose, onAction }: Props) {
+/** Touch action sheet: edit / move / resize / unschedule / check-in / resolve. */
+export function BlockActionSheet({
+  item,
+  open,
+  clashing = false,
+  onClose,
+  onAction,
+}: Props) {
   const [mode, setMode] = useState<"menu" | "move" | "resize" | "edit">("menu");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -77,6 +85,15 @@ export function BlockActionSheet({ item, open, onClose, onAction }: Props) {
 
       {mode === "menu" ? (
         <div className="sheet-actions">
+          {clashing ? (
+            <button
+              type="button"
+              className="tap-target"
+              onClick={() => onAction({ type: "resolve-clash" })}
+            >
+              Resolve clash…
+            </button>
+          ) : null}
           {item.placed ? (
             <>
               <button type="button" className="tap-target" onClick={beginEdit}>
@@ -106,7 +123,7 @@ export function BlockActionSheet({ item, open, onClose, onAction }: Props) {
               Check in…
             </button>
           ) : null}
-          {!item.placed && item.kind !== "block" ? (
+          {!clashing && !item.placed && item.kind !== "block" ? (
             <p className="muted">No actions for this card.</p>
           ) : null}
         </div>

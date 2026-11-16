@@ -3,19 +3,32 @@ import type { GridItem } from "@/lib/day-grid";
 export type BlockMenuAction =
   | "edit-placed"
   | "unschedule-placed"
-  | "check-in";
+  | "check-in"
+  | "resolve-clash";
 
 type Props = {
   x: number;
   y: number;
   item: GridItem;
+  clashing?: boolean;
   onAction: (action: BlockMenuAction) => void;
   onClose: () => void;
 };
 
-/** Right-click menu for placed blocks (edit / unschedule / check-in). */
-export function BlockContextMenu({ x, y, item, onAction, onClose }: Props) {
+/** Right-click menu for placed blocks (edit / unschedule / check-in / resolve). */
+export function BlockContextMenu({
+  x,
+  y,
+  item,
+  clashing = false,
+  onAction,
+  onClose,
+}: Props) {
   const items: { id: BlockMenuAction; label: string }[] = [];
+
+  if (clashing) {
+    items.push({ id: "resolve-clash", label: "Resolve clash…" });
+  }
 
   if (item.placed) {
     items.push(

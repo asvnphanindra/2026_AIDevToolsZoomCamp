@@ -63,6 +63,7 @@ import {
 } from "@/lib/scheduler-layers";
 import {
   buildHalfHourSlots,
+  dateFromKey,
   formatDayLabel,
   formatHhmm,
   minutesOf,
@@ -73,6 +74,8 @@ type Props = {
   isDemo: boolean;
   areas: SeedArea[];
   timezone?: string;
+  /** Centre the 5-day window on this YYYY-MM-DD (calendar Open day). */
+  anchorDate?: string;
   tasks: BacklogTask[];
   onTasksChange: (tasks: BacklogTask[]) => void;
   placedBlocks: PlacedBlock[];
@@ -138,6 +141,7 @@ export function DayGrid({
   isDemo,
   areas,
   timezone,
+  anchorDate,
   tasks,
   onTasksChange,
   placedBlocks,
@@ -181,6 +185,7 @@ export function DayGrid({
         isDemo,
         areas,
         timezone,
+        now: anchorDate ? dateFromKey(anchorDate) : undefined,
         bands,
         routines,
         schedules,
@@ -191,6 +196,7 @@ export function DayGrid({
       isDemo,
       areas,
       timezone,
+      anchorDate,
       bands,
       routines,
       schedules,
@@ -381,6 +387,21 @@ export function DayGrid({
         title: i.title,
         kind: i.kind,
       }));
+  }
+
+  /** Reopen overlap options for an existing clash (badge / menu / sheet). */
+  function openClashResolve(item: GridItem) {
+    const candidate =
+      placedBlocks.find((b) => b.id === item.id) ??
+      placedBlocks.find((b) =>
+        b.date === item.date && rangesClash(b, item) && b.id !== item.id,
+      );
+    if (!candidate) return;
+    const conflicts = findConflicts(candidate, timedUniverse(candidate.id));
+    if (!conflicts.length) return;
+    setCtx(null);
+    setTouchSheetItem(null);
+    setOverlap({ candidate, conflicts, mode: "update" });
   }
 
   function commitBlock(candidate: PlacedBlock, mode: "create" | "update") {
@@ -638,6 +659,10 @@ export function DayGrid({
     const item = ctx.item;
     setCtx(null);
 
+    if (action === "resolve-clash") {
+      openClashResolve(item);
+      return;
+    }
     if (action === "edit-placed") {
       const title = window.prompt("Block title", item.title);
       if (!title?.trim()) return;
@@ -660,6 +685,10 @@ export function DayGrid({
 
   function onTouchSheetAction(action: BlockSheetAction) {
     if (!touchSheetItem) return;
+    if (action.type === "resolve-clash") {
+      openClashResolve(touchSheetItem);
+      return;
+    }
     if (action.type === "check-in") {
       setCheckInTarget(touchSheetItem);
       setTouchSheetItem(null);
@@ -934,6 +963,9 @@ export function DayGrid({
       <BlockActionSheet
         item={touchSheetItem}
         open={Boolean(touchSheetItem)}
+        clashing={
+          touchSheetItem ? clashIds.has(touchSheetItem.id) : false
+        }
         onClose={() => setTouchSheetItem(null)}
         onAction={onTouchSheetAction}
       />
@@ -1113,7 +1145,7 @@ export function DayGrid({
                         onPointerLeave={clearLongPress}
                       >
                         <span className="day-grid-item-title">
-                          {warned || clashing ? "! " : ""}
+                          {warned && !clashing ? "! " : ""}
                           {item.title}
                         </span>
                         <span className="day-grid-item-time">
@@ -1122,6 +1154,21 @@ export function DayGrid({
                             ? ` · ${outcomeLabel(checkIn.outcome)}`
                             : ""}
                         </span>
+                        {clashing ? (
+                          <button
+                            type="button"
+                            className="clash-badge tap-target"
+                            aria-label={`Resolve clash for ${item.title}`}
+                            title="Resolve clash"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openClashResolve(item);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            ⚠
+                          </button>
+                        ) : null}
                         {item.placed ? (
                           <button
                             type="button"
@@ -1187,6 +1234,7 @@ export function DayGrid({
           x={ctx.x}
           y={ctx.y}
           item={ctx.item}
+          clashing={clashIds.has(ctx.item.id)}
           onAction={onMenuAction}
           onClose={() => setCtx(null)}
         />

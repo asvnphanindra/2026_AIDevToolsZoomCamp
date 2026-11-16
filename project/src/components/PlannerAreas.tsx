@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { GoalsGantt } from "@/components/GoalsGantt";
 import { PlannerWeekBacklog } from "@/components/PlannerWeekBacklog";
 import { TeachingPlan } from "@/components/TeachingPlan";
@@ -10,6 +17,13 @@ import {
 } from "@/lib/areas";
 import type { FocusItem } from "@/lib/focus";
 import type { DailyRule } from "@/lib/rules";
+import {
+  loadPlannerAccordion,
+  PLANNER_SECTION_LABELS,
+  writePlannerAccordion,
+  type PlannerAccordionState,
+  type PlannerSectionId,
+} from "@/lib/scheduler-layers";
 import type { BacklogTask } from "@/lib/tasks";
 import {
   findJobArea,
@@ -60,7 +74,18 @@ export function PlannerAreas({
   const [name, setName] = useState("");
   const [colour, setColour] = useState(DEFAULT_AREA_COLOURS[0]!);
   const [configAreaId, setConfigAreaId] = useState<string | null>(null);
+  const [accordion, setAccordion] = useState<PlannerAccordionState>(() =>
+    loadPlannerAccordion(),
+  );
   const teachingPlanRef = useRef<HTMLDivElement | null>(null);
+
+  function toggleSection(id: PlannerSectionId) {
+    setAccordion((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      writePlannerAccordion(next);
+      return next;
+    });
+  }
   const orderedForGantt = useMemo(
     () => [...areas].sort((a, b) => a.order - b.order),
     [areas],
@@ -194,7 +219,10 @@ export function PlannerAreas({
           <button
             type="button"
             className={jobSelected ? "nav-active" : "secondary"}
-            onClick={openTeachingPlan}
+            onClick={() => {
+              if (!accordion.schedules) toggleSection("schedules");
+              openTeachingPlan();
+            }}
             aria-controls="teaching-plan-panel"
           >
             Teaching Plan
@@ -202,219 +230,284 @@ export function PlannerAreas({
         ) : null}
       </div>
 
-      <ul className="planner-area-row">
-        {ordered.map((area) => {
-          const areaRules = rules.filter((r) => r.areaId === area.id);
-          const mins = areaRules.reduce(
-            (sum, r) => sum + r.minMinutesPerDay,
-            0,
-          );
-          const open = configAreaId === area.id;
-          return (
-            <li key={area.id}>
-              <article
-                className={
-                  open ? "planner-area-card is-open" : "planner-area-card"
-                }
-                style={{ ["--area-colour" as string]: area.colour }}
-              >
-                <span
-                  className="planner-area-swatch"
-                  aria-hidden="true"
-                  style={{ background: area.colour }}
-                />
-                <div className="planner-area-body">
-                  <strong className="planner-area-name">{area.name}</strong>
-                  <span className="muted planner-area-meta">
-                    {areaRules.length === 0
-                      ? "No daily minimum"
-                      : `≥ ${mins}m / day`}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="planner-area-gear secondary"
-                  aria-label={`Configure ${area.name}`}
-                  aria-expanded={open}
-                  aria-controls={
-                    open ? "planner-area-config-panel" : undefined
-                  }
-                  onClick={() => toggleConfig(area.id)}
-                >
-                  <GearIcon />
-                </button>
-              </article>
-            </li>
-          );
-        })}
-        <li className="planner-area-add-slot">
-          <form className="planner-area-add" onSubmit={onAddArea}>
-            <label className="sr-only" htmlFor="planner-new-area-name">
-              New area name
-            </label>
-            <input
-              id="planner-new-area-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Add area"
-              required
-            />
-            <label className="sr-only" htmlFor="planner-new-area-colour">
-              Colour
-            </label>
-            <input
-              id="planner-new-area-colour"
-              type="color"
-              value={colour}
-              onChange={(e) => setColour(e.target.value)}
-              aria-label="New area colour"
-            />
-            <button type="submit">Add</button>
-          </form>
-        </li>
-      </ul>
-
-      {configArea ? (
-        <div
-          id="planner-area-config-panel"
-          className="planner-area-config"
-          role="region"
-          aria-label={`${configArea.name} settings`}
+      <div className="planner-accordion">
+        <PlannerAccordionCard
+          id="week"
+          open={accordion.week}
+          onToggle={() => toggleSection("week")}
         >
-          <div className="area-config-head">
-            <input
-              type="color"
-              value={configArea.colour}
-              onChange={(e) =>
-                updateArea(configArea.id, { colour: e.target.value })
-              }
-              aria-label={`${configArea.name} colour`}
-            />
-            <input
-              className="area-name-input"
-              value={configArea.name}
-              onChange={(e) =>
-                updateArea(configArea.id, { name: e.target.value })
-              }
-              aria-label="Area name"
-            />
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => removeArea(configArea.id)}
-            >
-              Delete
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => setConfigAreaId(null)}
-            >
-              Close
-            </button>
-          </div>
+          <PlannerWeekBacklog
+            areas={areas}
+            area={orderedForGantt.find((a) => a.id === ganttAreaId)}
+            period={weekPeriod}
+            tasks={tasks}
+            onTasksChange={onTasksChange}
+            focusItems={focusItems}
+            onFocusItemsChange={onFocusItemsChange}
+            onOpenScheduler={onOpenSchedulerFocus}
+          />
+        </PlannerAccordionCard>
 
-          <div className="area-rules">
-            <div className="area-rules-head">
-              <strong>Daily minimums</strong>
+        <PlannerAccordionCard
+          id="goals"
+          open={accordion.goals}
+          onToggle={() => toggleSection("goals")}
+        >
+          <GoalsGantt
+            areas={areas}
+            goals={areaGoals}
+            onGoalsChange={onAreaGoalsChange}
+            onOpenWeekOverview={onOpenWeekOverview}
+            onAddToWeekBacklog={onAddGoalToWeekBacklog}
+            weekBacklogGoalIds={weekBacklogGoalIds}
+            areaId={ganttAreaId}
+            onAreaIdChange={setGanttAreaId}
+          />
+        </PlannerAccordionCard>
+
+        <PlannerAccordionCard
+          id="schedules"
+          open={accordion.schedules}
+          onToggle={() => toggleSection("schedules")}
+        >
+          {showTeachingPlan ? (
+            <div
+              id="teaching-plan-panel"
+              ref={teachingPlanRef}
+              className="teaching-plan-anchor"
+            >
+              {teachingPlan && onTeachingPlanChange ? (
+                <TeachingPlan
+                  plan={teachingPlan}
+                  onPlanChange={onTeachingPlanChange}
+                />
+              ) : (
+                <section className="teaching-plan" aria-label="Teaching plan">
+                  <h3>Teaching Plan</h3>
+                  <p className="muted">Loading Job teaching plan…</p>
+                </section>
+              )}
+            </div>
+          ) : jobArea && onTeachingPlanChange ? (
+            <p className="muted teaching-plan-hint">
+              Select area <strong>{jobArea.name}</strong> (or use{" "}
               <button
                 type="button"
-                className="secondary"
-                onClick={() => addRule(configArea.id)}
+                className="linkish"
+                onClick={openTeachingPlan}
               >
-                Add minimum
+                Teaching Plan
               </button>
-            </div>
-            <p className="muted hint-inline">
-              Used in Weekly goals retrospective (allocated vs planned min).
-              May deviate — not enforced while scheduling.
+              ) to open topics, coverage, and timetables.
             </p>
-            {configRules.length === 0 ? (
-              <p className="muted hint-inline">No daily minimum.</p>
-            ) : (
-              <ul className="rule-list">
-                {configRules.map((rule) => (
-                  <li key={rule.id} className="rule-row">
-                    <div className="task-main">
-                      <strong>
-                        {rule.label || `${configArea.name} minimum`}
-                      </strong>
-                      <span className="muted">
-                        ≥ {rule.minMinutesPerDay}m / day
+          ) : (
+            <p className="muted">No schedules configured yet.</p>
+          )}
+        </PlannerAccordionCard>
+
+        <PlannerAccordionCard
+          id="areas"
+          open={accordion.areas}
+          onToggle={() => toggleSection("areas")}
+        >
+          <ul className="planner-area-row">
+            {ordered.map((area) => {
+              const areaRules = rules.filter((r) => r.areaId === area.id);
+              const mins = areaRules.reduce(
+                (sum, r) => sum + r.minMinutesPerDay,
+                0,
+              );
+              const open = configAreaId === area.id;
+              return (
+                <li key={area.id}>
+                  <article
+                    className={
+                      open ? "planner-area-card is-open" : "planner-area-card"
+                    }
+                    style={{ ["--area-colour" as string]: area.colour }}
+                  >
+                    <span
+                      className="planner-area-swatch"
+                      aria-hidden="true"
+                      style={{ background: area.colour }}
+                    />
+                    <div className="planner-area-body">
+                      <strong className="planner-area-name">{area.name}</strong>
+                      <span className="muted planner-area-meta">
+                        {areaRules.length === 0
+                          ? "No daily minimum"
+                          : `≥ ${mins}m / day`}
                       </span>
                     </div>
                     <button
                       type="button"
-                      className="secondary"
-                      onClick={() => editRule(rule)}
+                      className="planner-area-gear secondary"
+                      aria-label={`Configure ${area.name}`}
+                      aria-expanded={open}
+                      aria-controls={
+                        open ? "planner-area-config-panel" : undefined
+                      }
+                      onClick={() => toggleConfig(area.id)}
                     >
-                      Edit
+                      <GearIcon />
                     </button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => removeRule(rule.id)}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      ) : null}
+                  </article>
+                </li>
+              );
+            })}
+            <li className="planner-area-add-slot">
+              <form className="planner-area-add" onSubmit={onAddArea}>
+                <label className="sr-only" htmlFor="planner-new-area-name">
+                  New area name
+                </label>
+                <input
+                  id="planner-new-area-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Add area"
+                  required
+                />
+                <label className="sr-only" htmlFor="planner-new-area-colour">
+                  Colour
+                </label>
+                <input
+                  id="planner-new-area-colour"
+                  type="color"
+                  value={colour}
+                  onChange={(e) => setColour(e.target.value)}
+                  aria-label="New area colour"
+                />
+                <button type="submit">Add</button>
+              </form>
+            </li>
+          </ul>
 
-      {showTeachingPlan ? (
-        <div
-          id="teaching-plan-panel"
-          ref={teachingPlanRef}
-          className="teaching-plan-anchor"
-        >
-          {teachingPlan && onTeachingPlanChange ? (
-            <TeachingPlan
-              plan={teachingPlan}
-              onPlanChange={onTeachingPlanChange}
-            />
-          ) : (
-            <section className="teaching-plan" aria-label="Teaching plan">
-              <h3>Teaching Plan</h3>
-              <p className="muted">Loading Job teaching plan…</p>
-            </section>
-          )}
-        </div>
-      ) : jobArea && onTeachingPlanChange ? (
-        <p className="muted teaching-plan-hint">
-          Select area <strong>{jobArea.name}</strong> (or use{" "}
-          <button type="button" className="linkish" onClick={openTeachingPlan}>
-            Teaching Plan
-          </button>
-          ) to open topics, coverage, and timetables.
-        </p>
-      ) : null}
+          {configArea ? (
+            <div
+              id="planner-area-config-panel"
+              className="planner-area-config"
+              role="region"
+              aria-label={`${configArea.name} settings`}
+            >
+              <div className="area-config-head">
+                <input
+                  type="color"
+                  value={configArea.colour}
+                  onChange={(e) =>
+                    updateArea(configArea.id, { colour: e.target.value })
+                  }
+                  aria-label={`${configArea.name} colour`}
+                />
+                <input
+                  className="area-name-input"
+                  value={configArea.name}
+                  onChange={(e) =>
+                    updateArea(configArea.id, { name: e.target.value })
+                  }
+                  aria-label="Area name"
+                />
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => removeArea(configArea.id)}
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setConfigAreaId(null)}
+                >
+                  Close
+                </button>
+              </div>
 
-      <GoalsGantt
-        areas={areas}
-        goals={areaGoals}
-        onGoalsChange={onAreaGoalsChange}
-        onOpenWeekOverview={onOpenWeekOverview}
-        onAddToWeekBacklog={onAddGoalToWeekBacklog}
-        weekBacklogGoalIds={weekBacklogGoalIds}
-        areaId={ganttAreaId}
-        onAreaIdChange={setGanttAreaId}
-      />
-
-      <PlannerWeekBacklog
-        areas={areas}
-        area={orderedForGantt.find((a) => a.id === ganttAreaId)}
-        period={weekPeriod}
-        tasks={tasks}
-        onTasksChange={onTasksChange}
-        focusItems={focusItems}
-        onFocusItemsChange={onFocusItemsChange}
-        onOpenScheduler={onOpenSchedulerFocus}
-      />
+              <div className="area-rules">
+                <div className="area-rules-head">
+                  <strong>Daily minimums</strong>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => addRule(configArea.id)}
+                  >
+                    Add minimum
+                  </button>
+                </div>
+                <p className="muted hint-inline">
+                  Used in Weekly goals retrospective (allocated vs planned min).
+                  May deviate — not enforced while scheduling.
+                </p>
+                {configRules.length === 0 ? (
+                  <p className="muted hint-inline">No daily minimum.</p>
+                ) : (
+                  <ul className="rule-list">
+                    {configRules.map((rule) => (
+                      <li key={rule.id} className="rule-row">
+                        <div className="task-main">
+                          <strong>
+                            {rule.label || `${configArea.name} minimum`}
+                          </strong>
+                          <span className="muted">
+                            ≥ {rule.minMinutesPerDay}m / day
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => editRule(rule)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => removeRule(rule.id)}
+                        >
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </PlannerAccordionCard>
+      </div>
     </section>
+  );
+}
+
+function PlannerAccordionCard({
+  id,
+  open,
+  onToggle,
+  children,
+}: {
+  id: PlannerSectionId;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const panelId = `planner-section-${id}`;
+  return (
+    <article className={open ? "planner-card is-open" : "planner-card"}>
+      <button
+        type="button"
+        className="planner-card-toggle tap-target"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <span>{PLANNER_SECTION_LABELS[id]}</span>
+        <span aria-hidden="true">{open ? "▾" : "▸"}</span>
+      </button>
+      {open ? (
+        <div id={panelId} className="planner-card-body" role="region">
+          {children}
+        </div>
+      ) : null}
+    </article>
   );
 }
 

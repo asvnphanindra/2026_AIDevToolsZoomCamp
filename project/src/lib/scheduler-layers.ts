@@ -160,3 +160,59 @@ export function writeSchedulerLayers(state: SchedulerLayerState): void {
 export function loadSchedulerLayers(): SchedulerLayerState {
   return layerStateForMode(loadSchedulerLayerMode());
 }
+
+/** Planner accordion section ids (1.5). */
+export type PlannerSectionId = "week" | "goals" | "schedules" | "areas";
+
+export type PlannerAccordionState = Record<PlannerSectionId, boolean>;
+
+export const PLANNER_SECTION_IDS: PlannerSectionId[] = [
+  "week",
+  "goals",
+  "schedules",
+  "areas",
+];
+
+export const PLANNER_SECTION_LABELS: Record<PlannerSectionId, string> = {
+  week: "Week",
+  goals: "Goals",
+  schedules: "Schedules",
+  areas: "Areas",
+};
+
+const PLANNER_ACCORDION_KEY = "work-planner.planner-accordion";
+
+export const DEFAULT_PLANNER_ACCORDION: PlannerAccordionState = {
+  week: true,
+  goals: false,
+  schedules: false,
+  areas: false,
+};
+
+function isAccordionState(value: unknown): value is PlannerAccordionState {
+  if (!value || typeof value !== "object") return false;
+  const obj = value as Record<string, unknown>;
+  return PLANNER_SECTION_IDS.every((id) => typeof obj[id] === "boolean");
+}
+
+export function readPlannerAccordion(): PlannerAccordionState | null {
+  try {
+    const raw = localStorage.getItem(PLANNER_ACCORDION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    return isAccordionState(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writePlannerAccordion(state: PlannerAccordionState): void {
+  localStorage.setItem(PLANNER_ACCORDION_KEY, JSON.stringify(state));
+}
+
+export function loadPlannerAccordion(): PlannerAccordionState {
+  if (typeof localStorage === "undefined") {
+    return { ...DEFAULT_PLANNER_ACCORDION };
+  }
+  return readPlannerAccordion() ?? { ...DEFAULT_PLANNER_ACCORDION };
+}

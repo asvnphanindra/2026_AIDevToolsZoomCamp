@@ -1457,6 +1457,102 @@ button.nav-active {
   font-size: 0.75rem;
 }
 
+button.month-day-btn {
+  width: 100%;
+  min-height: var(--tap, 44px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.month-day-selected {
+  box-shadow: inset 0 0 0 2px var(--accent, #0f6b4c);
+}
+
+.month-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.month-calendar-grid-phone {
+  grid-template-columns: 1fr;
+}
+
+.cal-day-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sheet-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: end;
+  margin-bottom: var(--space-4);
+}
+
+.activity-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.activity-filter-toggle {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  min-height: var(--tap, 44px);
+}
+
+.planner-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.planner-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.planner-card-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+
+.planner-card-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--line);
+}
+
 .month-day-pad {
   visibility: hidden;
 }
@@ -2239,6 +2335,37 @@ button.nav-active {
     rgba(0, 0, 0, 0.12) 4px,
     rgba(0, 0, 0, 0.12) 8px
   );
+}
+
+.clash-badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  z-index: 4;
+  min-width: var(--tap, 44px);
+  min-height: var(--tap, 44px);
+  padding: 0;
+  border: 1px solid rgba(192, 57, 43, 0.55);
+  border-radius: 6px;
+  background: #fff8f6;
+  color: #c0392b;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agenda-item {
+  position: relative;
+}
+
+.agenda-item.is-clash {
+  box-shadow: inset 0 0 0 2px rgba(192, 57, 43, 0.85);
+}
+
+.agenda-item .clash-badge {
+  position: static;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .clash-swatch {

@@ -121,6 +121,10 @@ export function AuthShell() {
 
   const [appView, setAppView] = useState<AppView>("scheduler");
   const [fabOpen, setFabOpen] = useState(false);
+  const [anchorDate, setAnchorDate] = useState<string | undefined>(undefined);
+  const [fabScheduleDate, setFabScheduleDate] = useState<string | undefined>(
+    undefined,
+  );
   const breakpoint = useBreakpoint();
   const isPhone = breakpoint === "phone";
   const [dataReady, setDataReady] = useState(false);
@@ -805,6 +809,17 @@ export function AuthShell() {
             events={calendarEvents}
             series={calendarSeries}
             onSeriesChange={onCalendarSeriesChange}
+            timezone={tz}
+            onOpenDay={(dateKey) => {
+              setAnchorDate(dateKey);
+              setAppView("scheduler");
+            }}
+            onAddItem={(dateKey) => {
+              setAnchorDate(dateKey);
+              setFabScheduleDate(dateKey);
+              setAppView("scheduler");
+              setFabOpen(true);
+            }}
           />
         ) : appView === "activity" ? (
           <ActivityLog entries={activityEntries} />
@@ -849,6 +864,7 @@ export function AuthShell() {
                   isDemo={isDemo}
                   areas={areas}
                   timezone={tz}
+                  anchorDate={anchorDate}
                   tasks={tasks}
                   onTasksChange={onTasksChange}
                   placedBlocks={blocks}
@@ -867,6 +883,7 @@ export function AuthShell() {
                   isDemo={isDemo}
                   areas={areas}
                   timezone={tz}
+                  anchorDate={anchorDate}
                   tasks={tasks}
                   onTasksChange={onTasksChange}
                   placedBlocks={blocks}
@@ -905,7 +922,10 @@ export function AuthShell() {
               type="button"
               className="fab-add tap-target"
               aria-label="Add task"
-              onClick={() => setFabOpen(true)}
+              onClick={() => {
+                setFabScheduleDate(undefined);
+                setFabOpen(true);
+              }}
             >
               +
             </button>
@@ -931,41 +951,52 @@ export function AuthShell() {
                 </button>
               ))}
             </nav>
-            <BottomSheet
-              open={fabOpen}
-              title="Add task"
-              onClose={() => setFabOpen(false)}
-            >
-              <TaskEditor
-                areas={areas}
-                showSchedule
-                defaultScheduleDate={dateKeyInTz(new Date(), tz)}
-                submitLabel="Add"
-                onCancel={() => setFabOpen(false)}
-                onSave={({ task, schedule }) => {
-                  let nextTasks = [
-                    { ...task, id: task.id || `task-${Date.now()}` },
-                    ...tasks,
-                  ];
-                  if (schedule) {
-                    const block = placedBlockFromSchedule(
-                      nextTasks[0]!,
-                      schedule,
-                      areas,
-                    );
-                    nextTasks = nextTasks.map((t, i) =>
-                      i === 0 ? { ...t, status: "scheduled" } : t,
-                    );
-                    onBlocksChange([...blocks, block]);
-                  }
-                  onTasksChange(nextTasks);
-                  setFabOpen(false);
-                  setAppView("scheduler");
-                }}
-              />
-            </BottomSheet>
           </>
         ) : null}
+
+        <BottomSheet
+          open={fabOpen}
+          title="Add task"
+          onClose={() => {
+            setFabOpen(false);
+            setFabScheduleDate(undefined);
+          }}
+        >
+          <TaskEditor
+            key={fabScheduleDate || "today"}
+            areas={areas}
+            showSchedule
+            defaultScheduleDate={
+              fabScheduleDate || dateKeyInTz(new Date(), tz)
+            }
+            submitLabel="Add"
+            onCancel={() => {
+              setFabOpen(false);
+              setFabScheduleDate(undefined);
+            }}
+            onSave={({ task, schedule }) => {
+              let nextTasks = [
+                { ...task, id: task.id || `task-${Date.now()}` },
+                ...tasks,
+              ];
+              if (schedule) {
+                const block = placedBlockFromSchedule(
+                  nextTasks[0]!,
+                  schedule,
+                  areas,
+                );
+                nextTasks = nextTasks.map((t, i) =>
+                  i === 0 ? { ...t, status: "scheduled" } : t,
+                );
+                onBlocksChange([...blocks, block]);
+              }
+              onTasksChange(nextTasks);
+              setFabOpen(false);
+              setFabScheduleDate(undefined);
+              setAppView("scheduler");
+            }}
+          />
+        </BottomSheet>
 
         {error ? <p className="error">{error}</p> : null}
       </main>

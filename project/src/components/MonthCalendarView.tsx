@@ -1,4 +1,12 @@
-import { useMemo, useState, type FormEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import { BottomSheet } from "@/components/BottomSheet";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import type { CalendarEventKind } from "@/data/fictional-seed";
 import {
   currentWeekDayKeys,
@@ -8,9 +16,11 @@ import {
   threeMonthGrids,
   upcomingEvents,
   type CalendarEvent,
+  type MonthGrid,
 } from "@/lib/calendar-events";
 import {
   describeSeriesRule,
+  expandSeriesOccurrences,
   type CalendarSeries,
   type SeriesRule,
 } from "@/lib/calendar-series";
@@ -21,10 +31,13 @@ type Props = {
   series: CalendarSeries[];
   onSeriesChange: (next: CalendarSeries[]) => void;
   timezone?: string;
+  onOpenDay?: (dateKey: string) => void;
+  onAddItem?: (dateKey: string) => void;
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const KINDS = Object.keys(EVENT_KIND_LABELS) as CalendarEventKind[];
+const SWIPE_MIN = 48;
 
 /** 3-month mini calendar + upcoming list + recurring series rules (US-F1/F2). */
 export function MonthCalendarView({
@@ -32,11 +45,28 @@ export function MonthCalendarView({
   series,
   onSeriesChange,
   timezone = "Asia/Kolkata",
+  onOpenDay,
+  onAddItem,
 }: Props) {
-  const grids = useMemo(
-    () => threeMonthGrids(new Date(), timezone),
-    [timezone],
-  );
+  const bp = useBreakpoint();
+  const isPhone = bp === "phone";
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const swipeRef = useRef<{ x: number; y: number; id: number } | null>(null);
+
+  const monthAnchor = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthOffset);
+    return d;
+  }, [monthOffset]);
+
+  const grids = useMemo((): MonthGrid[] => {
+    if (isPhone) {
+      return [threeMonthGrids(monthAnchor, timezone)[0]!];
+    }
+    return threeMonthGrids(new Date(), timezone);
+  }, [isPhone, monthAnchor, timezone]);
+
   const weekKeys = useMemo(
     () => new Set(currentWeekDayKeys(new Date(), timezone)),
     [timezone],
@@ -46,6 +76,17 @@ export function MonthCalendarView({
     () => upcomingEvents(events, new Date(), timezone),
     [events, timezone],
   );
+
+  const selectedEvents = useMemo(
+    () => (selectedDate ? eventsOnDate(events, selectedDate) : []),
+    [events, selectedDate],
+  );
+  const selectedSeriesHits = useMemo(() => {
+    if (!selectedDate) return [];
+    return series.flatMap((s) =>
+      expandSeriesOccurrences(s, selectedDate, selectedDate),
+    );
+  }, [series, selectedDate]);
 
   const [label, setLabel] = useState("");
   const [time, setTime] = useState("19:00");
@@ -86,14 +127,34 @@ export function MonthCalendarView({
     setLabel("");
   }
 
+  function onSelectDate(dateKey: string) {
+    setSelectedDate(dateKey);
+  }
+
+  function onSwipeDown(e: ReactPointerEvent) {
+    if (!isPhone) return;
+    swipeRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  }
+
+  function onSwipeUp(e: ReactPointerEvent) {
+    if (!isPhone) return;
+    const start = swipeRef.current;
+    swipeRef.current = null;
+    if (!start || start.id !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy)) return;
+    setMonthOffset((o) => o + (dx < 0 ? 1 : -1));
+  }
+
   return (
     <section className="month-calendar-view" aria-label="3-month calendar">
       <div className="day-grid-meta">
         <h2>Calendar</h2>
         <p className="muted">
-          This month and the next two · coloured markers by event kind ·
-          current ISO week highlighted · series expanded on read · upcoming
-          list below
+          {isPhone
+            ? "Swipe months · tap a date for the day sheet"
+            : "This month and the next two · tap a date for the day sheet · series expanded on read"}
         </p>
       </div>
 
@@ -110,7 +171,44 @@ export function MonthCalendarView({
         ))}
       </ul>
 
-      <div className="month-calendar-grid">
+      {isPhone ? (
+        <div className="month-nav">
+          <button
+            type="button"
+            className="secondary tap-target"
+            onClick={() => setMonthOffset((o) => o - 1)}
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            className="secondary tap-target"
+            onClick={() => setMonthOffset(0)}
+          >
+            This month
+          </button>
+          <button
+            type="button"
+            className="tap-target"
+            onClick={() => setMonthOffset((o) => o + 1)}
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        className={
+          isPhone
+            ? "month-calendar-grid month-calendar-grid-phone"
+            : "month-calendar-grid"
+        }
+        onPointerDown={onSwipeDown}
+        onPointerUp={onSwipeUp}
+        onPointerCancel={() => {
+          swipeRef.current = null;
+        }}
+      >
         {grids.map((month) => (
           <article key={month.key} className="month-panel">
             <h3>{month.label}</h3>
@@ -137,21 +235,26 @@ export function MonthCalendarView({
                     const isToday = dayKey === todayKey;
                     const dayNum = Number(dayKey.slice(-2));
                     return (
-                      <div
+                      <button
                         key={dayKey}
+                        type="button"
                         role="gridcell"
                         className={[
                           "month-day",
+                          "month-day-btn",
+                          "tap-target",
                           inWeek ? "month-day-week" : "",
                           isToday ? "month-day-today" : "",
+                          selectedDate === dayKey ? "month-day-selected" : "",
                         ]
                           .filter(Boolean)
                           .join(" ")}
                         title={
                           dayEvents.length
                             ? dayEvents.map((ev) => ev.label).join(", ")
-                            : undefined
+                            : `Open ${dayKey}`
                         }
+                        onClick={() => onSelectDate(dayKey)}
                       >
                         <span className="month-day-num">{dayNum}</span>
                         {dayEvents.length ? (
@@ -170,7 +273,7 @@ export function MonthCalendarView({
                             ))}
                           </span>
                         ) : null}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -179,6 +282,91 @@ export function MonthCalendarView({
           </article>
         ))}
       </div>
+
+      <BottomSheet
+        open={Boolean(selectedDate)}
+        title={
+          selectedDate
+            ? formatDayLabel(selectedDate, timezone)
+            : "Day"
+        }
+        onClose={() => setSelectedDate(null)}
+        footer={
+          selectedDate ? (
+            <div className="sheet-actions sheet-actions-row">
+              <button
+                type="button"
+                className="tap-target"
+                onClick={() => {
+                  const key = selectedDate;
+                  setSelectedDate(null);
+                  onOpenDay?.(key);
+                }}
+              >
+                Open day
+              </button>
+              <button
+                type="button"
+                className="secondary tap-target"
+                onClick={() => {
+                  const key = selectedDate;
+                  setSelectedDate(null);
+                  onAddItem?.(key);
+                }}
+              >
+                Add item
+              </button>
+            </div>
+          ) : null
+        }
+      >
+        {selectedDate ? (
+          <>
+            <p className="muted">{selectedDate}</p>
+            {selectedEvents.length === 0 && selectedSeriesHits.length === 0 ? (
+              <p className="muted">Nothing on this date.</p>
+            ) : (
+              <ul className="cal-day-sheet-list">
+                {selectedEvents.map((event) => (
+                  <li key={event.id} className="cal-upcoming-item">
+                    <span
+                      className="cal-dot"
+                      style={{ background: EVENT_KIND_COLOURS[event.kind] }}
+                      aria-hidden
+                    />
+                    <div className="task-main">
+                      <strong>{event.label}</strong>
+                      <span className="muted">
+                        {event.time ? `${event.time} · ` : ""}
+                        {EVENT_KIND_LABELS[event.kind]}
+                        {event.seriesId ? " · from series" : ""}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+                {selectedSeriesHits
+                  .filter((hit) => !selectedEvents.some((e) => e.id === hit.id))
+                  .map((hit) => (
+                    <li key={hit.id} className="cal-upcoming-item">
+                      <span
+                        className="cal-dot"
+                        style={{ background: EVENT_KIND_COLOURS[hit.kind] }}
+                        aria-hidden
+                      />
+                      <div className="task-main">
+                        <strong>{hit.label}</strong>
+                        <span className="muted">
+                          {hit.time ? `${hit.time} · ` : ""}
+                          series
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </>
+        ) : null}
+      </BottomSheet>
 
       <section className="cal-series" aria-label="Recurring series">
         <h3>Recurring series</h3>

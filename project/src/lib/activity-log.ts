@@ -30,6 +30,78 @@ export type ActivityActor = {
   role: ActorRole;
 };
 
+export type ActivityFilter = {
+  role?: ActorRole | "all";
+  entityType?: string | "all";
+  /** Inclusive YYYY-MM-DD (UTC date of entry.at). */
+  from?: string;
+  /** Inclusive YYYY-MM-DD (UTC date of entry.at). */
+  to?: string;
+  /** Hide create/add + delete/remove pairs on the same entityId. */
+  hideNetZero?: boolean;
+};
+
+const CREATE_ACTIONS = new Set(["create", "add"]);
+const DELETE_ACTIONS = new Set(["delete", "remove"]);
+
+function entryDateKey(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+/** Hide matched create↔delete pairs per entityId (chronological pairing). */
+export function hideNetZeroPairs(entries: ActivityEntry[]): ActivityEntry[] {
+  const byEntity = new Map<string, ActivityEntry[]>();
+  for (const e of entries) {
+    const list = byEntity.get(e.entityId) ?? [];
+    list.push(e);
+    byEntity.set(e.entityId, list);
+  }
+  const hide = new Set<string>();
+  for (const list of byEntity.values()) {
+    const ordered = [...list].sort((a, b) => a.at.localeCompare(b.at));
+    const creates: ActivityEntry[] = [];
+    for (const e of ordered) {
+      const action = e.action.toLowerCase();
+      if (CREATE_ACTIONS.has(action)) {
+        creates.push(e);
+        continue;
+      }
+      if (DELETE_ACTIONS.has(action) && creates.length) {
+        const created = creates.shift()!;
+        hide.add(created.id);
+        hide.add(e.id);
+      }
+    }
+  }
+  return entries.filter((e) => !hide.has(e.id));
+}
+
+/** Pure client-side activity filter (no writes). */
+export function filterActivity(
+  entries: ActivityEntry[],
+  filter: ActivityFilter,
+): ActivityEntry[] {
+  let out = entries;
+  if (filter.role && filter.role !== "all") {
+    out = out.filter((e) => e.actorRole === filter.role);
+  }
+  if (filter.entityType && filter.entityType !== "all") {
+    out = out.filter((e) => e.entityType === filter.entityType);
+  }
+  if (filter.from) {
+    out = out.filter((e) => entryDateKey(e.at) >= filter.from!);
+  }
+  if (filter.to) {
+    out = out.filter((e) => entryDateKey(e.at) <= filter.to!);
+  }
+  if (filter.hideNetZero) {
+    out = hideNetZeroPairs(out);
+  }
+  return out;
+}
+
 const LOCAL_KEY = "work-planner.activity-log";
 const MAX_LOCAL = 200;
 
