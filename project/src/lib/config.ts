@@ -32,6 +32,8 @@ export type UserSettings = {
   reminderDefaultMin: number;
   eveningReviewAt?: string;
   setupDone?: boolean;
+  /** Setup template id when chosen (Phase 2). */
+  templateId?: string;
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -189,6 +191,12 @@ export function parseUserSettings(
         ? String(nested["eveningReviewAt"])
         : undefined,
     setupDone: nested["setupDone"] != null ? Boolean(nested["setupDone"]) : undefined,
+    templateId:
+      nested["templateId"] != null
+        ? String(nested["templateId"])
+        : data?.["templateId"] != null
+          ? String(data["templateId"])
+          : undefined,
   };
 }
 

@@ -6,6 +6,8 @@ import { DayGrid } from "@/components/DayGrid";
 import { LiveClock } from "@/components/LiveClock";
 import { MonthCalendarView } from "@/components/MonthCalendarView";
 import { PlannerAreas } from "@/components/PlannerAreas";
+import { Settings } from "@/components/Settings";
+import { SetupWizard } from "@/components/SetupWizard";
 import { TaskBacklog } from "@/components/TaskBacklog";
 import {
   placedBlockFromSchedule,
@@ -16,6 +18,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { SecondClockProvider } from "@/hooks/useSecondClock";
 import { dateKeyInTz } from "@/lib/time";
+import {
+  SETUP_TEMPLATES,
+  type SetupTemplateId,
+} from "@/data/templates";
 import {
   fictionalSeed,
   type SeedArea,
@@ -40,7 +46,14 @@ import {
   type CalendarSeries,
 } from "@/lib/calendar-series";
 import type { BlockCheckIn } from "@/lib/checkin";
-import { loadUserConfig, type ConfigDayType } from "@/lib/config";
+import {
+  DEFAULT_USER_SETTINGS,
+  loadPersonalConfig,
+  loadUserConfig,
+  saveUserSettings,
+  type ConfigDayType,
+  type UserSettings,
+} from "@/lib/config";
 import {
   loadDemoPlannerState,
   replaceDemoCheckIns,
@@ -51,6 +64,7 @@ import { type AreaGoal } from "@/lib/area-goals";
 import { isoWeekPeriod } from "@/lib/goals";
 import { migrateLocalToUsers } from "@/lib/migrate-local";
 import {
+  demoRoot,
   loadPlannerState,
   replaceCheckIns,
   replaceCollection,
@@ -68,6 +82,7 @@ import {
   writeSchedulerLayerMode,
   type SchedulerLayerMode,
 } from "@/lib/scheduler-layers";
+import { seedDemoWithTemplate } from "@/lib/seed";
 import {
   backlogTaskFromAreaGoal,
   openBacklogForGoalWeek,
@@ -92,7 +107,8 @@ type AppView =
   | "weeks"
   | "calendar"
   | "activity"
-  | "more";
+  | "more"
+  | "settings";
 
 function emptyDemoBootstrap() {
   return {
@@ -155,6 +171,9 @@ export function AuthShell() {
   const [routines, setRoutines] = useState<SeedRoutine[]>([]);
   const [schedules, setSchedules] = useState<SeedSchedule[]>([]);
   const [dayTypes, setDayTypes] = useState<ConfigDayType[]>([]);
+  const [userSettings, setUserSettings] = useState<UserSettings>({
+    ...DEFAULT_USER_SETTINGS,
+  });
   const [layerMode, setLayerMode] = useState<SchedulerLayerMode>("combined");
   const [teachingPlan, setTeachingPlan] = useState<TeachingPlanState | null>(
     null,
@@ -162,6 +181,7 @@ export function AuthShell() {
   const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceProfile | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [demoNeedsTemplate, setDemoNeedsTemplate] = useState(false);
 
   const workspaceOwnerUid = workspace?.workspaceOwnerUid || user?.uid || "";
 
@@ -254,9 +274,9 @@ export function AuthShell() {
         if (cancelled || plannerUidRef.current !== user.uid) return;
 
         const root = usersRoot(ownerUid);
-        const [state, config, plan, activity] = await Promise.all([
+        const [state, personal, plan, activity] = await Promise.all([
           loadPlannerState(root),
-          loadUserConfig(root),
+          loadPersonalConfig(ownerUid),
           loadOrSeedTeachingPlan({
             ownerUid,
             isDemo: false,
@@ -280,16 +300,19 @@ export function AuthShell() {
         setCalendarSeries(state.series);
         setAreaGoals(state.areaGoals);
         setCheckIns(state.checkIns);
-        setBands(config.bands);
-        setRoutines(config.routines);
-        setSchedules(config.schedules);
-        setDayTypes(config.dayTypes);
+        setBands(personal.bands);
+        setRoutines(personal.routines);
+        setSchedules(personal.schedules);
+        setDayTypes(personal.dayTypes);
+        setUserSettings(personal.settings);
         setTeachingPlan(plan);
         setActivityEntries(activity);
-        setNeedsSetup(
+        const emptyConfig =
           areasMigrated.length === 0 &&
-            config.schedules.length === 0 &&
-            config.bands.length === 0,
+          personal.schedules.length === 0 &&
+          personal.bands.length === 0;
+        setNeedsSetup(
+          personal.settings.setupDone !== true && emptyConfig,
         );
         setDataReady(true);
       } catch (err) {
@@ -316,6 +339,7 @@ export function AuthShell() {
     setDataReady(false);
     setDataLoadError(null);
     setNeedsSetup(false);
+    setDemoNeedsTemplate(false);
     const boot = emptyDemoBootstrap();
     setTasks(boot.tasks);
     setBlocks(boot.blocks);
@@ -336,6 +360,11 @@ export function AuthShell() {
       try {
         const state = await loadDemoPlannerState(user.uid);
         if (cancelled || plannerUidRef.current !== user.uid) return;
+        if (state.areas.length === 0) {
+          setDemoNeedsTemplate(true);
+          setDataReady(true);
+          return;
+        }
         const areasMigrated = migrateJobAreaName(state.areas);
         setAreas(areasMigrated);
         if (areasMigrated !== state.areas) {
@@ -350,9 +379,21 @@ export function AuthShell() {
         setCalendarSeries(state.series);
         setAreaGoals(state.areaGoals);
         setCheckIns(state.checkIns);
-        setBands(fictionalSeed.bands);
-        setRoutines(fictionalSeed.routines);
-        setSchedules(fictionalSeed.schedule);
+        const config = await loadUserConfig(demoRoot(user.uid));
+        if (cancelled || plannerUidRef.current !== user.uid) return;
+        setBands(config.bands.length ? config.bands : fictionalSeed.bands);
+        setRoutines(
+          config.routines.length ? config.routines : fictionalSeed.routines,
+        );
+        setSchedules(
+          config.schedules.length ? config.schedules : fictionalSeed.schedule,
+        );
+        setDayTypes(config.dayTypes);
+        setUserSettings({
+          ...DEFAULT_USER_SETTINGS,
+          setupDone: true,
+          templateId: "teacher-phd",
+        });
         setWorkspace({
           uid: user.uid,
           displayName: fictionalSeed.profile.displayName,
@@ -381,6 +422,7 @@ export function AuthShell() {
             }),
           );
         }
+        setDemoNeedsTemplate(false);
         setDataReady(true);
       } catch (err) {
         if (cancelled) return;
@@ -733,15 +775,133 @@ export function AuthShell() {
     );
   }
 
-  const plannerNavActive = appView === "planner" || appView === "weeks";
+  async function onPickDemoTemplate(id: SetupTemplateId) {
+    if (!user) return;
+    setDataReady(false);
+    try {
+      await seedDemoWithTemplate(user.uid, id);
+      const state = await loadDemoPlannerState(user.uid);
+      const config = await loadUserConfig(demoRoot(user.uid));
+      setAreas(migrateJobAreaName(state.areas));
+      setTasks(state.tasks);
+      setBlocks(state.blocks);
+      setRules(state.rules);
+      setFocusItems(state.focusItems);
+      setWeekHorizon(state.weekHorizon);
+      setOneOffEvents(state.events.filter((e) => !e.seriesId));
+      setCalendarSeries(state.series);
+      setAreaGoals(state.areaGoals);
+      setCheckIns(state.checkIns);
+      setBands(config.bands.length ? config.bands : fictionalSeed.bands);
+      setRoutines(
+        config.routines.length ? config.routines : fictionalSeed.routines,
+      );
+      setSchedules(
+        config.schedules.length ? config.schedules : fictionalSeed.schedule,
+      );
+      setDayTypes(config.dayTypes);
+      setUserSettings({
+        ...DEFAULT_USER_SETTINGS,
+        setupDone: true,
+        templateId: id,
+      });
+      setDemoNeedsTemplate(false);
+      setNeedsSetup(false);
+      setDataReady(true);
+    } catch (err) {
+      setDataLoadError(
+        err instanceof Error ? err.message : "Failed to apply demo template",
+      );
+      setDataReady(true);
+    }
+  }
+
+  if (isDemo && demoNeedsTemplate) {
+    return (
+      <main className="shell shell-wide">
+        <header className="brand">
+          <h1>Samaya Scheduler</h1>
+          <p className="lede">Choose a fictional demo template</p>
+        </header>
+        <ul className="template-picker">
+          {SETUP_TEMPLATES.map((t) => (
+            <li key={t.id}>
+              <button
+                type="button"
+                className="template-card tap-target"
+                disabled={busy}
+                onClick={() => void onPickDemoTemplate(t.id)}
+              >
+                <strong>{t.name}</strong>
+                <span className="muted">{t.description}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="secondary tap-target" onClick={signOut}>
+          Sign out
+        </button>
+      </main>
+    );
+  }
+
+  if (!isDemo && needsSetup && user) {
+    return (
+      <main className="shell shell-wide">
+        <header className="brand brand-row">
+          <div>
+            <h1>Samaya Scheduler</h1>
+            <p className="lede">Quick setup for your plan</p>
+          </div>
+          <button type="button" className="secondary tap-target" onClick={signOut}>
+            Sign out
+          </button>
+        </header>
+        <SetupWizard
+          root={usersRoot(user.uid)}
+          onSkipAll={() => {
+            void saveUserSettings(user.uid, {
+              ...userSettings,
+              setupDone: true,
+            }).then(() => {
+              setUserSettings((s) => ({ ...s, setupDone: true }));
+              setNeedsSetup(false);
+            });
+          }}
+          onComplete={(result) => {
+            setAreas(result.areas);
+            setBands(result.bands);
+            setRoutines(result.routines);
+            setSchedules(result.schedules);
+            setRules(result.rules);
+            setCalendarSeries(result.series);
+            setUserSettings(result.settings);
+            setNeedsSetup(false);
+            setAppView("scheduler");
+          }}
+        />
+      </main>
+    );
+  }
+
+  const plannerNavActive =
+    appView === "planner" || appView === "weeks" || appView === "settings";
   const showFocusSide = showsTasksToFocus(layerMode) && !isPhone;
-  const tz = "Asia/Kolkata";
+  const tz = userSettings.timezone || "Asia/Kolkata";
+  const plannerRoot = user
+    ? isDemo
+      ? demoRoot(user.uid)
+      : usersRoot(workspaceOwnerUid || user.uid)
+    : usersRoot("");
 
   const navButtons: { id: AppView; label: string }[] = [
     { id: "scheduler", label: isPhone ? "Today" : "Scheduler" },
     { id: "planner", label: "Planner" },
     { id: "calendar", label: "Calendar" },
     { id: "activity", label: "Activity" },
+    ...(!isPhone
+      ? [{ id: "settings" as AppView, label: "Settings" }]
+      : []),
   ];
 
   return (
@@ -768,7 +928,9 @@ export function AuthShell() {
                     key={btn.id}
                     type="button"
                     className={
-                      (btn.id === "planner" ? plannerNavActive : appView === btn.id)
+                      (btn.id === "planner"
+                        ? appView === "planner" || appView === "weeks"
+                        : appView === btn.id)
                         ? "nav-active"
                         : "secondary"
                     }
@@ -842,10 +1004,51 @@ export function AuthShell() {
           />
         ) : appView === "activity" ? (
           <ActivityLog entries={activityEntries} />
+        ) : appView === "settings" ? (
+          user ? (
+            <Settings
+              root={plannerRoot}
+              settings={userSettings}
+              onSettingsChange={setUserSettings}
+              areas={areas}
+              onAreasChange={onAreasChange}
+              bands={bands}
+              onBandsChange={(next) => {
+                setBands(next);
+              }}
+              routines={routines}
+              onRoutinesChange={setRoutines}
+              schedules={schedules}
+              onSchedulesChange={setSchedules}
+              rules={rules}
+              onRulesChange={onRulesChange}
+              series={calendarSeries}
+              onSeriesChange={onCalendarSeriesChange}
+              onRerunSetup={
+                isDemo
+                  ? undefined
+                  : () => {
+                      setNeedsSetup(true);
+                      setUserSettings((s) => ({ ...s, setupDone: false }));
+                      void saveUserSettings(workspaceOwnerUid || user.uid, {
+                        ...userSettings,
+                        setupDone: false,
+                      });
+                    }
+              }
+            />
+          ) : null
         ) : appView === "more" ? (
           <section className="more-panel" aria-label="More">
             <h2>More</h2>
             <div className="sheet-actions">
+              <button
+                type="button"
+                className="tap-target"
+                onClick={() => setAppView("settings")}
+              >
+                Settings
+              </button>
               <button
                 type="button"
                 className="tap-target"
@@ -872,10 +1075,10 @@ export function AuthShell() {
             }
           >
             <div className="scheduler-main">
-              {needsSetup ? (
+              {areas.length === 0 && bands.length === 0 ? (
                 <p className="muted" role="status">
-                  Empty plan — add areas in Planner, or run setup when available.
-                  Demo classes are not shown on personal accounts.
+                  Empty plan — open More → Settings or run setup to add areas and
+                  bands. Demo classes are not shown on personal accounts.
                 </p>
               ) : null}
               {isPhone ? (
@@ -1007,9 +1210,10 @@ export function AuthShell() {
                   type="button"
                   className={
                     (btn.id === "planner"
-                      ? plannerNavActive
+                      ? appView === "planner" || appView === "weeks"
                       : appView === btn.id) ||
-                    (btn.id === "more" && appView === "weeks")
+                    (btn.id === "more" &&
+                      (appView === "weeks" || appView === "settings"))
                       ? "nav-active"
                       : "secondary"
                   }

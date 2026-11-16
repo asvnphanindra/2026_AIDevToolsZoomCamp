@@ -8,11 +8,17 @@ import {
   isAuthEmulatorReachable,
   isFirestoreEmulatorReachable,
 } from "@/lib/firebase";
-import { DEMO_COLLECTION, loadDemoSeed } from "@/lib/seed";
+import {
+  DEMO_COLLECTION,
+  loadDemoSeed,
+  seedDemoWithTemplate,
+} from "@/lib/seed";
 import { fictionalSeed } from "@/data/fictional-seed";
+import { applyTemplate } from "@/data/templates";
+import { demoRoot } from "@/lib/planner-store";
 
 /**
- * Integration: anonymous Auth + loadDemoSeed against Firebase emulators.
+ * Integration: anonymous Auth + demo template seed against Firebase emulators.
  * Run via `npm test` / `firebase emulators:exec` (not alone).
  */
 describe("demo seed via Firebase emulators", () => {
@@ -35,19 +41,23 @@ describe("demo seed via Firebase emulators", () => {
     }
   });
 
-  it("writes fictional areas under demo/{uid} after Try-demo seed", async () => {
+  it("awaits template then writes Teacher/PhD seed under demo/{uid}", async () => {
     const cred = await signInAnonymously(auth);
     const uid = cred.user.uid;
     expect(uid).toBeTruthy();
 
-    const view = await loadDemoSeed(uid);
-    expect(view.source).toBe("firestore");
-    expect(view.areas.length).toBe(fictionalSeed.areas.length);
-    expect(view.taskCount).toBe(fictionalSeed.tasks.length);
+    const pending = await loadDemoSeed(uid);
+    expect(pending.source).toBe("firestore");
+    expect(pending.areas.length).toBe(0);
 
     const profile = await getDoc(doc(db, DEMO_COLLECTION, uid));
     expect(profile.exists()).toBe(true);
     expect(profile.data()?.["mode"]).toBe("demo");
+    expect(profile.data()?.["awaitingTemplate"]).toBe(true);
+
+    const view = await seedDemoWithTemplate(uid, "teacher-phd");
+    expect(view.areas.length).toBe(fictionalSeed.areas.length);
+    expect(view.taskCount).toBe(fictionalSeed.tasks.length);
 
     const areasSnap = await getDocs(
       collection(db, DEMO_COLLECTION, uid, "areas"),
@@ -67,6 +77,20 @@ describe("demo seed via Firebase emulators", () => {
     const names = areasSnap.docs.map((d) => String(d.data()["name"] ?? ""));
     expect(names).toEqual(
       expect.arrayContaining(fictionalSeed.areas.map((a) => a.name)),
+    );
+  });
+
+  it("applies student template config under demo/{uid}", async () => {
+    const cred = await signInAnonymously(auth);
+    const uid = cred.user.uid;
+    await loadDemoSeed(uid);
+    await applyTemplate(demoRoot(uid), "student", { setupDone: true });
+    const areasSnap = await getDocs(
+      collection(db, DEMO_COLLECTION, uid, "areas"),
+    );
+    const names = areasSnap.docs.map((d) => String(d.data()["name"] ?? ""));
+    expect(names).toEqual(
+      expect.arrayContaining(["Study", "Projects", "Health", "Social"]),
     );
   });
 });

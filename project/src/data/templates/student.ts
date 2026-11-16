@@ -1,0 +1,135 @@
+import type { SetupTemplate } from "@/data/templates/types";
+
+/** Student — lecture week with study and health minimums. */
+export const studentTemplate: SetupTemplate = {
+  id: "student",
+  name: "Student",
+  description:
+    "Study-first week with lecture slots, exam-friendly rhythm, and exercise minimum.",
+  areas: [
+    { id: "study", name: "Study", colour: "#1D4E89", order: 1 },
+    { id: "projects", name: "Projects", colour: "#0F6B4C", order: 2 },
+    { id: "health", name: "Health", colour: "#2A7A4B", order: 3 },
+    { id: "social", name: "Social", colour: "#A15C07", order: 4 },
+  ],
+  bands: [
+    {
+      id: "band-high-study",
+      level: "high",
+      start: "08:00",
+      end: "12:00",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    {
+      id: "band-med-aft",
+      level: "medium",
+      start: "14:00",
+      end: "18:00",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    {
+      id: "band-med-eve",
+      level: "medium",
+      start: "19:00",
+      end: "21:00",
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+    },
+  ],
+  routines: [
+    {
+      id: "slot-campus-walk",
+      label: "Campus walk (low focus)",
+      start: "12:30",
+      end: "13:00",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+  ],
+  schedule: [
+    {
+      id: "s-lecture-a",
+      title: "Lecture A",
+      start: "09:00",
+      end: "10:30",
+      weekday: 1,
+      kind: "class",
+      location: "Room 101",
+    },
+    {
+      id: "s-lecture-b",
+      title: "Lecture B",
+      start: "11:00",
+      end: "12:30",
+      weekday: 2,
+      kind: "class",
+      location: "Room 204",
+    },
+    {
+      id: "s-lab",
+      title: "Project lab",
+      start: "14:00",
+      end: "16:00",
+      weekday: 3,
+      kind: "class",
+      location: "Lab 3",
+    },
+    {
+      id: "s-seminar",
+      title: "Seminar",
+      start: "10:00",
+      end: "11:30",
+      weekday: 4,
+      kind: "class",
+      location: "Hall C",
+    },
+    {
+      id: "s-tutorial",
+      title: "Tutorial",
+      start: "15:00",
+      end: "16:00",
+      weekday: 5,
+      kind: "class",
+      location: "Room 110",
+    },
+  ],
+  rules: [
+    {
+      id: "rule-study",
+      areaId: "study",
+      minMinutesPerDay: 120,
+      label: "Study 2 h",
+    },
+    {
+      id: "rule-exercise",
+      areaId: "health",
+      minMinutesPerDay: 30,
+      label: "Exercise 30 min",
+    },
+  ],
+  series: [
+    {
+      id: "ser-study-group",
+      label: "Study group",
+      kind: "series",
+      rule: { freq: "weeks", interval: 1 },
+      startDayOffset: 2,
+      time: "18:00",
+    },
+    {
+      id: "ser-exam-window",
+      label: "Exam period marker",
+      kind: "exam",
+      rule: { freq: "months", interval: 3, dayOfMonth: 1 },
+      startDayOffset: 14,
+      time: "09:00",
+    },
+  ],
+  settings: {
+    timezone: "Asia/Kolkata",
+    gridStartHour: 7,
+    gridEndHour: 22,
+    daysVisible: 5,
+    checkInCadence: "after-block",
+    reminderDefaultMin: 30,
+    eveningReviewAt: "21:30",
+  },
+};

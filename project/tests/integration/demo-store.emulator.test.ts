@@ -12,7 +12,11 @@ import {
   loadDemoPlannerState,
   replaceDemoCollection,
 } from "@/lib/demo-store";
-import { DEMO_COLLECTION, loadDemoSeed } from "@/lib/seed";
+import {
+  DEMO_COLLECTION,
+  loadDemoSeed,
+  seedDemoWithTemplate,
+} from "@/lib/seed";
 
 describe("demo runtime Firestore store", () => {
   beforeAll(async () => {
@@ -39,6 +43,7 @@ describe("demo runtime Firestore store", () => {
     const uid = cred.user.uid;
 
     await loadDemoSeed(uid);
+    await seedDemoWithTemplate(uid, "teacher-phd");
     const before = await loadDemoPlannerState(uid);
     expect(before.tasks.length).toBeGreaterThan(0);
     expect(before.areas.length).toBeGreaterThan(0);

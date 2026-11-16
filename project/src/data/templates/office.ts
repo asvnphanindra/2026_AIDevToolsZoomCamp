@@ -1,0 +1,142 @@
+import type { SetupTemplate } from "@/data/templates/types";
+
+/** Office worker — focus blocks, learning minimum, meeting series. */
+export const officeTemplate: SetupTemplate = {
+  id: "office",
+  name: "Office worker",
+  description:
+    "Office hours with focus and learning minimums; meetings as recurring series.",
+  areas: [
+    { id: "work", name: "Work", colour: "#0F6B4C", order: 1 },
+    { id: "learning", name: "Learning", colour: "#1D4E89", order: 2 },
+    { id: "health", name: "Health", colour: "#2A7A4B", order: 3 },
+    { id: "family", name: "Family", colour: "#A15C07", order: 4 },
+  ],
+  bands: [
+    {
+      id: "band-high-am",
+      level: "high",
+      start: "09:00",
+      end: "12:00",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    {
+      id: "band-med-pm",
+      level: "medium",
+      start: "13:30",
+      end: "17:00",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    {
+      id: "band-low-eve",
+      level: "low",
+      start: "19:00",
+      end: "21:00",
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+    },
+  ],
+  routines: [
+    {
+      id: "slot-commute-am",
+      label: "Commute (listen/review)",
+      start: "08:15",
+      end: "08:55",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    {
+      id: "slot-commute-pm",
+      label: "Commute (listen/review)",
+      start: "17:30",
+      end: "18:10",
+      weekdays: [1, 2, 3, 4, 5],
+    },
+  ],
+  schedule: [
+    {
+      id: "s-standup",
+      title: "Team standup",
+      start: "10:00",
+      end: "10:20",
+      weekday: 1,
+      kind: "meeting",
+      location: "Zoom",
+    },
+    {
+      id: "s-office-hours",
+      title: "Office hours",
+      start: "09:00",
+      end: "17:00",
+      weekday: 2,
+      kind: "meeting",
+      location: "Desk",
+    },
+    {
+      id: "s-planning",
+      title: "Sprint planning",
+      start: "14:00",
+      end: "15:00",
+      weekday: 3,
+      kind: "meeting",
+      location: "Room 4",
+    },
+    {
+      id: "s-1on1",
+      title: "Manager 1:1",
+      start: "15:00",
+      end: "15:30",
+      weekday: 4,
+      kind: "meeting",
+      location: "Cafe",
+    },
+    {
+      id: "s-retro",
+      title: "Team retro",
+      start: "16:00",
+      end: "16:45",
+      weekday: 5,
+      kind: "meeting",
+      location: "Teams",
+    },
+  ],
+  rules: [
+    {
+      id: "rule-focus",
+      areaId: "work",
+      minMinutesPerDay: 120,
+      label: "Focus 2 h",
+    },
+    {
+      id: "rule-learning",
+      areaId: "learning",
+      minMinutesPerDay: 30,
+      label: "Learning 30 min",
+    },
+  ],
+  series: [
+    {
+      id: "ser-all-hands",
+      label: "All-hands",
+      kind: "series",
+      rule: { freq: "weeks", interval: 2 },
+      startDayOffset: 2,
+      time: "11:00",
+    },
+    {
+      id: "ser-dentist",
+      label: "Dental checkup",
+      kind: "appointment",
+      rule: { freq: "months", interval: 6, dayOfMonth: 10 },
+      startDayOffset: 0,
+      time: "09:30",
+    },
+  ],
+  settings: {
+    timezone: "Asia/Kolkata",
+    gridStartHour: 7,
+    gridEndHour: 21,
+    daysVisible: 5,
+    checkInCadence: "end-of-day",
+    reminderDefaultMin: 15,
+    eveningReviewAt: "20:30",
+  },
+};

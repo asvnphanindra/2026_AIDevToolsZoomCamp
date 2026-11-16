@@ -8,6 +8,10 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import {
+  applyTemplate,
+  type SetupTemplateId,
+} from "@/data/templates";
+import {
   fictionalSeed,
   type FictionalSeed,
   type SeedArea,
@@ -16,6 +20,7 @@ import { addDaysToDateKey, seedAreaGoals } from "@/lib/area-goals";
 import { seedCalendarEvents } from "@/lib/calendar-events";
 import { seedCalendarSeries } from "@/lib/calendar-series";
 import { db } from "@/lib/firebase";
+import { demoRoot } from "@/lib/planner-store";
 import { dateKeyInTz, DEFAULT_TZ } from "@/lib/time";
 
 export type PlannerView = {
@@ -104,8 +109,8 @@ export async function ensureOwnerProfile(
 }
 
 /**
- * US-A2: copy fictional seed into `demo/{uid}/…` for anonymous Try demo.
- * Requires working Firestore (emulator or prod). No offline / localStorage seed.
+ * US-A2: ensure `demo/{uid}` profile exists. Template seeding is deferred to
+ * the in-app picker (Phase 2.3) via `seedDemoWithTemplate`.
  */
 export async function loadDemoSeed(uid: string): Promise<PlannerView> {
   const root = [DEMO_COLLECTION, uid] as const;
@@ -114,23 +119,46 @@ export async function loadDemoSeed(uid: string): Promise<PlannerView> {
   const areasExisting = profileSnap.exists()
     ? await readAreas(root)
     : [];
-  const needsSeed = !profileSnap.exists() || areasExisting.length === 0;
 
-  if (needsSeed) {
-    await writeSeedToDemo(uid, fictionalSeed);
+  if (!profileSnap.exists()) {
+    const batch = writeBatch(db);
+    batch.set(profileRef, {
+      displayName: fictionalSeed.profile.displayName,
+      timezone: fictionalSeed.profile.timezone,
+      settings: fictionalSeed.profile.settings,
+      mode: "demo",
+      awaitingTemplate: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    await batch.commit();
   }
 
-  const areas = await readAreas(root);
-  if (!areas.length) {
-    throw new Error(
-      "Demo seed failed: Firestore returned no areas under demo/{uid}.",
-    );
-  }
-
+  const areas = areasExisting.length ? areasExisting : await readAreas(root);
   return {
     displayName: fictionalSeed.profile.displayName,
     areas,
-    taskCount: fictionalSeed.tasks.length,
+    taskCount: areas.length ? fictionalSeed.tasks.length : 0,
+    source: "firestore",
+  };
+}
+
+/** Apply a setup template under demo/{uid}. Teacher/PhD uses the full fictional seed. */
+export async function seedDemoWithTemplate(
+  uid: string,
+  templateId: SetupTemplateId,
+): Promise<PlannerView> {
+  if (templateId === "teacher-phd") {
+    await writeSeedToDemo(uid, fictionalSeed);
+  } else {
+    await applyTemplate(demoRoot(uid), templateId, { setupDone: true });
+  }
+
+  const areas = await readAreas([DEMO_COLLECTION, uid]);
+  return {
+    displayName: fictionalSeed.profile.displayName,
+    areas,
+    taskCount: templateId === "teacher-phd" ? fictionalSeed.tasks.length : 0,
     source: "firestore",
   };
 }
