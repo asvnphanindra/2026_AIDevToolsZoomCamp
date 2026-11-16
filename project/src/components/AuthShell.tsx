@@ -692,7 +692,7 @@ export function AuthShell() {
     return (
       <main className="shell">
         <header className="brand">
-          <h1>Work Planner</h1>
+          <h1>Samaya Scheduler</h1>
           <p className="lede">
             Sign in with email to keep your plan private, or try the fictional
             demo.
