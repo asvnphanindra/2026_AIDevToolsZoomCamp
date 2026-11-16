@@ -12,6 +12,7 @@ import {
 } from "@/components/BlockActionSheet";
 import { BottomSheet } from "@/components/BottomSheet";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
+import { SuggestionChips } from "@/components/SuggestionChips";
 import type {
   SeedArea,
   SeedBand,
@@ -37,7 +38,9 @@ import {
   buildDayGrid,
   type GridItem,
 } from "@/lib/day-grid";
+import type { DailyRule } from "@/lib/rules";
 import { dayTypeForDay, type DayTypeLike } from "@/lib/schedule";
+import type { Schedule } from "@/lib/schedules";
 import { type BacklogTask } from "@/lib/tasks";
 import {
   dateFromKey,
@@ -61,7 +64,9 @@ type Props = {
   bands?: SeedBand[];
   routines?: SeedRoutine[];
   schedules?: SeedSchedule[];
+  versionedSchedules?: Schedule[];
   dayTypes?: DayTypeLike[];
+  rules?: DailyRule[];
   checkIns: Record<string, BlockCheckIn>;
   onCheckInsChange: (next: Record<string, BlockCheckIn>) => void;
 };
@@ -89,7 +94,9 @@ export function DayAgenda({
   bands,
   routines,
   schedules,
+  versionedSchedules,
   dayTypes,
+  rules = [],
   checkIns,
   onCheckInsChange,
 }: Props) {
@@ -126,6 +133,7 @@ export function DayAgenda({
         bands,
         routines,
         schedules,
+        versionedSchedules,
         dayTypes,
         placedBlocks,
       }),
@@ -137,6 +145,7 @@ export function DayAgenda({
       bands,
       routines,
       schedules,
+      versionedSchedules,
       dayTypes,
       placedBlocks,
     ],
@@ -472,6 +481,15 @@ export function DayAgenda({
           </button>
         ) : null}
       </header>
+
+      <SuggestionChips
+        dateKey={dayKey}
+        model={model}
+        rules={rules}
+        areas={areas}
+        placedBlocks={placedBlocks}
+        onPlacedBlocksChange={onPlacedBlocksChange}
+      />
 
       <div
         className="day-agenda-list"

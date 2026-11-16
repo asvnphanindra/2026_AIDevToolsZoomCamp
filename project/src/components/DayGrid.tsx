@@ -19,6 +19,7 @@ import {
 import { BottomSheet } from "@/components/BottomSheet";
 import { CheckInPrompt } from "@/components/CheckInPrompt";
 import { NowIndicator } from "@/components/NowIndicator";
+import { SuggestionChips } from "@/components/SuggestionChips";
 import type {
   SeedArea,
   SeedBand,
@@ -53,7 +54,9 @@ import {
   slotBandLevel,
   type GridItem,
 } from "@/lib/day-grid";
+import type { DailyRule } from "@/lib/rules";
 import { dayTypeForDay, type DayTypeLike } from "@/lib/schedule";
+import type { Schedule } from "@/lib/schedules";
 import {
   layerStateForMode,
   SCHEDULER_LAYER_MODE_LABELS,
@@ -93,7 +96,9 @@ type Props = {
   bands?: SeedBand[];
   routines?: SeedRoutine[];
   schedules?: SeedSchedule[];
+  versionedSchedules?: Schedule[];
   dayTypes?: DayTypeLike[];
+  rules?: DailyRule[];
   /** When set, check-ins are controlled (Firestore); no localStorage. */
   checkIns?: Record<string, BlockCheckIn>;
   onCheckInsChange?: (next: Record<string, BlockCheckIn>) => void;
@@ -159,7 +164,9 @@ export function DayGrid({
   bands,
   routines,
   schedules,
+  versionedSchedules,
   dayTypes,
+  rules = [],
   checkIns: checkInsProp,
   onCheckInsChange,
 }: Props) {
@@ -207,6 +214,7 @@ export function DayGrid({
         bands,
         routines,
         schedules,
+        versionedSchedules,
         dayTypes,
         placedBlocks,
       }),
@@ -219,6 +227,7 @@ export function DayGrid({
       bands,
       routines,
       schedules,
+      versionedSchedules,
       dayTypes,
       placedBlocks,
     ],
@@ -935,6 +944,15 @@ export function DayGrid({
           </button>
         ) : null}
       </div>
+
+      <SuggestionChips
+        dateKey={singleDay ? dayKey : model.todayKey}
+        model={model}
+        rules={rules}
+        areas={areas}
+        placedBlocks={placedBlocks}
+        onPlacedBlocksChange={onPlacedBlocksChange}
+      />
 
       {overlap ? (
         <div className="overlap-banner" role="alertdialog">

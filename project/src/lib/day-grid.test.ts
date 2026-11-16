@@ -47,6 +47,47 @@ describe("day grid planner model", () => {
     expect(model.scheduleFromSeed).toBe(0);
   });
 
+  it("paints versioned teaching-plan slots for a personal account", () => {
+    const model = buildDayGrid({
+      isDemo: false,
+      areas: [{ id: "work", name: "Job", colour: "#0F6B4C", order: 1 }],
+      bands: [],
+      routines: [],
+      schedules: [],
+      versionedSchedules: [
+        {
+          id: "sched-job",
+          name: "Teaching",
+          areaId: "work",
+          versions: [
+            {
+              id: "v1",
+              name: "Term",
+              effectiveFrom: "2026-01-01",
+              effectiveTo: "2026-12-31",
+              slots: [
+                {
+                  dayOfWeek: 3,
+                  startTime: "09:00",
+                  endTime: "10:30",
+                  label: "Section A",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      dayTypes: [],
+      now: new Date("2026-11-11T12:00:00+05:30"), // Wednesday
+      timezone: "Asia/Kolkata",
+      daysVisible: 1,
+    });
+    const schedule = model.items.filter((i) => i.kind === "schedule");
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0]?.title).toBe("Section A");
+    expect(schedule[0]?.areaId).toBe("work");
+  });
+
   it("flags deep-work blocks overlapping a low energy band", () => {
     const warnings = findDeepWorkInLowBand(
       [

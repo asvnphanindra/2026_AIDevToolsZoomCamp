@@ -1,11 +1,18 @@
 import { fictionalSeed, type SeedRule } from "@/data/fictional-seed";
 import { durationMinutes } from "@/lib/blocks";
 import { dayKeysForIsoWeek } from "@/lib/week-horizon";
-import { DEFAULT_TZ } from "@/lib/time";
+import { DEFAULT_TZ, minutesOf } from "@/lib/time";
 
 const STORAGE_KEY = "work-planner.daily-rules";
 
-export type DailyRule = SeedRule;
+/** Soft = weekly review only; required = day progress + suggestions. */
+export type DailyRule = SeedRule & {
+  kind?: "soft" | "required";
+  /** Minutes inside this window do not count toward the minimum. */
+  outsideWindow?: { start: string; end: string };
+  /** Sun=0 … Sat=6; omit = every day. */
+  days?: number[];
+};
 
 export type RuleShortfall = {
   ruleId: string;
@@ -58,6 +65,21 @@ export function loadRules(): DailyRule[] {
   return seeded;
 }
 
+function countedMinutes(
+  start: string,
+  end: string,
+  outsideWindow?: { start: string; end: string },
+): number {
+  const total = durationMinutes(start, end);
+  if (!outsideWindow) return total;
+  const oStart = minutesOf(outsideWindow.start);
+  const oEnd = minutesOf(outsideWindow.end);
+  const a = minutesOf(start);
+  const b = minutesOf(end);
+  const overlap = Math.max(0, Math.min(b, oEnd) - Math.max(a, oStart));
+  return Math.max(0, total - overlap);
+}
+
 /** Minutes planned for an area on a date (blocks with areaId). */
 export function minutesForAreaOnDate(
   date: string,
@@ -69,6 +91,7 @@ export function minutesForAreaOnDate(
     areaId?: string;
     kind: string;
   }[],
+  outsideWindow?: { start: string; end: string },
 ): number {
   return items
     .filter(
@@ -77,7 +100,14 @@ export function minutesForAreaOnDate(
         i.areaId === areaId &&
         i.kind === "block",
     )
-    .reduce((sum, i) => sum + durationMinutes(i.start, i.end), 0);
+    .reduce(
+      (sum, i) => sum + countedMinutes(i.start, i.end, outsideWindow),
+      0,
+    );
+}
+
+export function isRequiredRule(rule: DailyRule): boolean {
+  return rule.kind !== "soft";
 }
 
 export function evaluateDayRules(
@@ -90,10 +120,23 @@ export function evaluateDayRules(
     areaId?: string;
     kind: string;
   }[],
+  weekday?: number,
 ): RuleShortfall[] {
   const shortfalls: RuleShortfall[] = [];
   for (const rule of rules) {
-    const actual = minutesForAreaOnDate(date, rule.areaId, items);
+    if (
+      rule.days?.length &&
+      weekday != null &&
+      !rule.days.includes(weekday)
+    ) {
+      continue;
+    }
+    const actual = minutesForAreaOnDate(
+      date,
+      rule.areaId,
+      items,
+      rule.outsideWindow,
+    );
     if (actual < rule.minMinutesPerDay) {
       shortfalls.push({
         ruleId: rule.id,

@@ -753,6 +753,35 @@ button.nav-active {
   gap: var(--space-2);
 }
 
+.suggestion-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.suggestion-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border, #c9cfc9) 80%, transparent);
+  background: color-mix(in srgb, var(--surface, #fff) 92%, #0f6b4c 8%);
+}
+
+.suggestion-chip-text {
+  flex: 1 1 12rem;
+  font-size: 0.95rem;
+}
+
+.suggestion-chip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .checkin-chip {
   margin-top: var(--space-2);
   background: #fff7e8;

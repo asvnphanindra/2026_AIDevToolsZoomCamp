@@ -88,6 +88,7 @@ import {
   openBacklogForGoalWeek,
   type BacklogTask,
 } from "@/lib/tasks";
+import { scheduleFromTeachingPlan } from "@/lib/schedules";
 import {
   JOB_AREA_ID,
   loadOrSeedTeachingPlan,
@@ -886,6 +887,10 @@ export function AuthShell() {
 
   const showFocusSide = showsTasksToFocus(layerMode) && !isPhone;
   const tz = userSettings.timezone || "Asia/Kolkata";
+  const versionedSchedules = useMemo(
+    () => (teachingPlan ? [scheduleFromTeachingPlan(teachingPlan)] : []),
+    [teachingPlan],
+  );
   const plannerRoot = user
     ? isDemo
       ? demoRoot(user.uid)
@@ -1116,9 +1121,11 @@ export function AuthShell() {
                       bands={bands}
                       routines={routines}
                       schedules={schedules}
+                      versionedSchedules={versionedSchedules}
                       dayTypes={
                         isDemo ? fictionalSeed.dayTypes : dayTypes
                       }
+                      rules={rules}
                       checkIns={checkIns}
                       onCheckInsChange={onCheckInsChange}
                     />
@@ -1139,9 +1146,11 @@ export function AuthShell() {
                       bands={bands}
                       routines={routines}
                       schedules={schedules}
+                      versionedSchedules={versionedSchedules}
                       dayTypes={
                         isDemo ? fictionalSeed.dayTypes : dayTypes
                       }
+                      rules={rules}
                       checkIns={checkIns}
                       onCheckInsChange={onCheckInsChange}
                     />
@@ -1162,9 +1171,11 @@ export function AuthShell() {
                   bands={bands}
                   routines={routines}
                   schedules={schedules}
+                  versionedSchedules={versionedSchedules}
                   dayTypes={
                     isDemo ? fictionalSeed.dayTypes : dayTypes
                   }
+                  rules={rules}
                   checkIns={checkIns}
                   onCheckInsChange={onCheckInsChange}
                 />

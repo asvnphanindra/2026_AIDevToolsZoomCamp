@@ -18,6 +18,10 @@ import {
   type DayTypeLike,
 } from "@/lib/schedule";
 import {
+  expandSchedulesForDate,
+  type Schedule,
+} from "@/lib/schedules";
+import {
   DEFAULT_TZ,
   minutesOf,
   weekCenteredDayKeys,
@@ -85,6 +89,8 @@ export function buildDayGrid(opts: {
   bands?: SeedBand[];
   routines?: SeedRoutine[];
   schedules?: SeedSchedule[];
+  /** Versioned timetables (teaching plan / any area) — Phase 6.1. */
+  versionedSchedules?: Schedule[];
   dayTypes?: DayTypeLike[];
   /** User-placed blocks from backlog drag (US-C2). */
   placedBlocks?: PlacedBlock[];
@@ -134,6 +140,28 @@ export function buildDayGrid(opts: {
     kind: "schedule" as const,
     colour: item.colour,
   }));
+  const versionedItems: GridItem[] = [];
+  const versioned = opts.versionedSchedules ?? [];
+  if (versioned.length) {
+    for (const [index, dayKey] of dayKeys.entries()) {
+      const relative = index - todayIndex;
+      const dt = dayTypeForDay(dayKey, relative, dayTypes);
+      for (const item of expandSchedulesForDate(versioned, dayKey, {
+        dayType: dt?.type,
+      })) {
+        versionedItems.push({
+          id: item.id,
+          date: item.date,
+          title: item.title,
+          start: item.start,
+          end: item.end,
+          kind: "schedule",
+          colour: item.colour,
+          areaId: item.areaId,
+        });
+      }
+    }
+  }
   const demoItems = opts.isDemo
     ? expandDemoExtras(
         dayKeys,
@@ -157,7 +185,12 @@ export function buildDayGrid(opts: {
     placed: true,
     taskId: b.taskId,
   }));
-  const items = [...scheduleItems, ...demoItems, ...placedItems];
+  const items = [
+    ...scheduleItems,
+    ...versionedItems,
+    ...demoItems,
+    ...placedItems,
+  ];
 
   return {
     timezone,
