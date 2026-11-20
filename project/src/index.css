@@ -2875,3 +2875,202 @@ button.linkish:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Teaching Lesson Planner (/tlp) */
+.tlp {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--panel) 94%, #e7eef8);
+}
+
+.tlp-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.tlp-header h2 {
+  margin: 0 0 var(--space-1);
+}
+
+.tlp-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tlp-screen {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tlp-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tlp-chip-row li {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.tlp-week-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.tlp-week-strip {
+  display: grid;
+  gap: var(--space-2);
+  overflow: auto;
+}
+
+.tlp-week-row {
+  display: grid;
+  grid-template-columns: 6.5rem repeat(7, minmax(5.5rem, 1fr));
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.tlp-week-head .tlp-day-col {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tlp-sec-label {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.tlp-day-col {
+  min-height: 4.5rem;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+
+.tlp-day-col.is-today {
+  outline: 2px solid color-mix(in srgb, var(--accent, #2f6fed) 70%, #1d4ed8);
+  background: color-mix(in srgb, var(--panel) 80%, #dbeafe);
+}
+
+.tlp-today-mark {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #1d4ed8;
+}
+
+.tlp-occ-chip,
+.tlp-placement-chip,
+.tlp-drag-chip {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel) 88%, #c7d7f5);
+  text-align: left;
+  font: inherit;
+}
+
+.tlp-drag-chip {
+  cursor: grab;
+  list-style: none;
+}
+
+.tlp-tray {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tlp-paste {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tlp-paste textarea {
+  width: 100%;
+  min-height: 8rem;
+  font: inherit;
+}
+
+.tlp-map-screen {
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  align-items: start;
+}
+
+.tlp-map-tray {
+  position: sticky;
+  top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.tlp-map-screen .tlp-week-toolbar {
+  grid-column: 1 / -1;
+}
+
+.tlp-map-screen .tlp-map-tray {
+  grid-column: 1;
+}
+
+.tlp-map-screen .tlp-week-strip {
+  grid-column: 2;
+}
+
+.tlp-drop-cell {
+  min-height: 6rem;
+}
+
+.tlp-cell-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tlp-cell-actions button {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .tlp-map-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .tlp-map-screen .tlp-map-tray,
+  .tlp-map-screen .tlp-week-strip {
+    grid-column: 1;
+  }
+
+  .tlp-map-tray {
+    position: static;
+  }
+
+  .tlp-week-row {
+    grid-template-columns: 5rem repeat(7, minmax(4.5rem, 1fr));
+  }
+}

@@ -3,6 +3,7 @@ import { ActivityLog } from "@/components/ActivityLog";
 import { BottomSheet } from "@/components/BottomSheet";
 import { DayAgenda } from "@/components/DayAgenda";
 import { DayGrid } from "@/components/DayGrid";
+import { LessonPlanner } from "@/components/LessonPlanner";
 import { LiveClock } from "@/components/LiveClock";
 import { MonthCalendarView } from "@/components/MonthCalendarView";
 import { PlannerAreas } from "@/components/PlannerAreas";
@@ -95,6 +96,11 @@ import {
   persistTeachingPlan,
   type TeachingPlanState,
 } from "@/lib/teaching-plan";
+import {
+  loadOrSeedTlpPlan,
+  persistTlpPlan,
+  type TlpPlan,
+} from "@/lib/tlp";
 import { type WeekHorizonItem } from "@/lib/week-horizon";
 import {
   actorRoleFromProfile,
@@ -108,8 +114,26 @@ type AppView =
   | "weeks"
   | "calendar"
   | "activity"
+  | "tlp"
   | "more"
   | "settings";
+
+function appViewFromPath(pathname: string): AppView | null {
+  if (pathname === "/tlp" || pathname.startsWith("/tlp/")) return "tlp";
+  return null;
+}
+
+function syncPathForView(view: AppView) {
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname;
+  if (view === "tlp") {
+    if (path !== "/tlp") window.history.pushState({}, "", "/tlp");
+    return;
+  }
+  if (path === "/tlp" || path.startsWith("/tlp/")) {
+    window.history.pushState({}, "", "/");
+  }
+}
 
 function emptyDemoBootstrap() {
   return {
@@ -141,7 +165,22 @@ export function AuthShell() {
     signOut,
   } = useAuth();
 
-  const [appView, setAppView] = useState<AppView>("scheduler");
+  const [appView, setAppView] = useState<AppView>(() =>
+    typeof window !== "undefined"
+      ? appViewFromPath(window.location.pathname) ?? "scheduler"
+      : "scheduler",
+  );
+  const goAppView = useCallback((next: AppView) => {
+    setAppView(next);
+    syncPathForView(next);
+  }, []);
+  useEffect(() => {
+    const onPop = () => {
+      setAppView(appViewFromPath(window.location.pathname) ?? "scheduler");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const [fabOpen, setFabOpen] = useState(false);
   const [anchorDate, setAnchorDate] = useState<string | undefined>(undefined);
   const [fabScheduleDate, setFabScheduleDate] = useState<string | undefined>(
@@ -176,6 +215,7 @@ export function AuthShell() {
     ...DEFAULT_USER_SETTINGS,
   });
   const [layerMode, setLayerMode] = useState<SchedulerLayerMode>("combined");
+  const [tlpPlan, setTlpPlan] = useState<TlpPlan | null>(null);
   const [teachingPlan, setTeachingPlan] = useState<TeachingPlanState | null>(
     null,
   );
@@ -275,7 +315,7 @@ export function AuthShell() {
         if (cancelled || plannerUidRef.current !== user.uid) return;
 
         const root = usersRoot(ownerUid);
-        const [state, personal, plan, activity] = await Promise.all([
+        const [state, personal, plan, activity, tlp] = await Promise.all([
           loadPlannerState(root),
           loadPersonalConfig(ownerUid),
           loadOrSeedTeachingPlan({
@@ -284,6 +324,7 @@ export function AuthShell() {
             areaId: JOB_AREA_ID,
           }),
           loadActivityLog({ ownerUid, isDemo: false }),
+          loadOrSeedTlpPlan({ ownerUid, isDemo: false }),
         ]);
         if (cancelled || plannerUidRef.current !== user.uid) return;
 
@@ -307,6 +348,7 @@ export function AuthShell() {
         setDayTypes(personal.dayTypes);
         setUserSettings(personal.settings);
         setTeachingPlan(plan);
+        setTlpPlan(tlp);
         setActivityEntries(activity);
         const emptyConfig =
           areasMigrated.length === 0 &&
@@ -402,16 +444,18 @@ export function AuthShell() {
           workspaceOwnerUid: user.uid,
         });
         try {
-          const [plan, activity] = await Promise.all([
+          const [plan, activity, tlp] = await Promise.all([
             loadOrSeedTeachingPlan({
               ownerUid: user.uid,
               isDemo: true,
               areaId: JOB_AREA_ID,
             }),
             loadActivityLog({ ownerUid: user.uid, isDemo: true }),
+            loadOrSeedTlpPlan({ ownerUid: user.uid, isDemo: true }),
           ]);
           if (cancelled || plannerUidRef.current !== user.uid) return;
           setTeachingPlan(plan);
+          setTlpPlan(tlp);
           setActivityEntries(activity);
         } catch {
           if (cancelled) return;
@@ -572,6 +616,19 @@ export function AuthShell() {
       })();
     },
     [workspaceOwnerUid, isDemo, logActivity],
+  );
+
+  const onTlpPlanChange = useCallback(
+    (next: TlpPlan) => {
+      setTlpPlan(next);
+      if (!workspaceOwnerUid) return;
+      void persistTlpPlan({
+        ownerUid: workspaceOwnerUid,
+        isDemo,
+        state: next,
+      });
+    },
+    [workspaceOwnerUid, isDemo],
   );
 
   const onLayerModeChange = useCallback(
@@ -904,6 +961,7 @@ export function AuthShell() {
     { id: "planner", label: "Planner" },
     { id: "calendar", label: "Calendar" },
     { id: "activity", label: "Activity" },
+    { id: "tlp", label: "TLP" },
     ...(!isPhone
       ? [{ id: "settings" as AppView, label: "Settings" }]
       : []),
@@ -939,7 +997,7 @@ export function AuthShell() {
                         ? "nav-active"
                         : "secondary"
                     }
-                    onClick={() => setAppView(btn.id)}
+                    onClick={() => goAppView(btn.id)}
                   >
                     {btn.label}
                   </button>
@@ -1009,6 +1067,14 @@ export function AuthShell() {
           />
         ) : appView === "activity" ? (
           <ActivityLog entries={activityEntries} />
+        ) : appView === "tlp" ? (
+          tlpPlan ? (
+            <LessonPlanner plan={tlpPlan} onPlanChange={onTlpPlanChange} />
+          ) : (
+            <p className="muted" role="status">
+              Loading Teaching Lesson Planner…
+            </p>
+          )
         ) : appView === "settings" ? (
           user ? (
             <Settings
@@ -1228,7 +1294,7 @@ export function AuthShell() {
                       ? "nav-active"
                       : "secondary"
                   }
-                  onClick={() => setAppView(btn.id)}
+                  onClick={() => goAppView(btn.id)}
                 >
                   {btn.label}
                 </button>
